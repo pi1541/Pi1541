@@ -1,0 +1,73 @@
+Brian Sidebotham's - Raspberry-Pi Bare Metal Tutorials
+https://github.com/BrianSidebotham/arm-tutorial-rpi
+armc-cstartup.c
+armc-cstubs.c
+rpi-base.h
+rpi-interrupts.h
+rpi-interrupts.c
+rpi-mailbox.h
+rpi-mailbox.c
+
+David Banks' PiTubeDirect (GNU General Public License v3.0)
+https://github.com/hoglet67/PiTubeDirect
+defs.h
+cache.h
+cache.c
+armc-start.S
+startup.h
+rpi-aux.h
+rpi-aux.c
+rpi-gpio.h (added GpioDetect)
+rpi-gpio.c
+rpi-mailbox-interface.h (Added some missing ones)
+rpi-mailbox-interface.c
+linker.ld
+
+R Stange's USPi
+https://github.com/rsta2/uspi
+uspi\*.*
+exception.c
+interrupt.h
+interrupt.c
+Timer.h
+Timer.cpp
+
+R Stange's modified version of John Cronin's EMMC controller
+emmc.h
+emmc.cpp
+
+ChaN's Generic FAT file system R0.12b
+http://elm-chan.org/fsw/ff/00index_e.html
+ff.h
+ff.cpp
+diskio.h
+diskio.cpp
+
+Sean Barrett's stb_image (MIT) (used for loading PNGs)
+https://github.com/nothings/stb
+stb_image.h
+
+FFmpeg  (LGPL v2.1+) (used for the font)
+https://github.com/FFmpeg/FFmpeg
+xga_font_data.h
+xga_font_data.c
+
+Pete Rittwage's (Markus Brenner's) NIB lib
+https://c64preservation.com/svn/nibtools/trunk
+gcr.h
+gcr.cpp
+prot.h
+prot.cpp
+
+Marcus Geelnard's LZ77 coder/decoder (GNU General Public License, version 2 or later)
+https://c64preservation.com/svn/nibtools/trunk/lz.c
+lz.h
+lz.c
+
+
+nbla000's CBM-FileBrowser_v1.6
+http://www.nightfallcrew.com/21/08/2013/cbm-filebrowser-v1-6-by-nbla000/
+
+
+
+
