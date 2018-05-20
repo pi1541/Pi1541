@@ -1,0 +1,51 @@
+# To show build commands: make
+ifneq ($(V),1)
+Q		:= @
+endif
+
+RASPPI	?= 3
+PREFIX	?= arm-none-eabi-
+
+CC	= $(PREFIX)gcc
+CPP	= $(PREFIX)g++
+AS	= $(CC)
+LD	= $(PREFIX)ld
+AR	= $(PREFIX)ar
+
+ifeq ($(strip $(RASPPI)),0)
+ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPIZERO=1
+CFLAGS	+= -DRPIZERO=1 -DRASPPI=1
+else ifeq ($(strip $(RASPPI)),1)
+ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPIBPLUS=1
+CFLAGS	+= -DRPIBPLUS=1 -DRASPPI=1
+else ifeq ($(strip $(RASPPI)),2)
+ARCH	?= -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -marm -DRPI2=1
+CFLAGS	+= -DRPI2=1
+else ifeq ($(strip $(RASPPI)),3)
+ARCH	?= -march=armv8-a+crc -mtune=cortex-a53 -mfpu=neon-fp-armv8 -mfloat-abi=hard -marm -DRPI3=1
+CFLAGS	+= -DRPI3=1
+else
+$(error RASPPI must be one of: 0, 1, 2, 3)
+endif
+
+AFLAGS	 += $(ARCH)
+CFLAGS	 += $(ARCH) -Wall -Wno-psabi -fsigned-char -fno-builtin -Ofast -DNDEBUG
+CPPFLAGS += $(CFLAGS) -fno-exceptions -fno-rtti -std=c++0x -Wno-write-strings
+CFLAGS	 += -fno-delete-null-pointer-checks -fdata-sections -ffunction-sections -u _printf_float
+
+.PHONY: clean
+
+%.o: %.S
+	@echo "  AS   $@"
+	$(Q)$(AS) $(AFLAGS) $(INCLUDE) -c -o $@ $<
+
+%.o: %.c
+	@echo "  CC   $@"
+	$(Q)$(CC) $(CFLAGS) $(INCLUDE) -c -o $@ $<
+
+%.o: %.cpp
+	@echo "  CPP  $@"
+	$(Q)$(CPP) $(CPPFLAGS) $(INCLUDE) -c -o $@ $<
+
+clean:
+	$(RM) *.o *.a *.elf *.lst *.img *.map

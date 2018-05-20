@@ -1,7 +1,7 @@
 #ifndef _Singleton_h_
 #define _Singleton_h_
 
-#include "Types.h"
+#include "types.h"
 
 template <typename T> 
 class Singleton
