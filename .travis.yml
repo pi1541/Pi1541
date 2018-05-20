@@ -1,0 +1,34 @@
+# Thanks to https://github.com/andysworkshop
+
+language: cpp
+sudo: false
+
+addons:
+  apt:
+    packages:
+      libc6-i386
+
+matrix:
+  include:
+    - env: RASPPI=0
+    - env: RASPPI=1
+    - env: RASPPI=2 
+    - env: RASPPI=3
+
+cache:
+  directories:
+    - $HOME/gcc-arm-none-eabi-5_4-2016q2
+
+install:
+  - export GCC_DIR=$HOME/gcc-arm-none-eabi-5_4-2016q2
+  - export GCC_ARCHIVE=$HOME/gccarmnoneeabi542016q220160622linuxtar.bz2
+  - export GCC_URL=https://developer.arm.com/-/media/Files/downloads/gnu-rm/5_4-2016q2/gccarmnoneeabi542016q220160622linuxtar.bz2?revision=8f445a99-c1ae-4ed8-9eb8-f41929a671c4?product=GNU%20Arm%20Embedded%20Toolchain,32-bit,,Linux,5-2016-q2-update
+  - if [ ! -e $GCC_DIR/bin/arm-none-eabi-g++ ]; then wget $GCC_URL -O $GCC_ARCHIVE; tar xfj $GCC_ARCHIVE -C $HOME; fi
+  - export PATH=$PATH:$GCC_DIR/bin
+
+script:
+  - make
+
+before_deploy:
+  - zip kernel-raspi-$RASPPI.zip kernel.img
+  - echo Add deploy in 'deploy' block
