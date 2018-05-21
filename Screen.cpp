@@ -17,7 +17,6 @@
 // along with Pi1541. If not, see <http://www.gnu.org/licenses/>.
 
 #include "Screen.h"
-#include "CBMFont.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,6 +33,8 @@ extern "C"
 }
 
 extern u32 RPi_CpuId;
+
+extern unsigned char* CBMFont;
 
 static const int BitFontHt = 16;
 static const int BitFontWth = 8;
@@ -182,20 +183,41 @@ void Screen::Clear(RGBA colour)
 	ClearArea(0, 0, width, height, colour);
 }
 
+u32 Screen::GetCBMFontHeight()
+{
+	if (CBMFont)
+		return 8;
+	else
+		return BitFontHt;
+}
+
+static char vga2screen(char c)
+{
+	if ((u8)c == 160)
+		c = ' ';
+	else if ((u8)c == 209)
+		c = 'X';
+	else if ((u8)c == 215)
+		c = 'O';
+	return c;
+}
+
 void Screen::WriteChar(bool petscii, u32 x, u32 y, unsigned char c, RGBA colour)
 {
 	if (opened)
 	{
 		u32 fontHeight;
 		const unsigned char* fontBitMap;
-		if (petscii)
+		if (petscii && CBMFont)
 		{
-			fontBitMap = CMBFont;
+			fontBitMap = CBMFont;
 			fontHeight = 8;
 			c = petscii2screen(c);
 		}
 		else
 		{
+			if (petscii)
+				c = vga2screen(c);
 			fontBitMap = avpriv_vga16_font;
 			fontHeight = BitFontHt;
 		}
@@ -261,7 +283,7 @@ u32 Screen::PrintText(bool petscii, u32 x, u32 y, char *ptr, RGBA TxtColour, RGB
 	int len = 0;
 	u32 fontHeight;
 
-	if (petscii) fontHeight = 8;
+	if (petscii && CBMFont) fontHeight = 8;
 	else fontHeight = BitFontHt;
 
 	if (width) *width = 0;

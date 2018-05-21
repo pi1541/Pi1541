@@ -46,6 +46,7 @@ public:
 
 	unsigned int GetDeviceID() const { return deviceID; }
 	unsigned int GetOnResetChangeToStartingFolder() const { return onResetChangeToStartingFolder; }
+	const char* GetRomFontName() const { return ROMFontName; }
 	const char* GetRomName(int index) const;
 	unsigned int GetExtraRAM() const { return extraRAM; }
 	unsigned int GetDisableSD2IECCommands() const { return disableSD2IECCommands; }
@@ -73,6 +74,7 @@ private:
 	unsigned int invertIECInputs;
 	unsigned int splitIECLines;
 
+	char ROMFontName[256];
 	char ROMName[256];
 	char ROMNameSlot2[256];
 	char ROMNameSlot3[256];

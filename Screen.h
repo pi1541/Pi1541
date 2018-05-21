@@ -64,6 +64,8 @@ public:
 	u32 Width() const { return width; }
 	u32 Height() const { return height; }
 
+	u32 GetCBMFontHeight();
+
 private:
 
 	typedef void (Screen::*PlotPixelFunction)(u32 pixel_offset, RGBA Colour);

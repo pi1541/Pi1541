@@ -73,6 +73,10 @@ const long int tempBufferSize = 1024;
 char tempBuffer[tempBufferSize];
 ROMs roms;
 
+const long int CBMFont_size = 4096;
+unsigned char CBMFontData[4096];
+unsigned char* CBMFont = 0;
+
 //u8 s_u8Memory[0x800];
 u8 s_u8Memory[0xc000];
 
@@ -921,6 +925,7 @@ static void LoadOptions()
 	u32 widthScreen = screen.Width();
 	u32 heightScreen = screen.Height();
 	u32 xpos, ypos;
+	const char* ROMName;
 
 	res = f_open(&fp, "options.txt", FA_READ);
 	if (res == FR_OK)
@@ -957,13 +962,42 @@ static void LoadOptions()
 		if (!splitIECLines)
 			invertIECInputs = false;
 
+
+		ROMName = options.GetRomFontName();
+		if (ROMName)
+		{
+			//DEBUG_LOG("%d Rom Name = %s\r\n", ROMIndex, ROMName);
+			res = f_open(&fp, ROMName, FA_READ);
+			if (res == FR_OK)
+			{
+				u32 bytesRead;
+
+				screen.Clear(COLOUR_BLACK);
+				snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
+				screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+				xpos = (widthScreen - widthText) >> 1;
+				ypos = (heightScreen - heightText) >> 1;
+				screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+
+				SetACTLed(true);
+				res = f_read(&fp, CBMFontData, CBMFont_size, &bytesRead);
+				SetACTLed(false);
+				f_close(&fp);
+				if (res == FR_OK && bytesRead == CBMFont_size)
+				{
+					CBMFont = CBMFontData;
+				}
+				//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
+			}
+		}
+
 		int ROMIndex;
 
 		for (ROMIndex = ROMs::MAX_ROMS - 1; ROMIndex >= 0; --ROMIndex)
 		{
 			roms.ROMValid[ROMIndex] = false;
 			const char* ROMName = options.GetRomName(ROMIndex);
-			if (ROMName[ROMIndex])
+			if (ROMName[0])
 			{
 				//DEBUG_LOG("%d Rom Name = %s\r\n", ROMIndex, ROMName);
 				res = f_open(&fp, ROMName, FA_READ);

@@ -746,7 +746,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 	char name[17] = { 0 };
 	unsigned char buffer[260] = { 0 };
 	int charIndex;
-
+	u32 fontHeight = screen.GetCBMFontHeight();
 	u32 x = 0;
 	u32 y = 0;
 	char bufferOut[128] = { 0 };
@@ -799,7 +799,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 				x += 8;
 				bits <<= 1;
 			}
-			y += 8;
+			y += fontHeight;
 		}
 		for (; bamTrack < lastTrackUsed; ++bamTrack)
 		{
@@ -810,7 +810,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 				screen.PrintText(true, x, y, bufferOut, usedColour, bgColour);
 				x += 8;
 			}
-			y += 8;
+			y += fontHeight;
 		}
 		x = 0;
 		y = 0;
@@ -820,7 +820,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 		snprintf(bufferOut, 128, "\"%s\" %c%c%c%c%c%c", name, buffer[162], buffer[163], buffer[164], buffer[165], buffer[166], buffer[167]);
 		screen.PrintText(true, x, y, bufferOut, bgColour, textColour);
 		x = 0;
-		y += 8;
+		y += fontHeight;
 
 		if (track != 0)
 		{
@@ -879,7 +879,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 								modifier = screen2petscii(60);
 							snprintf(bufferOut, 128, "%s%c", fileTypes[fileType & 7], modifier);
 							screen.PrintText(true, x, y, bufferOut, textColour, bgColour);
-							y += 8;
+							y += fontHeight;
 						}
 						entryOffset += 32;
 					}
@@ -895,7 +895,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 		//DEBUG_LOG("%d blocks free\r\n", blocksFree);
 		snprintf(bufferOut, 128, "%d BLOCKS FREE.\r\n", blocksFree);
 		screen.PrintText(true, x, y, bufferOut, textColour, bgColour);
-		y += 8;
+		y += fontHeight;
 	}
 
 	DisplayStatusBar();

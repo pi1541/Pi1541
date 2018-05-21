@@ -131,6 +131,7 @@ Options::Options(void)
 	, invertIECInputs(0)
 	, splitIECLines(0)
 {
+	strcpy(ROMFontName, "chargen");
 	ROMName[0] = 0;
 	ROMNameSlot2[0] = 0;
 	ROMNameSlot3[0] = 0;
@@ -216,6 +217,10 @@ void Options::Process(char* buffer)
 			unsigned nValue = 0;
 			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
 				splitIECLines = nValue;
+		}
+		else if ((strcasecmp(pOption, "Font") == 0))
+		{
+			strncpy(ROMFontName, pValue, 255);
 		}
 		else if ((strcasecmp(pOption, "ROM") == 0) || (strcasecmp(pOption, "ROM1") == 0))
 		{
