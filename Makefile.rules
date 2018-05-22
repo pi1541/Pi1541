@@ -22,7 +22,7 @@ else ifeq ($(strip $(RASPPI)),2)
 ARCH	?= -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -marm -DRPI2=1
 CFLAGS	+= -DRPI2=1
 else ifeq ($(strip $(RASPPI)),3)
-ARCH	?= -march=armv8-a+crc -mtune=cortex-a53 -mfpu=neon-fp-armv8 -mfloat-abi=hard -marm -DRPI3=1
+ARCH	?= -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8 -mfloat-abi=hard -marm -DRPI3=1
 CFLAGS	+= -DRPI3=1
 else
 $(error RASPPI must be one of: 0, 1, 2, 3)
