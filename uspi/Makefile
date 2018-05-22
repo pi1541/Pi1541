@@ -27,12 +27,19 @@ OBJS	= uspilibrary.o \
 	  dwhcirootport.o usbmouse.o \
 	  dwhciframeschednsplit.o usbgamepad.o synchronize.o usbstring.o usbmidi.o
 
-INCLUDE = -I../include
+SRCDIR  = lib
+OBJS   := $(addprefix $(SRCDIR)/, $(OBJS))
 
-all: libuspi.a
+TARGET  = libuspi
+INCLUDE = -Iinclude
 
-libuspi.a: $(OBJS)
+all: $(TARGET).a
+
+$(TARGET).a: $(OBJS)
 	@echo "  LINK $@"
-	$(Q)$(AR) cr libuspi.a $(OBJS)
+	$(Q)$(AR) cr $(TARGET).a $(OBJS)
 
-include ../../Makefile.rules
+clean:
+	$(Q)$(RM) $(OBJS) $(TARGET).a
+
+include ../Makefile.rules

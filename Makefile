@@ -5,7 +5,10 @@ OBJS	= armc-start.o armc-cstartup.o armc-cstubs.o armc-cppstubs.o \
 	Drive.o gcr.o prot.o lz.o emmc.o diskio.o options.o Screen.o \
 	Timer.o FileBrowser.o DiskCaddy.o ROMs.o InputMappings.o xga_font_data.o
 
-LIBS    = uspi/lib/libuspi.a
+SRCDIR   = src
+OBJS    := $(addprefix $(SRCDIR)/, $(OBJS))
+
+LIBS     = uspi/libuspi.a
 INCLUDE  = -Iuspi/include/
 
 TARGET  ?= kernel
@@ -20,12 +23,11 @@ $(TARGET): $(OBJS) $(LIBS)
 	$(Q)$(PREFIX)objdump -d $(TARGET).elf | $(PREFIX)c++filt > $(TARGET).lst
 	$(Q)$(PREFIX)objcopy $(TARGET).elf -O binary $(TARGET).img
 
-uspi/lib/libuspi.a:
-	$(MAKE) -C uspi/lib
+uspi/libuspi.a:
+	$(MAKE) -C uspi
 
-clean: clean_libs
-
-clean_libs:
-	$(MAKE) -C uspi/lib clean
+clean:
+	$(Q)$(RM) $(OBJS) $(TARGET).elf $(TARGET).map $(TARGET).lst $(TARGET).img
+	$(MAKE) -C uspi clean
 
 include Makefile.rules

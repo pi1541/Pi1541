@@ -1,4 +1,4 @@
-# To show build commands: make
+# To show build commands: make V=1
 ifneq ($(V),1)
 Q		:= @
 endif
@@ -46,6 +46,3 @@ CFLAGS	 += -fno-delete-null-pointer-checks -fdata-sections -ffunction-sections -
 %.o: %.cpp
 	@echo "  CPP  $@"
 	$(Q)$(CPP) $(CPPFLAGS) $(INCLUDE) -c -o $@ $<
-
-clean:
-	$(RM) *.o *.a *.elf *.lst *.img *.map
