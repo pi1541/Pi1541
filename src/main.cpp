@@ -18,7 +18,7 @@
 
 #include "defs.h"
 #include <string.h>
-#include "timer.h"
+#include "Timer.h"
 #include "ROMs.h"
 #include "stb_image.h"
 extern "C"

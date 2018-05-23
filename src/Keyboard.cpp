@@ -19,11 +19,11 @@
 #include "Keyboard.h"
 #include <string.h>
 #include <uspi.h>
-#include "timer.h"
+#include "Timer.h"
 #include "debug.h"
 extern "C"
 {
-#include "uspi\devicenameservice.h"
+#include "uspi/devicenameservice.h"
 }
 
 #define REPEAT_RATE		8

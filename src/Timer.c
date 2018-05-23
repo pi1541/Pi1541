@@ -1,4 +1,4 @@
-#include "timer.h"
+#include "Timer.h"
 #include "bcm2835int.h"
 #include "rpiHardware.h"
 
