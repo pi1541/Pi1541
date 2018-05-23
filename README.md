@@ -16,10 +16,16 @@ See www.pi1541.com for SD card and hardware configurations.
 Building
 --------
 
-I use GNU Tools ARM Embedded tool chain 5.4.1 on Windows using make. https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads/5-2016-q2-update
+On Windows use GNU Tools ARM Embedded tool chain 5.4.1 using make.
+https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads/5-2016-q2-update
+
+On dpkg based linux systems install:
+binutils-arm-none-eabi
+gcc-arm-none-eabi
+libnewlib-arm-none-eabi
+libstdc++-arm-none-eabi-newlib
 
 ```
 make
 ```
 This will build kernel.img
-
