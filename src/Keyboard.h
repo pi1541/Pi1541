@@ -23,7 +23,7 @@
 
 extern "C"
 {
-#include <uspi\usbkeyboard.h>
+#include <uspi/usbkeyboard.h>
 }
 
 #define MAX_KEYS 0x7f

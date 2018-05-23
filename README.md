@@ -17,13 +17,9 @@ Building
 --------
 
 I use GNU Tools ARM Embedded tool chain 5.4.1 on Windows using make. https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads/5-2016-q2-update
-There are two make files.
-One in uspi\lib and Pi1541's make file the root folder.
-You will need to edit the make files to set GCC_BASE to the location of your GNU tools.
-(If anyone knows how to fix this requirement then please fix it. arm-none-eabi-gcc can find the include paths why can't arm-none-eabi-ld find the library paths?)
 
-You need to build uspi\lib first.
-Change to uspi\lib and make.
-Change back to the root folder of the project and again make.
+```
+make
+```
 This will build kernel.img
 
