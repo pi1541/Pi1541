@@ -44,6 +44,8 @@ bool IEC_Bus::Resetting = false;
 
 bool IEC_Bus::splitIECLines = false;
 bool IEC_Bus::invertIECInputs = false;
+bool IEC_Bus::invertIECOutputs = true;
+bool IEC_Bus::ignoreReset = false;
 
 u32 IEC_Bus::myOutsGPFSEL1 = 0;
 u32 IEC_Bus::myOutsGPFSEL0 = 0;
@@ -122,5 +124,5 @@ void IEC_Bus::Read(void)
 		if (VIA) portB->SetInput(VIAPORTPINS_CLOCKIN, true); // simulate the read in software
 	}
 
-	Resetting = (gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0);
+	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 }
