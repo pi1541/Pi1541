@@ -16,7 +16,8 @@ static void TimerPollKernelTimers()
 {
 	//EnterCritical();
 
-	for (unsigned hTimer = 0; hTimer < KERNEL_TIMERS; hTimer++)
+	unsigned hTimer;
+	for (hTimer = 0; hTimer < KERNEL_TIMERS; hTimer++)
 	{
 		volatile TKernelTimer* pTimer = &m_KernelTimer[hTimer];
 
@@ -71,7 +72,8 @@ void TimerSystemInitialize()
 	
 	DataMemBarrier();
 
-	for (unsigned hTimer = 0; hTimer < KERNEL_TIMERS; hTimer++)
+	unsigned hTimer;
+	for (hTimer = 0; hTimer < KERNEL_TIMERS; hTimer++)
 	{
 		m_KernelTimer[hTimer].m_pHandler = 0;
 	}

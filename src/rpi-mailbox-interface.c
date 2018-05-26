@@ -39,6 +39,8 @@ void RPI_PropertyAddTag( rpi_mailbox_tag_t tag, ... )
 {
 	int* ptr;
 	int value;
+	int index;
+
     va_list vl;
     va_start( vl, tag );
 
@@ -197,7 +199,7 @@ void RPI_PropertyAddTag( rpi_mailbox_tag_t tag, ... )
 			ptr++;
 			pt[pt_index++] = value;
 			{
-				for (int index = 0; index < value; ++index)
+				for (index = 0; index < value; ++index)
 				{
 					pt[pt_index++] = *ptr++;
 				}
