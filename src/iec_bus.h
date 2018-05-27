@@ -336,7 +336,8 @@ public:
 		do
 		{
 			gplev0 = read32(ARM_GPIO_GPLEV0);
-			Resetting = (gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0);
+			Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == \
+				 (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 
 			if (Resetting)
 				IEC_Bus::WaitMicroSeconds(100);
@@ -395,6 +396,7 @@ public:
 	{
 		unsigned set = 0;
 		unsigned clear = 0;
+		unsigned tmp;
 
 		if (!splitIECLines)
 		{
@@ -408,11 +410,19 @@ public:
 		}
 		else
 		{
+			clear |= 1 << PIGPIO_OUT_ATN;
+
 			if (AtnaDataSetToOut || DataSetToOut) set |= 1 << PIGPIO_OUT_DATA;
 			else clear |= 1 << PIGPIO_OUT_DATA;
 
 			if (ClockSetToOut) set |= 1 << PIGPIO_OUT_CLOCK;
 			else clear |= 1 << PIGPIO_OUT_CLOCK;
+
+			if (!invertIECOutputs) {
+				tmp = set;
+				set = clear;
+				clear = tmp;
+			}
 		}
 
 		if (OutputLED) set |= 1 << PIGPIO_OUT_LED;
@@ -477,6 +487,7 @@ public:
 			RefreshOuts();
 		}
 	}
+
 	static inline bool GetPI_Atn() { return PI_Atn; }
 	static inline bool IsAtnAsserted() { return PI_Atn; }
 	static inline bool IsAtnReleased() { return !PI_Atn; }
@@ -526,6 +537,16 @@ public:
 		}
 	}
 
+	static inline void SetInvertIECOutputs(bool value)
+	{
+		invertIECOutputs = value;
+	}
+
+	static inline void SetIgnoreReset(bool value)
+	{
+		ignoreReset = value;
+	}
+
 	// CA1 input ATN
 	// If CA1 is ever set to output
 	//	- CA1 will start to drive pb7
@@ -570,6 +591,9 @@ public:
 private:
 	static bool splitIECLines;
 	static bool invertIECInputs;
+	static bool invertIECOutputs;
+	static bool ignoreReset;
+
 	static u32 PIGPIO_MASK_IN_ATN;
 	static u32 PIGPIO_MASK_IN_DATA;
 	static u32 PIGPIO_MASK_IN_CLOCK;

@@ -129,7 +129,9 @@ Options::Options(void)
 	, displayPNGIcons(0)
 	, soundOnGPIO(0)
 	, invertIECInputs(0)
+	, invertIECOutputs(1)
 	, splitIECLines(0)
+	, ignoreReset(0)
 {
 	strcpy(ROMFontName, "chargen");
 	ROMName[0] = 0;
@@ -212,11 +214,23 @@ void Options::Process(char* buffer)
 			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
 				invertIECInputs = nValue;
 		}
+		else if (strcasecmp(pOption, "invertIECOutputs") == 0)
+		{
+			unsigned nValue = 0;
+			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
+				invertIECOutputs = nValue;
+		}
 		else if (strcasecmp(pOption, "splitIECLines") == 0)
 		{
 			unsigned nValue = 0;
 			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
 				splitIECLines = nValue;
+		}
+		else if (strcasecmp(pOption, "ignoreReset") == 0)
+		{
+			unsigned nValue = 0;
+			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
+				ignoreReset = nValue;
 		}
 		else if ((strcasecmp(pOption, "Font") == 0))
 		{

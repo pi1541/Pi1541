@@ -96,7 +96,9 @@ bool quickBoot = false;
 bool displayPNGIcons = false;
 bool soundOnGPIO = false;
 bool invertIECInputs = false;
+bool invertIECOutputs = true;
 bool splitIECLines = false;
+bool ignoreReset = false;
 
 const char* termainalTextRed = "\E[31m";
 const char* termainalTextNormal = "\E[0m";
@@ -958,10 +960,11 @@ static void LoadOptions()
 		displayPNGIcons = options.DisplayPNGIcons();
 		soundOnGPIO = options.SoundOnGPIO();
 		invertIECInputs = options.InvertIECInputs();
+		invertIECOutputs = options.InvertIECOutputs();
 		splitIECLines = options.SplitIECLines();
 		if (!splitIECLines)
 			invertIECInputs = false;
-
+		ignoreReset = options.IgnoreReset();
 
 		ROMName = options.GetRomFontName();
 		if (ROMName)
@@ -1096,6 +1099,8 @@ extern "C"
 
 		IEC_Bus::SetSplitIECLines(splitIECLines);
 		IEC_Bus::SetInvertIECInputs(invertIECInputs);
+		IEC_Bus::SetInvertIECOutputs(invertIECOutputs);
+		IEC_Bus::SetIgnoreReset(ignoreReset);
 
 		if (!soundOnGPIO)
 		{

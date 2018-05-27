@@ -58,6 +58,8 @@ public:
 	unsigned int SoundOnGPIO() const { return soundOnGPIO; }
 	unsigned int SplitIECLines() const { return splitIECLines; }
 	unsigned int InvertIECInputs() const { return invertIECInputs; }
+	unsigned int InvertIECOutputs() const { return invertIECOutputs; }
+	unsigned int IgnoreReset() const { return ignoreReset; }
 
 	static unsigned GetDecimal(char* pString);
 
@@ -72,7 +74,9 @@ private:
 	unsigned int displayPNGIcons;
 	unsigned int soundOnGPIO;
 	unsigned int invertIECInputs;
+	unsigned int invertIECOutputs;
 	unsigned int splitIECLines;
+	unsigned int ignoreReset;
 
 	char ROMFontName[256];
 	char ROMName[256];
