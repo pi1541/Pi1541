@@ -66,6 +66,12 @@ public:
 
 	u32 GetCBMFontHeight();
 
+	float GetScaleX() const { return scaleX; }
+	float GetScaleY() const { return scaleY; }
+
+	u32 ScaleX(u32 x) { return (u32)((float)x * scaleX); }
+	u32 ScaleY(u32 y) { return (u32)((float)y * scaleY); }
+
 private:
 
 	typedef void (Screen::*PlotPixelFunction)(u32 pixel_offset, RGBA Colour);
@@ -85,6 +91,9 @@ private:
 	u32 bpp;
 	u32 pitch;
 	volatile u8* framebuffer;
+
+	float scaleX;
+	float scaleY;
 };
 
 #endif

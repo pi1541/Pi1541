@@ -84,6 +84,7 @@ DiskCaddy diskCaddy;
 Pi1541 pi1541;
 CEMMCDevice	m_EMMC;
 Screen screen;
+Options options;
 const char* fileBrowserSelectedName;
 u8 deviceID = 8;
 IEC_Commands m_IEC_Commands;
@@ -99,6 +100,8 @@ bool invertIECInputs = false;
 bool invertIECOutputs = true;
 bool splitIECLines = false;
 bool ignoreReset = false;
+unsigned int screenWidth = 1024;
+unsigned int screenHeight = 768;
 
 const char* termainalTextRed = "\E[31m";
 const char* termainalTextNormal = "\E[0m";
@@ -279,7 +282,7 @@ void InitialiseHardware()
 #endif
 	RPI_AuxMiniUartInit(115200, 8);
 
-	screen.Open(1024, 768, 16);
+	screen.Open(screenWidth, screenHeight, 16);
 
 	RPI_PropertyInit();
 	RPI_PropertyAddTag(TAG_GET_MAX_CLOCK_RATE, ARM_CLK_ID);
@@ -326,9 +329,9 @@ void UpdateScreen()
 	RGBA atnColour = COLOUR_YELLOW;
 	RGBA BkColour = FileBrowser::Colour(VIC2_COLOUR_INDEX_BLUE);
 
-	int height = 60;
-	int screenHeight = 768;
-	int screenWidthM1 = 1023;
+	int height = screen.ScaleY(60);
+	int screenHeight = screen.Height();
+	int screenWidthM1 = screen.Width() - 1;
 	int top, top2, top3;
 	int bottom;
 	int graphX = 0;
@@ -343,7 +346,7 @@ void UpdateScreen()
 	while (1)
 	{
 		bool value;
-		u32 y = STATUS_BAR_POSITION_Y;
+		u32 y = screen.ScaleY(STATUS_BAR_POSITION_Y);
 
 		//RPI_UpdateTouch();
 		//refreshUartStatusDisplay = false;
@@ -923,11 +926,6 @@ static void LoadOptions()
 {
 	FIL fp;
 	FRESULT res;
-	u32 widthText, heightText;
-	u32 widthScreen = screen.Width();
-	u32 heightScreen = screen.Height();
-	u32 xpos, ypos;
-	const char* ROMName;
 
 	res = f_open(&fp, "options.txt", FA_READ);
 	if (res == FR_OK)
@@ -938,36 +936,83 @@ static void LoadOptions()
 		SetACTLed(false);
 		f_close(&fp);
 
-		Options options;
-
 		options.Process((char*)tempBuffer);
 
-		deviceID = (u8)options.GetDeviceID();
-		DEBUG_LOG("DeviceID = %d\r\n", deviceID);
+		screenWidth = options.ScreenWidth();
+		screenHeight = options.ScreenHeight();
+	}
+}
 
-		onResetChangeToStartingFolder = options.GetOnResetChangeToStartingFolder() != 0;
-		DEBUG_LOG("onResetChangeToStartingFolder = %d\r\n", onResetChangeToStartingFolder);
+static void CheckOptions()
+{
+	FIL fp;
+	FRESULT res;
 
-		extraRAM = options.GetExtraRAM() != 0;
-		DEBUG_LOG("extraRAM = %d\r\n", extraRAM);
+	u32 widthText, heightText;
+	u32 widthScreen = screen.Width();
+	u32 heightScreen = screen.Height();
+	u32 xpos, ypos;
+	const char* ROMName;
 
-		disableSD2IECCommands = options.GetDisableSD2IECCommands();
-		//supportUARTInput = options.GetSupportUARTInput() != 0;
-		graphIEC = options.GraphIEC();
+	deviceID = (u8)options.GetDeviceID();
+	DEBUG_LOG("DeviceID = %d\r\n", deviceID);
 
-		quickBoot = options.QuickBoot();
+	onResetChangeToStartingFolder = options.GetOnResetChangeToStartingFolder() != 0;
+	DEBUG_LOG("onResetChangeToStartingFolder = %d\r\n", onResetChangeToStartingFolder);
 
-		displayPNGIcons = options.DisplayPNGIcons();
-		soundOnGPIO = options.SoundOnGPIO();
-		invertIECInputs = options.InvertIECInputs();
-		invertIECOutputs = options.InvertIECOutputs();
-		splitIECLines = options.SplitIECLines();
-		if (!splitIECLines)
-			invertIECInputs = false;
-		ignoreReset = options.IgnoreReset();
+	extraRAM = options.GetExtraRAM() != 0;
+	DEBUG_LOG("extraRAM = %d\r\n", extraRAM);
 
-		ROMName = options.GetRomFontName();
-		if (ROMName)
+	disableSD2IECCommands = options.GetDisableSD2IECCommands();
+	//supportUARTInput = options.GetSupportUARTInput() != 0;
+	graphIEC = options.GraphIEC();
+
+	quickBoot = options.QuickBoot();
+
+	displayPNGIcons = options.DisplayPNGIcons();
+	soundOnGPIO = options.SoundOnGPIO();
+	invertIECInputs = options.InvertIECInputs();
+	invertIECOutputs = options.InvertIECOutputs();
+	splitIECLines = options.SplitIECLines();
+	if (!splitIECLines)
+		invertIECInputs = false;
+	ignoreReset = options.IgnoreReset();
+
+	ROMName = options.GetRomFontName();
+	if (ROMName)
+	{
+		//DEBUG_LOG("%d Rom Name = %s\r\n", ROMIndex, ROMName);
+		res = f_open(&fp, ROMName, FA_READ);
+		if (res == FR_OK)
+		{
+			u32 bytesRead;
+
+			screen.Clear(COLOUR_BLACK);
+			snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
+			screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+			xpos = (widthScreen - widthText) >> 1;
+			ypos = (heightScreen - heightText) >> 1;
+			screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+
+			SetACTLed(true);
+			res = f_read(&fp, CBMFontData, CBMFont_size, &bytesRead);
+			SetACTLed(false);
+			f_close(&fp);
+			if (res == FR_OK && bytesRead == CBMFont_size)
+			{
+				CBMFont = CBMFontData;
+			}
+			//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
+		}
+	}
+
+	int ROMIndex;
+
+	for (ROMIndex = ROMs::MAX_ROMS - 1; ROMIndex >= 0; --ROMIndex)
+	{
+		roms.ROMValid[ROMIndex] = false;
+		const char* ROMName = options.GetRomName(ROMIndex);
+		if (ROMName[0])
 		{
 			//DEBUG_LOG("%d Rom Name = %s\r\n", ROMIndex, ROMName);
 			res = f_open(&fp, ROMName, FA_READ);
@@ -983,67 +1028,33 @@ static void LoadOptions()
 				screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
 
 				SetACTLed(true);
-				res = f_read(&fp, CBMFontData, CBMFont_size, &bytesRead);
+				res = f_read(&fp, roms.ROMImages[ROMIndex], ROMs::ROM_SIZE, &bytesRead);
 				SetACTLed(false);
-				f_close(&fp);
-				if (res == FR_OK && bytesRead == CBMFont_size)
+				if (res == FR_OK && bytesRead == ROMs::ROM_SIZE)
 				{
-					CBMFont = CBMFontData;
+					strncpy(roms.ROMNames[ROMIndex], ROMName, 255);
+					roms.ROMValid[ROMIndex] = true;
 				}
+				f_close(&fp);
 				//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
 			}
 		}
+	}
 
-		int ROMIndex;
-
-		for (ROMIndex = ROMs::MAX_ROMS - 1; ROMIndex >= 0; --ROMIndex)
+	if (roms.ROMValid[0] == false && !(AttemptToLoadROM("d1541.rom") || AttemptToLoadROM("dos1541") || AttemptToLoadROM("d1541II") || AttemptToLoadROM("Jiffy.bin")))
+	{
+		snprintf(tempBuffer, tempBufferSize, "No ROM file found!\r\nPlease copy a valid 1541 ROM file in the root folder of the SD card.\r\nThe file needs to be called 'dos1541'.");
+		screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+		xpos = (widthScreen - widthText) >> 1;
+		ypos = (heightScreen - heightText) >> 1;
+		do
 		{
-			roms.ROMValid[ROMIndex] = false;
-			const char* ROMName = options.GetRomName(ROMIndex);
-			if (ROMName[0])
-			{
-				//DEBUG_LOG("%d Rom Name = %s\r\n", ROMIndex, ROMName);
-				res = f_open(&fp, ROMName, FA_READ);
-				if (res == FR_OK)
-				{
-					u32 bytesRead;
-
-					screen.Clear(COLOUR_BLACK);
-					snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
-					screen.MeasureText(false, tempBuffer, &widthText, &heightText);
-					xpos = (widthScreen - widthText) >> 1;
-					ypos = (heightScreen - heightText) >> 1;
-					screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
-
-					SetACTLed(true);
-					res = f_read(&fp, roms.ROMImages[ROMIndex], ROMs::ROM_SIZE, &bytesRead);
-					SetACTLed(false);
-					if (res == FR_OK && bytesRead == ROMs::ROM_SIZE)
-					{
-						strncpy(roms.ROMNames[ROMIndex], ROMName, 255);
-						roms.ROMValid[ROMIndex] = true;
-					}
-					f_close(&fp);
-					//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
-				}
-			}
+			screen.Clear(COLOUR_RED);
+			IEC_Bus::WaitMicroSeconds(20000);
+			screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+			IEC_Bus::WaitMicroSeconds(100000);
 		}
-
-		if (roms.ROMValid[0] == false && !(AttemptToLoadROM("d1541.rom") || AttemptToLoadROM("dos1541") || AttemptToLoadROM("d1541II") || AttemptToLoadROM("Jiffy.bin")))
-		{
-			snprintf(tempBuffer, tempBufferSize, "No ROM file found!\r\nPlease copy a valid 1541 ROM file in the root folder of the SD card.\r\nThe file needs to be called 'dos1541'.");
-			screen.MeasureText(false, tempBuffer, &widthText, &heightText);
-			xpos = (widthScreen - widthText) >> 1;
-			ypos = (heightScreen - heightText) >> 1;
-			do
-			{
-				screen.Clear(COLOUR_RED);
-				IEC_Bus::WaitMicroSeconds(20000);
-				screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
-				IEC_Bus::WaitMicroSeconds(100000);
-			}
-			while (1);
-		}
+		while (1);
 	}
 }
 
@@ -1053,15 +1064,17 @@ extern "C"
 	{
 		FATFS fileSystem;
 
+		disk_setEMM(&m_EMMC);
+		m_EMMC.Initialize();
+		f_mount(&fileSystem, "", 1);
+
+		LoadOptions();
+
 		InitialiseHardware();
 		enable_MMU_and_IDCaches();
 		_enable_unaligned_access();
-		disk_setEMM(&m_EMMC);
-		m_EMMC.Initialize();
 
 		write32(ARM_GPIO_GPCLR0, 0xFFFFFFFF);
-
-		f_mount(&fileSystem, "", 1);
 
 		DisplayLogo();
 		snprintf(tempBuffer, tempBufferSize, "Copyright(C) 2018 Stephen White");
@@ -1095,7 +1108,7 @@ extern "C"
 
 		onResetChangeToStartingFolder = false;
 
-		LoadOptions();
+		CheckOptions();
 
 		IEC_Bus::SetSplitIECLines(splitIECLines);
 		IEC_Bus::SetInvertIECInputs(invertIECInputs);
@@ -1139,24 +1152,3 @@ extern "C"
 #endif
 	}
 }
-
-
-// Del everything in the Z:\MonCog\Builds folder
-// Build a WegGL build into Z:\MonCog\Builds
-// open cmd
-// cd Z:\MonCog\firebase
-// firebase init
-//	Y
-//	Hosting etc
-//	type "public"
-//	N
-//	overwrite 404 - N
-//	overwrite index - N
-// Copy over new files
-// firebase deploy
-
-// Eject delays
-// Remove asm commeted code from IEC_Bus
-// TO CHECKs
-// types
-// TDOO: need to display the image names as they write back

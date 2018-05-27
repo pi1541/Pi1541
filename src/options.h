@@ -61,6 +61,9 @@ public:
 	unsigned int InvertIECOutputs() const { return invertIECOutputs; }
 	unsigned int IgnoreReset() const { return ignoreReset; }
 
+	unsigned int ScreenWidth() const { return screenWidth; }
+	unsigned int ScreenHeight() const { return screenHeight; }
+
 	static unsigned GetDecimal(char* pString);
 
 private:
@@ -77,6 +80,9 @@ private:
 	unsigned int invertIECOutputs;
 	unsigned int splitIECLines;
 	unsigned int ignoreReset;
+
+	unsigned int screenWidth;
+	unsigned int screenHeight;
 
 	char ROMFontName[256];
 	char ROMName[256];

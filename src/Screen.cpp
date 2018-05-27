@@ -41,10 +41,22 @@ static const int BitFontWth = 8;
 
 void Screen::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth)
 {
+	if (widthDesired < 320)
+		widthDesired = 320;
+	if (heightDesired < 240)
+		heightDesired = 240;
+	if (widthDesired > 1024)
+		widthDesired = 1024;
+	if (heightDesired > 720)
+		heightDesired = 720;
+
 	rpi_mailbox_property_t* mp;
 	//int width = 0;
 	//int height = 0;
 	//int depth = 0;
+
+	scaleX = (float)widthDesired / 1024.0f;
+	scaleY = (float)heightDesired / 768.0f;
 
 	RPI_PropertyInit();
 	RPI_PropertyAddTag(TAG_GET_PHYSICAL_SIZE);
@@ -230,7 +242,7 @@ void Screen::WriteChar(bool petscii, u32 x, u32 y, unsigned char c, RGBA colour)
 			int yoffs = (y + py) * pitch;
 			for (int px = 0; px < 8; ++px)
 			{
-				if (x + px > width)
+				if (x + px >= width)
 					continue;
 
 				int pixel_offset = ((px + x) * (bpp >> 3)) + yoffs;
@@ -244,6 +256,8 @@ void Screen::WriteChar(bool petscii, u32 x, u32 y, unsigned char c, RGBA colour)
 
 void Screen::PlotPixel(u32 x, u32 y, RGBA colour)
 {
+	if (x < 0 || y < 0 || x >= width || y >= height)
+		return;
 	int pixel_offset = (x * (bpp >> 3)) + (y * pitch);
 	(this->*Screen::plotPixelFn)(pixel_offset, colour);
 }

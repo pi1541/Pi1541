@@ -98,6 +98,9 @@ FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, unsigned deviceID, bo
 	, deviceID(deviceID)
 	, displayPNGIcons(displayPNGIcons)
 {
+	maxOnScreen = (int)(38.0f * screen.GetScaleY());
+	if (maxOnScreen < 1)
+		maxOnScreen = 1;
 }
 
 u32 FileBrowser::Colour(int index)
@@ -216,6 +219,8 @@ void FileBrowser::RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* brow
 	if (terminal)
 		printf("\E[2J\E[f");
 
+	u32 maxCharacters = screen.ScaleX(80);
+
 	for (index = 0; index < maxOnScreen; ++index)
 	{
 		entryIndex = browsableList->offset + index;
@@ -223,8 +228,8 @@ void FileBrowser::RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* brow
 		if (entryIndex < browsableList->entries.size())
 		{
 			FileBrowser::BrowsableList::Entry* entry = &browsableList->entries[entryIndex];
-			snprintf(buffer2, 81, "%s", entry->filImage.fname);
-			memset(buffer1, ' ', 80);
+			snprintf(buffer2, maxCharacters + 1, "%s", entry->filImage.fname);
+			memset(buffer1, ' ', maxCharacters);
 			buffer1[127] = 0;
 			strncpy(buffer1, buffer2, strlen(buffer2));
 			if (showSelected && browsableList->currentIndex == entryIndex)
@@ -288,8 +293,9 @@ void FileBrowser::RefeshDisplay()
 		screen.PrintText(false, 0, 0, buffer, textColour, bgColour);
 	}
 
+	u32 offsetX = screen.ScaleX(1024 - 320);
 	RefeshDisplayForBrowsableList(&folder, 0);
-	RefeshDisplayForBrowsableList(&caddySelections, 1024 - 320, false);
+	RefeshDisplayForBrowsableList(&caddySelections, offsetX, false);
 
 	DisplayPNG();
 	DisplayStatusBar();
@@ -362,7 +368,9 @@ void FileBrowser::DisplayPNG()
 	if (displayPNGIcons && folder.current)
 	{
 		FileBrowser::BrowsableList::Entry* current = folder.current;
-		DisplayPNG(current->filIcon, 1024 - 320, 426);
+		u32 x = screen.ScaleX(1024 - 320);
+		u32 y = screen.ScaleY(666) - 240;
+		DisplayPNG(current->filIcon, x, y);
 	}
 }
 
@@ -709,7 +717,7 @@ void FileBrowser::UpdateInputDiskCaddy()
 void FileBrowser::DisplayStatusBar()
 {
 	u32 x = 0;
-	u32 y = STATUS_BAR_POSITION_Y;
+	u32 y = screen.ScaleY(STATUS_BAR_POSITION_Y);
 
 	char bufferOut[128];
 	snprintf(bufferOut, 256, "LED 0 Motor 0 Track 00.0 ATN 0 DAT 0 CLK 0");
@@ -727,7 +735,7 @@ void FileBrowser::ShowDeviceAndROM()
 	char buffer[256];
 	u32 textColour = RGBA(0, 0, 0, 0xff);
 	u32 bgColour = RGBA(0xff, 0xff, 0xff, 0xff);
-	u32 y = STATUS_BAR_POSITION_Y;
+	u32 y = screen.ScaleY(STATUS_BAR_POSITION_Y);
 
 	snprintf(buffer, 256, "Device %d %s               \r\n", deviceID, roms->ROMNames[roms->currentROMIndex]);
 	screen.PrintText(false, 43 * 8, y, buffer, textColour, bgColour);
@@ -755,6 +763,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 
 	u32 usedColour = palette[VIC2_COLOUR_INDEX_RED];
 	u32 freeColour = palette[VIC2_COLOUR_INDEX_LGREEN];
+	u32 BAMOffsetX = screen.ScaleX(400);
 
 	ClearScreen();
 
@@ -780,7 +789,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 			if ((bamTrack + 1) != 18)
 				blocksFree += buffer[BAM_OFFSET + bamTrack * BAM_ENTRY_SIZE];
 
-			x = 400;
+			x = BAMOffsetX;
 			for (int bit = 0; bit < DiskImage::SectorsPerTrack[bamTrack]; bit++)
 			{
 				u32 bits = buffer[BAM_OFFSET + 1 + (bit >> 3) + bamTrack * BAM_ENTRY_SIZE];
@@ -803,7 +812,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 		}
 		for (; bamTrack < lastTrackUsed; ++bamTrack)
 		{
-			x = 400;
+			x = BAMOffsetX;
 			for (int bit = 0; bit < DiskImage::SectorsPerTrack[bamTrack]; bit++)
 			{
 				snprintf(bufferOut, 128, "%c", screen2petscii(87));
@@ -904,7 +913,11 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 	{
 		FILINFO filIcon;
 		if (CheckForPNG(filenameForIcon, filIcon))
-			DisplayPNG(filIcon, 1024 - 320, 0);
+		{
+			x = screen.ScaleX(1024) - 320;
+			y = screen.ScaleY(0);
+			DisplayPNG(filIcon, x, y);
+		}
 	}
 }
 

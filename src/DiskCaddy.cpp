@@ -41,10 +41,11 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 	{
 		if (screen)
 		{
-			int y = screenPosYCaddySelections;
+			int x = screen->ScaleX(screenPosXCaddySelections);
+			int y = screen->ScaleY(screenPosYCaddySelections);
 
 			snprintf(buffer, 256, "Loading %s\r\n", fileInfo->fname);
-			screen->PrintText(false, screenPosXCaddySelections, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+			screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 		}
 
 		u32 bytesRead;
@@ -149,10 +150,11 @@ void DiskCaddy::Display()
 	{
 		unsigned numberOfImages = GetNumberOfImages();
 		unsigned caddyIndex;
-		int y = screenPosYCaddySelections;
+		int x = screen->ScaleX(screenPosXCaddySelections);
+		int y = screen->ScaleY(screenPosYCaddySelections);
 
 		snprintf(buffer, 256, "Emulating\r\n");
-		screen->PrintText(false, screenPosXCaddySelections, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+		screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 		y += 16;
 
 		for (caddyIndex = 0; caddyIndex < numberOfImages; ++caddyIndex)
@@ -162,7 +164,7 @@ void DiskCaddy::Display()
 			if (name)
 			{
 				snprintf(buffer, 256, "%d %s\r\n", caddyIndex + 1, name);
-				screen->PrintText(false, screenPosXCaddySelections, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+				screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 				y += 16;
 			}
 		}
@@ -173,8 +175,8 @@ void DiskCaddy::Display()
 
 void DiskCaddy::ShowSelectedImage(u32 index)
 {
-	u32 x = screenPosXCaddySelections - 16;
-	u32 y = screenPosYCaddySelections + 16 + 16 * index;
+	u32 x = screen->ScaleX(screenPosXCaddySelections) - 16;
+	u32 y = screen->ScaleY(screenPosYCaddySelections) + 16 + 16 * index;
 	snprintf(buffer, 256, "*");
 	screen->PrintText(false, x, y, buffer, white, red);
 }
@@ -188,8 +190,8 @@ bool DiskCaddy::Update()
 	{
 		if (screen)
 		{
-			x = screenPosXCaddySelections - 16;
-			y = screenPosYCaddySelections + 16 + 16 * oldCaddyIndex;
+			x = screen->ScaleX(screenPosXCaddySelections) - 16;
+			y = screen->ScaleY(screenPosYCaddySelections) + 16 + 16 * oldCaddyIndex;
 			snprintf(buffer, 256, " ");
 			screen->PrintText(false, x, y, buffer, red, red);
 			oldCaddyIndex = caddyIndex;

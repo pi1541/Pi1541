@@ -132,6 +132,8 @@ Options::Options(void)
 	, invertIECOutputs(1)
 	, splitIECLines(0)
 	, ignoreReset(0)
+	, screenWidth(1024)
+	, screenHeight(768)
 {
 	strcpy(ROMFontName, "chargen");
 	ROMName[0] = 0;
@@ -231,6 +233,18 @@ void Options::Process(char* buffer)
 			unsigned nValue = 0;
 			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
 				ignoreReset = nValue;
+		}
+		else if (strcasecmp(pOption, "screenWidth") == 0)
+		{
+			unsigned nValue = 0;
+			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
+				screenWidth = nValue;
+		}
+		else if (strcasecmp(pOption, "screenHeight") == 0)
+		{
+			unsigned nValue = 0;
+			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
+				screenHeight = nValue;
 		}
 		else if ((strcasecmp(pOption, "Font") == 0))
 		{
