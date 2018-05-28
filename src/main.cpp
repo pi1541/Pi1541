@@ -90,6 +90,7 @@ u8 deviceID = 8;
 IEC_Commands m_IEC_Commands;
 bool onResetChangeToStartingFolder = false;
 bool extraRAM = false;
+bool enableRAMBOard = false;
 bool disableSD2IECCommands = false;
 bool supportUARTInput = false;
 bool graphIEC = false;
@@ -202,7 +203,7 @@ DWORD get_fattime() { return 0; }	// If you have hardware RTC return a correct v
 // 1c00 !cs2 on pin 7
 u8 read6502(u16 address)
 {
-	u8 value;
+	u8 value = 0;
 	if (address & 0x8000)
 	{
 		switch (address & 0xe000) // keep bits 15,14,13
@@ -1011,6 +1012,9 @@ static void CheckOptions()
 	extraRAM = options.GetExtraRAM() != 0;
 	DEBUG_LOG("extraRAM = %d\r\n", extraRAM);
 
+	enableRAMBOard = options.GetRAMBOard() != 0;
+	DEBUG_LOG("RAMBOard = %d\r\n", enableRAMBOard);
+
 	disableSD2IECCommands = options.GetDisableSD2IECCommands();
 	//supportUARTInput = options.GetSupportUARTInput() != 0;
 	graphIEC = options.GraphIEC();
@@ -1025,6 +1029,20 @@ static void CheckOptions()
 	if (!splitIECLines)
 		invertIECInputs = false;
 	ignoreReset = options.IgnoreReset();
+
+	screen.Clear(COLOUR_BLACK);
+	int y_pos = 200;
+	snprintf(tempBuffer, tempBufferSize, "ignoreReset = %d\r\n", ignoreReset);
+	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "RAMBOard = %d\r\n", enableRAMBOard);
+	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "splitIECLines = %d\r\n", splitIECLines);
+	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "invertIECInputs = %d\r\n", invertIECInputs);
+	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", invertIECOutputs);
+	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	IEC_Bus::WaitMicroSeconds(3 * 1000000);
 
 	ROMName = options.GetRomFontName();
 	if (ROMName)
@@ -1125,12 +1143,14 @@ extern "C"
 		write32(ARM_GPIO_GPCLR0, 0xFFFFFFFF);
 
 		DisplayLogo();
+		int y_pos = 184;
 		snprintf(tempBuffer, tempBufferSize, "Copyright(C) 2018 Stephen White");
-		screen.PrintText(false, 0, 200, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		snprintf(tempBuffer, tempBufferSize, "This program comes with ABSOLUTELY NO WARRANTY.");
-		screen.PrintText(false, 0, 216, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		snprintf(tempBuffer, tempBufferSize, "This is free software, and you are welcome to redistribute it.");
-		screen.PrintText(false, 0, 232, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+
 
 		if (!quickBoot)
 			IEC_Bus::WaitMicroSeconds(3 * 1000000);

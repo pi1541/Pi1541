@@ -122,6 +122,7 @@ Options::Options(void)
 	, deviceID(8)
 	, onResetChangeToStartingFolder(0)
 	, extraRAM(0)
+	, enableRAMBOard(0)
 	, disableSD2IECCommands(0)
 	, supportUARTInput(0)
 	, graphIEC(0)
@@ -173,6 +174,12 @@ void Options::Process(char* buffer)
 			unsigned nValue = 0;
 			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
 				extraRAM = nValue;
+		}
+		else if (strcasecmp(pOption, "RAMBOard") == 0)
+		{
+			unsigned nValue = 0;
+			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
+				enableRAMBOard = nValue;
 		}
 		else if (strcasecmp(pOption, "DisableSD2IECCommands") == 0)
 		{
