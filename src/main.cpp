@@ -209,8 +209,10 @@ u8 read6502(u16 address)
 		switch (address & 0xe000) // keep bits 15,14,13
 		{
 			case 0x8000: // 0x8000-0x9fff
-				value = s_u8Memory[address]; // 74LS42 outputs low on pin 1 or pin 2
-				break;
+				if (enableRAMBOard) {
+					value = s_u8Memory[address]; // 74LS42 outputs low on pin 1 or pin 2
+					break;
+				}
 			case 0xa000: // 0xa000-0xbfff
 			case 0xc000: // 0xc000-0xdfff
 			case 0xe000: // 0xe000-0xffff
@@ -285,8 +287,10 @@ void write6502(u16 address, const u8 value)
 		switch (address & 0xe000) // keep bits 15,14,13
 		{
 			case 0x8000: // 0x8000-0x9fff
-				s_u8Memory[address] = value; // 74LS42 outputs low on pin 1 or pin 2
-				break;
+				if (enableRAMBOard) {
+					s_u8Memory[address] = value; // 74LS42 outputs low on pin 1 or pin 2
+					break;
+				}
 			case 0xa000: // 0xa000-0xbfff
 			case 0xc000: // 0xc000-0xdfff
 			case 0xe000: // 0xe000-0xffff
@@ -1042,7 +1046,7 @@ static void CheckOptions()
 	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", invertIECOutputs);
 	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	IEC_Bus::WaitMicroSeconds(3 * 1000000);
+	IEC_Bus::WaitMicroSeconds(5 * 1000000);
 
 	ROMName = options.GetRomFontName();
 	if (ROMName)
