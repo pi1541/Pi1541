@@ -1034,19 +1034,22 @@ static void CheckOptions()
 		invertIECInputs = false;
 	ignoreReset = options.IgnoreReset();
 
-	screen.Clear(COLOUR_BLACK);
-	int y_pos = 200;
-	snprintf(tempBuffer, tempBufferSize, "ignoreReset = %d\r\n", ignoreReset);
-	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	snprintf(tempBuffer, tempBufferSize, "RAMBOard = %d\r\n", enableRAMBOard);
-	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	snprintf(tempBuffer, tempBufferSize, "splitIECLines = %d\r\n", splitIECLines);
-	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	snprintf(tempBuffer, tempBufferSize, "invertIECInputs = %d\r\n", invertIECInputs);
-	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", invertIECOutputs);
-	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	IEC_Bus::WaitMicroSeconds(5 * 1000000);
+	// print confirmation of parsed options
+	if (0) {
+		screen.Clear(COLOUR_BLACK);
+		int y_pos = 200;
+		snprintf(tempBuffer, tempBufferSize, "ignoreReset = %d\r\n", ignoreReset);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		snprintf(tempBuffer, tempBufferSize, "RAMBOard = %d\r\n", enableRAMBOard);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		snprintf(tempBuffer, tempBufferSize, "splitIECLines = %d\r\n", splitIECLines);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		snprintf(tempBuffer, tempBufferSize, "invertIECInputs = %d\r\n", invertIECInputs);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", invertIECOutputs);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		IEC_Bus::WaitMicroSeconds(5 * 1000000);
+	}
 
 	ROMName = options.GetRomFontName();
 	if (ROMName)
