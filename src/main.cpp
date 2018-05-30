@@ -546,12 +546,6 @@ void emulator()
 			fileBrowser->ClearScreen();
 			IEC_Bus::Reset();
 
-			// Clearing the caddy now
-			//	- will write back all changed/dirty/written to disk images now
-			//		- TDOO: need to display the image names as they write back
-			//	- pass in a call back function?
-			diskCaddy.Empty();
-
 			fileBrowserSelectedName = 0;
 			fileBrowser->ClearSelections();
 
@@ -819,6 +813,12 @@ void emulator()
 				bool reset = IEC_Bus::IsReset();
 				if (reset)
 				{
+					// Clearing the caddy now
+					//	- will write back all changed/dirty/written to disk images now
+					//		- TDOO: need to display the image names as they write back
+					//	- pass in a call back function?
+					diskCaddy.Empty();
+
 					IEC_Bus::WaitUntilReset();
 					//DEBUG_LOG("6502 resetting\r\n");
 					if (onResetChangeToStartingFolder || selectedViaIECCommands)
