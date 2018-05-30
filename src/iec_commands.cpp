@@ -232,6 +232,7 @@ IEC_Commands::IEC_Commands()
 	deviceID = 8;
 	usingVIC20 = false;
 	Reset();
+	starFileName = 0;
 }
 
 void IEC_Commands::Reset(void)
@@ -1809,6 +1810,20 @@ void IEC_Commands::OpenFile()
 				if (text)
 					text = ParseNextName(text, filemode, true);
 			}
+
+			if (starFileName && starFileName[0] != 0 && filename[0] == '*')
+			{
+				char cwd[1024];
+				if (f_getcwd(cwd, 1024) == FR_OK)
+				{
+					if (strcasecmp(cwd, "/1541") == 0)
+					{
+						DEBUG_LOG("use star %s\r\n", starFileName);
+						strncpy(filename, starFileName, sizeof(filename) - 1);
+					}
+				}
+			}
+			
 
 			if (toupper(filetype[0]) == 'L')
 			{

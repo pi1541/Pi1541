@@ -1204,6 +1204,8 @@ extern "C"
 		f_chdir("/1541");
 
 		m_IEC_Commands.SetDeviceId(deviceID);
+		m_IEC_Commands.SetStarFileName(options.GetStarFileName());
+
 		SetVIAsDeviceID(deviceID);
 
 		pi1541.drive.SetVIA(&pi1541.VIA[1]);

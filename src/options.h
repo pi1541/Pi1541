@@ -48,6 +48,7 @@ public:
 	unsigned int GetOnResetChangeToStartingFolder() const { return onResetChangeToStartingFolder; }
 	const char* GetRomFontName() const { return ROMFontName; }
 	const char* GetRomName(int index) const;
+	const char* GetStarFileName() const { return starFileName; }
 	unsigned int GetExtraRAM() const { return extraRAM; }
 	unsigned int GetRAMBOard() const { return enableRAMBOard; }
 	unsigned int GetDisableSD2IECCommands() const { return disableSD2IECCommands; }
@@ -85,6 +86,8 @@ private:
 
 	unsigned int screenWidth;
 	unsigned int screenHeight;
+
+	char starFileName[256];
 
 	char ROMFontName[256];
 	char ROMName[256];

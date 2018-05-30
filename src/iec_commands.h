@@ -77,6 +77,7 @@ public:
 
 	const char* GetNameOfImageSelected() const { return selectedImageName; }
 	const FILINFO* GetImageSelected() const { return &filInfoSelectedImage; }
+	void SetStarFileName(const char* fileName) { starFileName = fileName; }
 protected:
 	enum ATNSequence 
 	{
@@ -164,5 +165,7 @@ protected:
 
 	char selectedImageName[256];
 	FILINFO filInfoSelectedImage;
+
+	const char* starFileName;
 };
 #endif

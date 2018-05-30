@@ -137,6 +137,7 @@ Options::Options(void)
 	, screenHeight(768)
 {
 	strcpy(ROMFontName, "chargen");
+	starFileName[0] = 0;
 	ROMName[0] = 0;
 	ROMNameSlot2[0] = 0;
 	ROMNameSlot3[0] = 0;
@@ -256,6 +257,10 @@ void Options::Process(char* buffer)
 		else if ((strcasecmp(pOption, "Font") == 0))
 		{
 			strncpy(ROMFontName, pValue, 255);
+		}
+		else if ((strcasecmp(pOption, "StarFileName") == 0))
+		{
+			strncpy(starFileName, pValue, 255);
 		}
 		else if ((strcasecmp(pOption, "ROM") == 0) || (strcasecmp(pOption, "ROM1") == 0))
 		{
