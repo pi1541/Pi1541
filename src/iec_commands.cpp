@@ -28,11 +28,13 @@
 #include "ff.h"
 #include "DiskImage.h"
 #include "Petscii.h"
+#include "FileBrowser.h"
 #include <string.h>
 #include <strings.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <algorithm>
 
 #define CBM_NAME_LENGTH 16
 #define CBM_NAME_LENGTH_MINUS_D64 CBM_NAME_LENGTH-4
@@ -1641,41 +1643,67 @@ void IEC_Commands::AddDirectoryEntry(Channel& channel, const char* name, u16 blo
 	channel.cursor += dirEntryLength;
 }
 
+struct greater
+{
+	bool operator()(const FileBrowser::BrowsableList::Entry& lhs, const FileBrowser::BrowsableList::Entry& rhs) const
+	{
+		if (strcasecmp(lhs.filImage.fname, "..") == 0)
+			return true;
+		else if (strcasecmp(rhs.filImage.fname, "..") == 0)
+			return false;
+		else if (((lhs.filImage.fattrib & AM_DIR) && (rhs.filImage.fattrib & AM_DIR)) || (!(lhs.filImage.fattrib & AM_DIR) && !(rhs.filImage.fattrib & AM_DIR)))
+			return strcasecmp(lhs.filImage.fname, rhs.filImage.fname) < 0;
+		else if ((lhs.filImage.fattrib & AM_DIR) && !(rhs.filImage.fattrib & AM_DIR))
+			return true;
+		else
+			return false;
+	}
+};
+
 void IEC_Commands::LoadDirectory()
 {
 	DIR dir;
-	FILINFO filInfo;
 	char* ext;
+	FRESULT res;
 
 	Channel& channel = channels[0];
 
 	memcpy(channel.buffer, DirectoryHeader, sizeof(DirectoryHeader));
 	channel.cursor = sizeof(DirectoryHeader);
 
-	FRESULT res;
+
+	FileBrowser::BrowsableList::Entry entry;
+	std::vector<FileBrowser::BrowsableList::Entry> entries;
+
 	res = f_opendir(&dir, ".");
 	if (res == FR_OK)
 	{
 		do
 		{
-			res = f_readdir(&dir, &filInfo);
-			ext = strrchr(filInfo.fname, '.');
-
-			if (res == FR_OK && filInfo.fname[0] != 0 && !(ext && strcasecmp(ext, ".png") == 0))
-			{
-				const char* fileName = filInfo.fname;
-				//DEBUG_LOG("%s", fileName);
-
-				if (!channel.CanFit(DIRECTORY_ENTRY_SIZE))
-					SendBuffer(channel, false);
-
-				if (filInfo.fattrib & AM_DIR) AddDirectoryEntry(channel, fileName, 0, 6);
-				else AddDirectoryEntry(channel, fileName, filInfo.fsize / 256 + 1, 2);
-			}
-		}
-		while (res == FR_OK && filInfo.fname[0] != 0);
+			res = f_readdir(&dir, &entry.filImage);
+			ext = strrchr(entry.filImage.fname, '.');
+			if (res == FR_OK && entry.filImage.fname[0] != 0 && !(ext && strcasecmp(ext, ".png") == 0))
+				entries.push_back(entry);
+		} while (res == FR_OK && entry.filImage.fname[0] != 0);
 		f_closedir(&dir);
+
+		std::sort(entries.begin(), entries.end(), greater());
 	}
+
+	for (u32 i = 0; i < entries.size(); ++i)
+	{
+		FILINFO* filInfo = &entries[i].filImage;
+		const char* fileName = filInfo->fname;
+
+		if (!channel.CanFit(DIRECTORY_ENTRY_SIZE))
+			SendBuffer(channel, false);
+
+		if (filInfo->fattrib & AM_DIR) AddDirectoryEntry(channel, fileName, 0, 6);
+		else AddDirectoryEntry(channel, fileName, filInfo->fsize / 256 + 1, 2);
+	}
+
+
+
 	SendBuffer(channel, false);
 
 	memcpy(channel.buffer, DirectoryBlocksFree, sizeof(DirectoryBlocksFree));
