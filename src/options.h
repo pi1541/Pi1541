@@ -49,6 +49,7 @@ public:
 	const char* GetRomFontName() const { return ROMFontName; }
 	const char* GetRomName(int index) const;
 	unsigned int GetExtraRAM() const { return extraRAM; }
+	unsigned int GetRAMBOard() const { return enableRAMBOard; }
 	unsigned int GetDisableSD2IECCommands() const { return disableSD2IECCommands; }
 	unsigned int GetSupportUARTInput() const { return supportUARTInput; }
 
@@ -70,6 +71,7 @@ private:
 	unsigned int deviceID;
 	unsigned int onResetChangeToStartingFolder;
 	unsigned int extraRAM;
+	unsigned int enableRAMBOard;
 	unsigned int disableSD2IECCommands;
 	unsigned int supportUARTInput;
 	unsigned int graphIEC;

@@ -90,6 +90,7 @@ u8 deviceID = 8;
 IEC_Commands m_IEC_Commands;
 bool onResetChangeToStartingFolder = false;
 bool extraRAM = false;
+bool enableRAMBOard = false;
 bool disableSD2IECCommands = false;
 bool supportUARTInput = false;
 bool graphIEC = false;
@@ -202,20 +203,43 @@ DWORD get_fattime() { return 0; }	// If you have hardware RTC return a correct v
 // 1c00 !cs2 on pin 7
 u8 read6502(u16 address)
 {
-	u8 value;
-	if (address & 0x8000)	// address line 15 selects the ROM
+	u8 value = 0;
+	if (address & 0x8000)
 	{
-		value = roms.Read(address);
+		switch (address & 0xe000) // keep bits 15,14,13
+		{
+			case 0x8000: // 0x8000-0x9fff
+				if (enableRAMBOard) {
+					value = s_u8Memory[address]; // 74LS42 outputs low on pin 1 or pin 2
+					break;
+				}
+			case 0xa000: // 0xa000-0xbfff
+			case 0xc000: // 0xc000-0xdfff
+			case 0xe000: // 0xe000-0xffff
+				value = roms.Read(address);
+				break;
+		}
 	}
 	else
 	{
 		// Address lines 15, 12, 11 and 10 are fed into a 74LS42 for decoding
-		u16 addressLines15_12_11_10 = (address & 0x1c00) >> 10;
-		addressLines15_12_11_10 |= (address & 0x8000) >> (15 - 3);
-		if (addressLines15_12_11_10 == 0 || addressLines15_12_11_10 == 1) value = s_u8Memory[address & 0x7ff]; // 74LS42 outputs low on pin 1 or pin 2
-		else if (addressLines15_12_11_10 == 6) value = pi1541.VIA[0].Read(address);	// 74LS42 outputs low on pin 7
-		else if (addressLines15_12_11_10 == 7) value = pi1541.VIA[1].Read(address);	// 74LS42 outputs low on pin 9
-		else value = address >> 8;	// Empty address bus
+		u16 addressLines12_11_10 = (address & 0x1c00) >> 10;
+		switch (addressLines12_11_10)
+		{
+			case 0:
+			case 1:
+				value = s_u8Memory[address & 0x7ff]; // 74LS42 outputs low on pin 1 or pin 2
+				break;
+			case 6:
+				value = pi1541.VIA[0].Read(address);	// 74LS42 outputs low on pin 7
+				break;
+			case 7:
+				value = pi1541.VIA[1].Read(address);	// 74LS42 outputs low on pin 9
+				break;
+			default:
+				value = address >> 8;	// Empty address bus
+				break;
+		}
 	}
 	return value;
 }
@@ -258,12 +282,41 @@ u8 peek6502(u16 address)
 
 void write6502(u16 address, const u8 value)
 {
-	if (address & 0x8000) return; // address line 15 selects the ROM
-	u16 addressLines15_12_11_10 = (address & 0x1c00) >> 10;
-	addressLines15_12_11_10 |= (address & 0x8000) >> (15 - 3);
-	if (addressLines15_12_11_10 == 0 || addressLines15_12_11_10 == 1) s_u8Memory[address & 0x7ff] = value; // 74LS42 outputs low on pin 1 or pin 2
-	else if (addressLines15_12_11_10 == 6) pi1541.VIA[0].Write(address, value);	// 74LS42 outputs low on pin 7
-	else if (addressLines15_12_11_10 == 7) pi1541.VIA[1].Write(address, value);	// 74LS42 outputs low on pin 9
+	if (address & 0x8000)
+	{
+		switch (address & 0xe000) // keep bits 15,14,13
+		{
+			case 0x8000: // 0x8000-0x9fff
+				if (enableRAMBOard) {
+					s_u8Memory[address] = value; // 74LS42 outputs low on pin 1 or pin 2
+					break;
+				}
+			case 0xa000: // 0xa000-0xbfff
+			case 0xc000: // 0xc000-0xdfff
+			case 0xe000: // 0xe000-0xffff
+				return;
+		}
+	}
+	else
+	{
+		// Address lines 15, 12, 11 and 10 are fed into a 74LS42 for decoding
+		u16 addressLines12_11_10 = (address & 0x1c00) >> 10;
+		switch (addressLines12_11_10)
+		{
+			case 0:
+			case 1:
+				s_u8Memory[address & 0x7ff] = value; // 74LS42 outputs low on pin 1 or pin 2
+				break;
+			case 6:
+				pi1541.VIA[0].Write(address, value);	// 74LS42 outputs low on pin 7
+				break;
+			case 7:
+				pi1541.VIA[1].Write(address, value);	// 74LS42 outputs low on pin 9
+				break;
+			default:
+				break;
+		}
+	}
 }
 
 void write6502ExtraRAM(u16 address, const u8 value)
@@ -963,6 +1016,9 @@ static void CheckOptions()
 	extraRAM = options.GetExtraRAM() != 0;
 	DEBUG_LOG("extraRAM = %d\r\n", extraRAM);
 
+	enableRAMBOard = options.GetRAMBOard() != 0;
+	DEBUG_LOG("RAMBOard = %d\r\n", enableRAMBOard);
+
 	disableSD2IECCommands = options.GetDisableSD2IECCommands();
 	//supportUARTInput = options.GetSupportUARTInput() != 0;
 	graphIEC = options.GraphIEC();
@@ -977,6 +1033,23 @@ static void CheckOptions()
 	if (!splitIECLines)
 		invertIECInputs = false;
 	ignoreReset = options.IgnoreReset();
+
+	// print confirmation of parsed options
+	if (0) {
+		screen.Clear(COLOUR_BLACK);
+		int y_pos = 200;
+		snprintf(tempBuffer, tempBufferSize, "ignoreReset = %d\r\n", ignoreReset);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		snprintf(tempBuffer, tempBufferSize, "RAMBOard = %d\r\n", enableRAMBOard);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		snprintf(tempBuffer, tempBufferSize, "splitIECLines = %d\r\n", splitIECLines);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		snprintf(tempBuffer, tempBufferSize, "invertIECInputs = %d\r\n", invertIECInputs);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", invertIECOutputs);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		IEC_Bus::WaitMicroSeconds(5 * 1000000);
+	}
 
 	ROMName = options.GetRomFontName();
 	if (ROMName)
@@ -1077,12 +1150,14 @@ extern "C"
 		write32(ARM_GPIO_GPCLR0, 0xFFFFFFFF);
 
 		DisplayLogo();
+		int y_pos = 184;
 		snprintf(tempBuffer, tempBufferSize, "Copyright(C) 2018 Stephen White");
-		screen.PrintText(false, 0, 200, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		snprintf(tempBuffer, tempBufferSize, "This program comes with ABSOLUTELY NO WARRANTY.");
-		screen.PrintText(false, 0, 216, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		snprintf(tempBuffer, tempBufferSize, "This is free software, and you are welcome to redistribute it.");
-		screen.PrintText(false, 0, 232, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+
 
 		if (!quickBoot)
 			IEC_Bus::WaitMicroSeconds(3 * 1000000);
