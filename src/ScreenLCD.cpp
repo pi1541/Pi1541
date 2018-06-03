@@ -38,7 +38,6 @@ void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int B
 	width = widthDesired;
 	height = heightDesired;
 
-	DEBUG_LOG("BSCMaster = %d\r\n");
 	ssd1306 = new SSD1306(BSCMaster);
 	ssd1306->DisplayOn();
 	ssd1306->Plottext(5, 1, "Pi1541", false);
