@@ -50,7 +50,7 @@ extern unsigned versionMinor;
 #define WaitWhile(checkStatus) \
 	do\
 	{\
-		IEC_Bus::Read();\
+		IEC_Bus::ReadBrowseMode();\
 		if (CheckATN()) return true;\
 	} while (checkStatus)
 
@@ -367,7 +367,7 @@ bool IEC_Commands::ReadIECSerialPort(u8& byte)
 	timer.Start(200);
 	do
 	{
-		IEC_Bus::Read();
+		IEC_Bus::ReadBrowseMode();
 		if (CheckATN()) return true;
 	}
 	while (IEC_Bus::IsClockReleased() && !timer.Tick());
@@ -396,7 +396,7 @@ void IEC_Commands::SimulateIECBegin(void)
 {
 	SetHeaderVersion();
 	Reset();
-	IEC_Bus::Read();
+	IEC_Bus::ReadBrowseMode();
 }
 
 // Paraphrasing Jim Butterfield
@@ -432,7 +432,7 @@ IEC_Commands::UpdateAction IEC_Commands::SimulateIECUpdate(void)
 		do
 		{
 			//DEBUG_LOG("Reset during SimulateIECUpdate\r\n");
-			IEC_Bus::Read();
+			IEC_Bus::ReadBrowseMode();
 			IEC_Bus::WaitMicroSeconds(100);
 		}
 		while (IEC_Bus::IsReset());
@@ -444,7 +444,7 @@ IEC_Commands::UpdateAction IEC_Commands::SimulateIECUpdate(void)
 	switch (atnSequence)
 	{
 		case ATN_SEQUENCE_IDLE:
-			IEC_Bus::Read();
+			IEC_Bus::ReadBrowseMode();
 			if (IEC_Bus::IsAtnAsserted()) atnSequence = ATN_SEQUENCE_ATN;
 			else if (selectedImageName[0] != 0) updateAction = IMAGE_SELECTED;
 		break;
@@ -462,7 +462,7 @@ IEC_Commands::UpdateAction IEC_Commands::SimulateIECUpdate(void)
 			// TODO: should set a timer here and if it times out (before the clock is released) go back to IDLE?
 			while (IEC_Bus::IsClockReleased())
 			{
-				IEC_Bus::Read();
+				IEC_Bus::ReadBrowseMode();
 			}
 		break;
 		case ATN_SEQUENCE_RECEIVE_COMMAND_CODE:

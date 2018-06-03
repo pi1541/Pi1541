@@ -328,7 +328,8 @@ public:
 		}
 	}
 
-	static void Read(void);
+	static void ReadBrowseMode(void);
+	static void ReadEmulationMode(void);
 
 	static void WaitUntilReset(void)
 	{
@@ -507,7 +508,7 @@ public:
 	{
 		while (IsAtnAsserted())
 		{
-			Read();
+			ReadBrowseMode();
 		}
 	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
@@ -599,6 +600,8 @@ private:
 	static u32 PIGPIO_MASK_IN_CLOCK;
 	static u32 PIGPIO_MASK_IN_SRQ;
 	static u32 PIGPIO_MASK_IN_RESET;
+
+	static u32 emulationModeCheckButtonIndex;
 
 	static bool PI_Atn;
 	static bool PI_Data;

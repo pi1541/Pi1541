@@ -745,7 +745,7 @@ void emulator()
 
 			while (1)
 			{
-				IEC_Bus::Read();
+				IEC_Bus::ReadEmulationMode();
 
 				if (pi1541.m6502.SYNC())	// About to start a new instruction.
 				{
@@ -833,12 +833,7 @@ void emulator()
 				bool nextDisk = inputMappings->NextDisk();
 				bool prevDisk = inputMappings->PrevDisk();
 
-				if (exitEmulation)
-				{
-					emulating = false;
-					break;
-				}
-				else if (nextDisk)
+				if (nextDisk)
 				{
 					pi1541.drive.Insert(diskCaddy.PrevDisk());
 				}
@@ -864,7 +859,7 @@ void emulator()
 				}
 
 				bool reset = IEC_Bus::IsReset();
-				if (reset)
+				if (reset || exitEmulation)
 				{
 					// Clearing the caddy now
 					//	- will write back all changed/dirty/written to disk images now

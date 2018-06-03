@@ -18,6 +18,8 @@
 
 #include "iec_bus.h"
 
+static int buttonCount = sizeof(ButtonPinFlags) / sizeof(unsigned);
+
 u32 IEC_Bus::PIGPIO_MASK_IN_ATN = 1 << PIGPIO_ATN;
 u32 IEC_Bus::PIGPIO_MASK_IN_DATA = 1 << PIGPIO_DATA;
 u32 IEC_Bus::PIGPIO_MASK_IN_CLOCK = 1 << PIGPIO_CLOCK;
@@ -58,26 +60,74 @@ u32 IEC_Bus::inputRepeatPrev[5];
 
 m6522* IEC_Bus::VIA = 0;
 
-void IEC_Bus::Read(void)
+u32 IEC_Bus::emulationModeCheckButtonIndex = 0;
+
+void IEC_Bus::ReadBrowseMode(void)
 {
 	IOPort* portB = 0;
 	unsigned gplev0 = read32(ARM_GPIO_GPLEV0);
 
 	int index;
-	int buttonCount = sizeof(ButtonPinFlags) / sizeof(unsigned);
 	for (index = 0; index < buttonCount; ++index)
 	{
 		UpdateButton(index, gplev0);
 	}
 
-	if (VIA) portB = VIA->GetPortB();
+	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
+	if (PI_Atn != ATNIn)
+	{
+		PI_Atn = ATNIn;
+	}
+
+	if (portB && (portB->GetDirection() & 0x10) == 0)
+		AtnaDataSetToOut = false; // If the ATNA PB4 gets set to an input then we can't be pulling data low. (Maniac Mansion does this)
+
+	if (!AtnaDataSetToOut && !DataSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
+	{
+		bool DATAIn = (gplev0 & PIGPIO_MASK_IN_DATA) == (invertIECInputs ? PIGPIO_MASK_IN_DATA : 0);
+		if (PI_Data != DATAIn)
+		{
+			PI_Data = DATAIn;
+		}
+	}
+	else
+	{
+		PI_Data = true;
+	}
+
+	if (!ClockSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
+	{
+		bool CLOCKIn = (gplev0 & PIGPIO_MASK_IN_CLOCK) == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK  : 0);
+		if (PI_Clock != CLOCKIn)
+		{
+			PI_Clock = CLOCKIn;
+		}
+	}
+	else
+	{
+		PI_Clock = true;
+	}
+
+	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+}
+
+void IEC_Bus::ReadEmulationMode(void)
+{
+	IOPort* portB = 0;
+	unsigned gplev0 = read32(ARM_GPIO_GPLEV0);
+
+	UpdateButton(emulationModeCheckButtonIndex, gplev0);
+	emulationModeCheckButtonIndex++;
+	emulationModeCheckButtonIndex %= buttonCount;
+
+	portB = VIA->GetPortB();
 
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
 	if (PI_Atn != ATNIn)
 	{
 		PI_Atn = ATNIn;
 
-		if (VIA)
+		//if (VIA)
 		{
 			if ((portB->GetDirection() & 0x10) != 0)
 			{
@@ -100,28 +150,28 @@ void IEC_Bus::Read(void)
 		if (PI_Data != DATAIn)
 		{
 			PI_Data = DATAIn;
-			if (VIA) portB->SetInput(VIAPORTPINS_DATAIN, DATAIn);	// VIA DATAin pb0 output from inverted DIN 5 DATA
+			portB->SetInput(VIAPORTPINS_DATAIN, DATAIn);	// VIA DATAin pb0 output from inverted DIN 5 DATA
 		}
 	}
 	else
 	{
 		PI_Data = true;
-		if (VIA) portB->SetInput(VIAPORTPINS_DATAIN, true);	// simulate the read in software
+		portB->SetInput(VIAPORTPINS_DATAIN, true);	// simulate the read in software
 	}
 
 	if (!ClockSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
 	{
-		bool CLOCKIn = (gplev0 & PIGPIO_MASK_IN_CLOCK) == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK  : 0);
+		bool CLOCKIn = (gplev0 & PIGPIO_MASK_IN_CLOCK) == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK : 0);
 		if (PI_Clock != CLOCKIn)
 		{
 			PI_Clock = CLOCKIn;
-			if (VIA) portB->SetInput(VIAPORTPINS_CLOCKIN, CLOCKIn); // VIA CLKin pb2 output from inverted DIN 4 CLK
+			portB->SetInput(VIAPORTPINS_CLOCKIN, CLOCKIn); // VIA CLKin pb2 output from inverted DIN 4 CLK
 		}
 	}
 	else
 	{
 		PI_Clock = true;
-		if (VIA) portB->SetInput(VIAPORTPINS_CLOCKIN, true); // simulate the read in software
+		portB->SetInput(VIAPORTPINS_CLOCKIN, true); // simulate the read in software
 	}
 
 	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
