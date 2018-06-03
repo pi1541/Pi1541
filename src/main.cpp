@@ -88,19 +88,7 @@ Options options;
 const char* fileBrowserSelectedName;
 u8 deviceID = 8;
 IEC_Commands m_IEC_Commands;
-bool onResetChangeToStartingFolder = false;
-bool extraRAM = false;
-bool enableRAMBOard = false;
-bool disableSD2IECCommands = false;
-bool supportUARTInput = false;
-bool graphIEC = false;
-bool quickBoot = false;
-bool displayPNGIcons = false;
-bool soundOnGPIO = false;
-bool invertIECInputs = false;
-bool invertIECOutputs = true;
-bool splitIECLines = false;
-bool ignoreReset = false;
+
 unsigned int screenWidth = 1024;
 unsigned int screenHeight = 768;
 
@@ -209,7 +197,7 @@ u8 read6502(u16 address)
 		switch (address & 0xe000) // keep bits 15,14,13
 		{
 			case 0x8000: // 0x8000-0x9fff
-				if (enableRAMBOard) {
+				if (options.GetRAMBOard()) {
 					value = s_u8Memory[address]; // 74LS42 outputs low on pin 1 or pin 2
 					break;
 				}
@@ -287,7 +275,7 @@ void write6502(u16 address, const u8 value)
 		switch (address & 0xe000) // keep bits 15,14,13
 		{
 			case 0x8000: // 0x8000-0x9fff
-				if (enableRAMBOard) {
+				if (options.GetRAMBOard()) {
 					s_u8Memory[address] = value; // 74LS42 outputs low on pin 1 or pin 2
 					break;
 				}
@@ -424,7 +412,7 @@ void UpdateScreen()
 		}
 
 		value = IEC_Bus::GetPI_Atn();
-		if (graphIEC)
+		if (options.GraphIEC())
 		{
 			bottom = top2 - 2;
 			if (value ^ oldATN)
@@ -447,7 +435,7 @@ void UpdateScreen()
 		}
 
 		value = IEC_Bus::GetPI_Data();
-		if (graphIEC)
+		if (options.GraphIEC())
 		{
 			bottom = top - 2;
 			if (value ^ oldDATA)
@@ -470,7 +458,7 @@ void UpdateScreen()
 		}
 
 		value = IEC_Bus::GetPI_Clock();
-		if (graphIEC)
+		if (options.GraphIEC())
 		{
 			bottom = screenHeight - 1;
 			if (value ^ oldCLOCK)
@@ -583,7 +571,7 @@ void emulator()
 	roms.lastManualSelectedROMIndex = 0;
 
 	diskCaddy.SetScreen(&screen);
-	fileBrowser = new FileBrowser(&diskCaddy, &roms, deviceID, displayPNGIcons);
+	fileBrowser = new FileBrowser(&diskCaddy, &roms, deviceID, options.DisplayPNGIcons());
 	fileBrowser->DisplayRoot();
 	pi1541.Initialise();
 
@@ -603,7 +591,7 @@ void emulator()
 			fileBrowser->ClearSelections();
 
 			// Go back to the root folder so you can load fb* again?
-			if ((resetWhileEmulating && onResetChangeToStartingFolder) || selectedViaIECCommands) fileBrowser->DisplayRoot(); // Go back to the root folder and display it.
+			if ((resetWhileEmulating && options.GetOnResetChangeToStartingFolder()) || selectedViaIECCommands) fileBrowser->DisplayRoot(); // Go back to the root folder and display it.
 			else fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
 
 			resetWhileEmulating = false;
@@ -613,7 +601,7 @@ void emulator()
 
 			fileBrowser->ShowDeviceAndROM();
 
-			if (!disableSD2IECCommands)
+			if (!options.GetDisableSD2IECCommands())
 			{
 				m_IEC_Commands.SimulateIECBegin();
 
@@ -624,7 +612,7 @@ void emulator()
 					switch (updateAction)
 					{
 						case IEC_Commands::RESET:
-							if (onResetChangeToStartingFolder)
+							if (options.GetOnResetChangeToStartingFolder())
 								fileBrowser->DisplayRoot();
 							IEC_Bus::Reset();
 							m_IEC_Commands.SimulateIECBegin();
@@ -734,6 +722,7 @@ void emulator()
 
 			inputMappings->directDiskSwapRequest = 0;
 
+			bool extraRAM = options.GetExtraRAM();
 			DataBusReadFn dataBusRead = extraRAM ? read6502ExtraRAM : read6502;
 			DataBusWriteFn dataBusWrite = extraRAM ? write6502ExtraRAM : write6502;
 			pi1541.m6502.SetBusFunctions(dataBusRead, dataBusWrite);
@@ -797,7 +786,7 @@ void emulator()
 					if (headDir ^ oldHeadDir)	// Need to start a new sound?
 					{
 						oldHeadDir = headDir;
-						if (soundOnGPIO)
+						if (options.SoundOnGPIO())
 						{
 							headSoundCounter = 1000000;
 							headSoundFreqCounter = headSoundFreq;
@@ -808,7 +797,7 @@ void emulator()
 						}
 					}
 
-					if (soundOnGPIO && headSoundCounter > 0)
+					if (options.SoundOnGPIO() && headSoundCounter > 0)
 					{
 						headSoundFreqCounter--;		// Continue updating a GPIO non DMA sound.
 						if (headSoundFreqCounter <= 0)
@@ -869,7 +858,7 @@ void emulator()
 
 					IEC_Bus::WaitUntilReset();
 					//DEBUG_LOG("6502 resetting\r\n");
-					if (onResetChangeToStartingFolder || selectedViaIECCommands)
+					if (options.GetOnResetChangeToStartingFolder() || selectedViaIECCommands)
 						fileBrowser->DisplayRoot();//m_IEC_Commands.ChangeToRoot(); // TO CHECK
 					emulating = false;
 					resetWhileEmulating = true;
@@ -1005,43 +994,20 @@ static void CheckOptions()
 	deviceID = (u8)options.GetDeviceID();
 	DEBUG_LOG("DeviceID = %d\r\n", deviceID);
 
-	onResetChangeToStartingFolder = options.GetOnResetChangeToStartingFolder() != 0;
-	DEBUG_LOG("onResetChangeToStartingFolder = %d\r\n", onResetChangeToStartingFolder);
-
-	extraRAM = options.GetExtraRAM() != 0;
-	DEBUG_LOG("extraRAM = %d\r\n", extraRAM);
-
-	enableRAMBOard = options.GetRAMBOard() != 0;
-	DEBUG_LOG("RAMBOard = %d\r\n", enableRAMBOard);
-
-	disableSD2IECCommands = options.GetDisableSD2IECCommands();
-	//supportUARTInput = options.GetSupportUARTInput() != 0;
-	graphIEC = options.GraphIEC();
-
-	quickBoot = options.QuickBoot();
-
-	displayPNGIcons = options.DisplayPNGIcons();
-	soundOnGPIO = options.SoundOnGPIO();
-	invertIECInputs = options.InvertIECInputs();
-	invertIECOutputs = options.InvertIECOutputs();
-	splitIECLines = options.SplitIECLines();
-	if (!splitIECLines)
-		invertIECInputs = false;
-	ignoreReset = options.IgnoreReset();
 
 	// print confirmation of parsed options
 	if (0) {
 		screen.Clear(COLOUR_BLACK);
 		int y_pos = 200;
-		snprintf(tempBuffer, tempBufferSize, "ignoreReset = %d\r\n", ignoreReset);
+		snprintf(tempBuffer, tempBufferSize, "ignoreReset = %d\r\n", options.IgnoreReset());
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		snprintf(tempBuffer, tempBufferSize, "RAMBOard = %d\r\n", enableRAMBOard);
+		snprintf(tempBuffer, tempBufferSize, "RAMBOard = %d\r\n", options.GetRAMBOard());
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		snprintf(tempBuffer, tempBufferSize, "splitIECLines = %d\r\n", splitIECLines);
+		snprintf(tempBuffer, tempBufferSize, "splitIECLines = %d\r\n", options.SplitIECLines());
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		snprintf(tempBuffer, tempBufferSize, "invertIECInputs = %d\r\n", invertIECInputs);
+		snprintf(tempBuffer, tempBufferSize, "invertIECInputs = %d\r\n", options.InvertIECInputs());
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", invertIECOutputs);
+		snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", options.InvertIECOutputs());
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		IEC_Bus::WaitMicroSeconds(5 * 1000000);
 	}
@@ -1154,7 +1120,7 @@ extern "C"
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 
 
-		if (!quickBoot)
+		if (!options.QuickBoot())
 			IEC_Bus::WaitMicroSeconds(3 * 1000000);
 
 		InterruptSystemInitialize();
@@ -1176,16 +1142,15 @@ extern "C"
 		InputMappings::Instance();
 		//USPiMouseRegisterStatusHandler(MouseHandler);
 
-		onResetChangeToStartingFolder = false;
 
 		CheckOptions();
 
-		IEC_Bus::SetSplitIECLines(splitIECLines);
-		IEC_Bus::SetInvertIECInputs(invertIECInputs);
-		IEC_Bus::SetInvertIECOutputs(invertIECOutputs);
-		IEC_Bus::SetIgnoreReset(ignoreReset);
+		IEC_Bus::SetSplitIECLines(options.SplitIECLines());
+		IEC_Bus::SetInvertIECInputs(options.InvertIECInputs());
+		IEC_Bus::SetInvertIECOutputs(options.InvertIECOutputs());
+		IEC_Bus::SetIgnoreReset(options.IgnoreReset());
 
-		if (!soundOnGPIO)
+		if (!options.SoundOnGPIO())
 		{
 			dmaSound = (u32*)malloc(Sample_bin_size * 4);
 			for (int i = 0; i < Sample_bin_size; ++i)

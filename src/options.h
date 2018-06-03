@@ -44,27 +44,27 @@ public:
 
 	void Process(char* buffer);
 
-	unsigned int GetDeviceID() const { return deviceID; }
-	unsigned int GetOnResetChangeToStartingFolder() const { return onResetChangeToStartingFolder; }
-	const char* GetRomFontName() const { return ROMFontName; }
+	inline unsigned int GetDeviceID() const { return deviceID; }
+	inline unsigned int GetOnResetChangeToStartingFolder() const { return onResetChangeToStartingFolder; }
+	inline const char* GetRomFontName() const { return ROMFontName; }
 	const char* GetRomName(int index) const;
-	const char* GetStarFileName() const { return starFileName; }
-	unsigned int GetExtraRAM() const { return extraRAM; }
-	unsigned int GetRAMBOard() const { return enableRAMBOard; }
-	unsigned int GetDisableSD2IECCommands() const { return disableSD2IECCommands; }
-	unsigned int GetSupportUARTInput() const { return supportUARTInput; }
+	inline const char* GetStarFileName() const { return starFileName; }
+	inline unsigned int GetExtraRAM() const { return extraRAM; }
+	inline unsigned int GetRAMBOard() const { return RAMBOard; }
+	inline unsigned int GetDisableSD2IECCommands() const { return disableSD2IECCommands; }
+	inline unsigned int GetSupportUARTInput() const { return supportUARTInput; }
 
-	unsigned int GraphIEC() const { return graphIEC; }
-	unsigned int QuickBoot() const { return quickBoot; }
-	unsigned int DisplayPNGIcons() const { return displayPNGIcons; }
-	unsigned int SoundOnGPIO() const { return soundOnGPIO; }
-	unsigned int SplitIECLines() const { return splitIECLines; }
-	unsigned int InvertIECInputs() const { return invertIECInputs; }
-	unsigned int InvertIECOutputs() const { return invertIECOutputs; }
-	unsigned int IgnoreReset() const { return ignoreReset; }
+	inline unsigned int GraphIEC() const { return graphIEC; }
+	inline unsigned int QuickBoot() const { return quickBoot; }
+	inline unsigned int DisplayPNGIcons() const { return displayPNGIcons; }
+	inline unsigned int SoundOnGPIO() const { return soundOnGPIO; }
+	inline unsigned int SplitIECLines() const { return splitIECLines; }
+	inline unsigned int InvertIECInputs() const { return invertIECInputs; }
+	inline unsigned int InvertIECOutputs() const { return invertIECOutputs; }
+	inline unsigned int IgnoreReset() const { return ignoreReset; }
 
-	unsigned int ScreenWidth() const { return screenWidth; }
-	unsigned int ScreenHeight() const { return screenHeight; }
+	inline unsigned int ScreenWidth() const { return screenWidth; }
+	inline unsigned int ScreenHeight() const { return screenHeight; }
 
 	static unsigned GetDecimal(char* pString);
 
@@ -72,7 +72,7 @@ private:
 	unsigned int deviceID;
 	unsigned int onResetChangeToStartingFolder;
 	unsigned int extraRAM;
-	unsigned int enableRAMBOard;
+	unsigned int RAMBOard;
 	unsigned int disableSD2IECCommands;
 	unsigned int supportUARTInput;
 	unsigned int graphIEC;

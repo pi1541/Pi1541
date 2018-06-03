@@ -122,7 +122,7 @@ Options::Options(void)
 	, deviceID(8)
 	, onResetChangeToStartingFolder(0)
 	, extraRAM(0)
-	, enableRAMBOard(0)
+	, RAMBOard(0)
 	, disableSD2IECCommands(0)
 	, supportUARTInput(0)
 	, graphIEC(0)
@@ -148,6 +148,14 @@ Options::Options(void)
 	ROMNameSlot8[0] = 0;
 }
 
+#define ELSE_CHECK_DECIMAL_OPTION(Name) \
+	else if (strcasecmp(pOption, #Name) == 0) \
+	{ \
+		unsigned nValue = 0; \
+		if ((nValue = GetDecimal(pValue)) != INVALID_VALUE) \
+			Name = nValue; \
+	}
+
 void Options::Process(char* buffer)
 {
 	SetData(buffer);
@@ -158,106 +166,26 @@ void Options::Process(char* buffer)
 		/*char* equals = */GetToken();
 		char* pValue = GetToken();
 
-		if (strcasecmp(pOption, "deviceID") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				deviceID = nValue;
-		}
-		else if (strcasecmp(pOption, "OnResetChangeToStartingFolder") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				onResetChangeToStartingFolder = nValue;
-		}
-		else if (strcasecmp(pOption, "ExtraRAM") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				extraRAM = nValue;
-		}
-		else if (strcasecmp(pOption, "RAMBOard") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				enableRAMBOard = nValue;
-		}
-		else if (strcasecmp(pOption, "DisableSD2IECCommands") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				disableSD2IECCommands = nValue;
-		}
-		else if (strcasecmp(pOption, "SupportUARTInput") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				supportUARTInput = nValue;
-		}
-		else if (strcasecmp(pOption, "GraphIEC") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				graphIEC = nValue;
-		}
-		else if (strcasecmp(pOption, "QuickBoot") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				quickBoot = nValue;
-		}
-		else if (strcasecmp(pOption, "DisplayPNGIcons") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				displayPNGIcons = nValue;
-		}
-		else if (strcasecmp(pOption, "soundOnGPIO") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				soundOnGPIO = nValue;
-		}
-		else if (strcasecmp(pOption, "invertIECInputs") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				invertIECInputs = nValue;
-		}
-		else if (strcasecmp(pOption, "invertIECOutputs") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				invertIECOutputs = nValue;
-		}
-		else if (strcasecmp(pOption, "splitIECLines") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				splitIECLines = nValue;
-		}
-		else if (strcasecmp(pOption, "ignoreReset") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				ignoreReset = nValue;
-		}
-		else if (strcasecmp(pOption, "screenWidth") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				screenWidth = nValue;
-		}
-		else if (strcasecmp(pOption, "screenHeight") == 0)
-		{
-			unsigned nValue = 0;
-			if ((nValue = GetDecimal(pValue)) != INVALID_VALUE)
-				screenHeight = nValue;
-		}
-		else if ((strcasecmp(pOption, "Font") == 0))
+		if ((strcasecmp(pOption, "Font") == 0))
 		{
 			strncpy(ROMFontName, pValue, 255);
 		}
+		ELSE_CHECK_DECIMAL_OPTION(deviceID)
+		ELSE_CHECK_DECIMAL_OPTION(onResetChangeToStartingFolder)
+		ELSE_CHECK_DECIMAL_OPTION(extraRAM)
+		ELSE_CHECK_DECIMAL_OPTION(RAMBOard)
+		ELSE_CHECK_DECIMAL_OPTION(disableSD2IECCommands)
+		ELSE_CHECK_DECIMAL_OPTION(supportUARTInput)
+		ELSE_CHECK_DECIMAL_OPTION(graphIEC)
+		ELSE_CHECK_DECIMAL_OPTION(quickBoot)
+		ELSE_CHECK_DECIMAL_OPTION(displayPNGIcons)
+		ELSE_CHECK_DECIMAL_OPTION(soundOnGPIO)
+		ELSE_CHECK_DECIMAL_OPTION(invertIECInputs)
+		ELSE_CHECK_DECIMAL_OPTION(invertIECOutputs)
+		ELSE_CHECK_DECIMAL_OPTION(splitIECLines)
+		ELSE_CHECK_DECIMAL_OPTION(ignoreReset)
+		ELSE_CHECK_DECIMAL_OPTION(screenWidth)
+		ELSE_CHECK_DECIMAL_OPTION(screenHeight)
 		else if ((strcasecmp(pOption, "StarFileName") == 0))
 		{
 			strncpy(starFileName, pValue, 255);
@@ -295,6 +223,9 @@ void Options::Process(char* buffer)
 			strncpy(ROMNameSlot8, pValue, 255);
 		}
 	}
+
+	if (!SplitIECLines())
+		invertIECInputs = false;
 }
 
 unsigned Options::GetDecimal(char* pString)
