@@ -34,6 +34,9 @@
 #define INSERT_FLAG		(1 << 10)
 #define NUMBER_FLAG		(1 << 11)
 
+#define PAGEDOWN_LCD_FLAG (1 << 12)
+#define PAGEUP_LCD_FLAG (1 << 13)
+
 class InputMappings : public Singleton<InputMappings>
 {
 protected:
@@ -41,6 +44,8 @@ protected:
 
 	unsigned keyboardFlags;
 	unsigned buttonFlags;
+
+	bool keyboardBrowseLCDScreen;
 
 	//inline void SetUartFlag(unsigned flag) { uartFlags |= flag;	}
 	//inline bool UartFlag(unsigned flag) { return (uartFlags & flag) != 0; }
@@ -62,6 +67,11 @@ public:
 	{
 		keyboardFlags = 0;
 		buttonFlags = 0;
+	}
+
+	void SetKeyboardBrowseLCDScreen(bool value)
+	{
+		keyboardBrowseLCDScreen = value;
 	}
 
 	inline bool Exit()
@@ -103,6 +113,10 @@ public:
 	{
 		return KeyboardFlag(PAGEUP_FLAG)/* | UartFlag(PAGEUP_FLAG)*/;
 	}
+	inline bool BrowsePageUpLCD()
+	{
+		return KeyboardFlag(PAGEUP_LCD_FLAG);
+	}
 
 	inline bool BrowseDown()
 	{
@@ -112,6 +126,10 @@ public:
 	inline bool BrowsePageDown()
 	{
 		return KeyboardFlag(PAGEDOWN_FLAG)/* | UartFlag(PAGEDOWN_FLAG)*/;
+	}
+	inline bool BrowsePageDownLCD()
+	{
+		return KeyboardFlag(PAGEDOWN_LCD_FLAG);
 	}
 
 	inline bool BrowseInsert()

@@ -32,6 +32,7 @@ unsigned InputMappings::directDiskSwapRequest = 0;
 //unsigned InputMappings::escapeSequenceIndex = 0;
 
 InputMappings::InputMappings()
+	: keyboardBrowseLCDScreen(false)
 {
 }
 
@@ -136,6 +137,7 @@ bool InputMappings::CheckKeyboardBrowseMode()
 
 	keyboardFlags = 0;
 
+	// TODO: add KEY_HOME and KEY_END
 	if (keyboard->KeyHeld(KEY_ESC))
 		SetKeyboardFlag(ESC_FLAG);
 	else if (keyboard->KeyHeld(KEY_ENTER))
@@ -149,11 +151,25 @@ bool InputMappings::CheckKeyboardBrowseMode()
 	else if (keyboard->KeyHeld(KEY_UP))
 		SetKeyboardFlag(UP_FLAG);
 	else if (keyboard->KeyHeld(KEY_PAGEUP) || keyboard->KeyHeld(KEY_LEFT))
-		SetKeyboardFlag(PAGEUP_FLAG);
+	{
+		if (keyboardBrowseLCDScreen)
+			SetKeyboardFlag(PAGEUP_LCD_FLAG);
+		else
+			SetKeyboardFlag(PAGEUP_FLAG);
+	}
 	else if (keyboard->KeyHeld(KEY_DOWN))
 		SetKeyboardFlag(DOWN_FLAG);
 	else if (keyboard->KeyHeld(KEY_PAGEDOWN) || keyboard->KeyHeld(KEY_RIGHT))
-		SetKeyboardFlag(PAGEDOWN_FLAG);
+	{
+		if (keyboardBrowseLCDScreen)
+			SetKeyboardFlag(PAGEDOWN_LCD_FLAG);
+		else
+			SetKeyboardFlag(PAGEDOWN_FLAG);
+	}
+	//else if (keyboard->KeyHeld(KEY_HOME))
+	//	SetKeyboardFlag(PAGEUP_LCD_FLAG);
+	//else if (keyboard->KeyHeld(KEY_END))
+	//	SetKeyboardFlag(PAGEDOWN_LCD_FLAG);
 	else
 	{
 		unsigned index;

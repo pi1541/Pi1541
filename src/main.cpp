@@ -18,12 +18,14 @@
 
 #include "defs.h"
 #include <string.h>
+#include <strings.h>
 #include "Timer.h"
 #include "ROMs.h"
 #include "stb_image.h"
 extern "C"
 {
 #include "rpi-aux.h"
+#include "rpi-i2c.h"
 #include "rpi-gpio.h"
 #include "startup.h"
 #include "cache.h"
@@ -37,12 +39,13 @@ extern "C"
 #include "diskio.h"
 #include "Pi1541.h"
 #include "FileBrowser.h"
+#include "ScreenLCD.h"
 
 #include "logo.h"
 #include "sample.h"
 
 unsigned versionMajor = 1;
-unsigned versionMinor = 2;
+unsigned versionMinor = 3;
 
 // When the emulated CPU starts we execute the first million odd cycles in non-real-time (ie as fast as possible so the emulated 1541 becomes responsive to CBM-Browser asap)
 // During these cycles the CPU is executing the ROM self test routines (these do not need to be cycle accurate)
@@ -84,6 +87,7 @@ DiskCaddy diskCaddy;
 Pi1541 pi1541;
 CEMMCDevice	m_EMMC;
 Screen screen;
+ScreenLCD* screenLCD = 0;
 Options options;
 const char* fileBrowserSelectedName;
 u8 deviceID = 8;
@@ -570,8 +574,8 @@ void emulator()
 
 	roms.lastManualSelectedROMIndex = 0;
 
-	diskCaddy.SetScreen(&screen);
-	fileBrowser = new FileBrowser(&diskCaddy, &roms, deviceID, options.DisplayPNGIcons());
+	diskCaddy.SetScreen(&screen, screenLCD);
+	fileBrowser = new FileBrowser(&diskCaddy, &roms, deviceID, options.DisplayPNGIcons(), &screen, screenLCD);
 	fileBrowser->DisplayRoot();
 	pi1541.Initialise();
 
@@ -598,6 +602,7 @@ void emulator()
 			selectedViaIECCommands = false;
 
 			inputMappings->Reset();
+			inputMappings->SetKeyboardBrowseLCDScreen(screenLCD && options.KeyboardBrowseLCDScreen());
 
 			fileBrowser->ShowDeviceAndROM();
 
@@ -1144,6 +1149,15 @@ extern "C"
 
 
 		CheckOptions();
+
+		if (strcasecmp(options.GetLCDName(), "ssd1306_128x64") == 0)
+		{
+			screenLCD = new ScreenLCD();
+			screenLCD->Open(128, 64, 1, options.SplitIECLines() ? 1 : 0);
+		}
+		else
+		{
+		}
 
 		IEC_Bus::SetSplitIECLines(options.SplitIECLines());
 		IEC_Bus::SetInvertIECInputs(options.InvertIECInputs());

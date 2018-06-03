@@ -135,6 +135,7 @@ Options::Options(void)
 	, ignoreReset(0)
 	, screenWidth(1024)
 	, screenHeight(768)
+	, keyboardBrowseLCDScreen(0)
 {
 	strcpy(ROMFontName, "chargen");
 	starFileName[0] = 0;
@@ -186,9 +187,14 @@ void Options::Process(char* buffer)
 		ELSE_CHECK_DECIMAL_OPTION(ignoreReset)
 		ELSE_CHECK_DECIMAL_OPTION(screenWidth)
 		ELSE_CHECK_DECIMAL_OPTION(screenHeight)
+		ELSE_CHECK_DECIMAL_OPTION(keyboardBrowseLCDScreen)
 		else if ((strcasecmp(pOption, "StarFileName") == 0))
 		{
 			strncpy(starFileName, pValue, 255);
+		}
+		else if ((strcasecmp(pOption, "LCDName") == 0))
+		{
+			strncpy(LCDName, pValue, 255);
 		}
 		else if ((strcasecmp(pOption, "ROM") == 0) || (strcasecmp(pOption, "ROM1") == 0))
 		{

@@ -21,7 +21,6 @@
 #include <string.h>
 #include <strings.h>
 #include <algorithm>
-#include "Screen.h"
 #include "debug.h"
 #include "Keyboard.h"
 #include "options.h"
@@ -32,8 +31,6 @@ extern "C"
 {
 #include "rpi-gpio.h"
 }
-
-extern Screen screen;
 
 #define PNG_WIDTH 320
 #define PNG_HEIGHT 200
@@ -75,6 +72,205 @@ static const u32 palette[] =
 	RGBA(0x9F, 0x9F, 0x9F, 0xFF)
 };
 
+void FileBrowser::BrowsableListView::Refresh()
+{
+	char buffer1[128] = { 0 };
+	char buffer2[128] = { 0 };
+	u32 index;
+	u32 entryIndex;
+	u32 x = positionX;
+	u32 y = positionY;
+	u32 colour;
+	RGBA BkColour = RGBA(0, 0, 0, 0xFF); //palette[VIC2_COLOUR_INDEX_BLUE];
+
+	// Ensure the current selection is visible
+	if (list->currentIndex - offset >= rows)
+	{
+		//DEBUG_LOG("CI= %d O = %d R = %d\r\n", list->currentIndex, offset, rows);
+		offset = list->currentIndex - rows + 1;
+		if ((int)offset < 0) offset = 0;
+	}
+
+	for (index = 0; index < rows; ++index)
+	{
+		entryIndex = offset + index;
+
+		if (entryIndex < list->entries.size())
+		{
+			FileBrowser::BrowsableList::Entry* entry = &list->entries[entryIndex];
+			if (screen->IsMonocrome())
+			{
+				if (entry->filImage.fattrib & AM_DIR)
+				{
+					snprintf(buffer2, columns + 1, "[%s]", entry->filImage.fname);
+				}
+				else
+				{
+					if (entry->caddyIndex != -1)
+						snprintf(buffer2, columns + 1, "%d>%s", entry->caddyIndex, entry->filImage.fname);
+					else
+						snprintf(buffer2, columns + 1, "%s", entry->filImage.fname);
+				}
+			}
+			else
+			{
+				snprintf(buffer2, columns + 1, "%s", entry->filImage.fname);
+			}
+			memset(buffer1, ' ', columns);
+			buffer1[127] = 0;
+			strncpy(buffer1, buffer2, strlen(buffer2));
+			if (/*showSelected && */list->currentIndex == entryIndex)
+			{
+				if (entry->filImage.fattrib & AM_DIR)
+				{
+					screen->PrintText(false, x, y, buffer1, palette[VIC2_COLOUR_INDEX_LBLUE], RGBA(0xff, 0xff, 0xff, 0xff));
+				}
+				else
+				{
+					colour = RGBA(0xff, 0, 0, 0xff);
+					if (entry->filImage.fattrib & AM_RDO)
+						colour = palette[VIC2_COLOUR_INDEX_RED];
+
+					screen->PrintText(false, x, y, buffer1, colour, RGBA(0xff, 0xff, 0xff, 0xff));
+				}
+			}
+			else
+			{
+				if (entry->filImage.fattrib & AM_DIR)
+				{
+					screen->PrintText(false, x, y, buffer1, palette[VIC2_COLOUR_INDEX_LBLUE], BkColour);
+				}
+				else
+				{
+					colour = palette[VIC2_COLOUR_INDEX_LGREY];
+					if (entry->filImage.fattrib & AM_RDO)
+						colour = palette[VIC2_COLOUR_INDEX_PINK];
+					screen->PrintText(false, x, y, buffer1, colour, BkColour);
+				}
+			}
+		}
+		else
+		{
+			memset(buffer1, ' ', 80);
+			screen->PrintText(false, x, y, buffer1, BkColour, BkColour);
+		}
+		y += 16;
+	}
+
+	screen->SwapBuffers();
+}
+
+bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
+{
+	InputMappings* inputMappings = InputMappings::Instance();
+	bool dirty = false;
+	u32 numberOfEntriesMinus1 = list->entries.size() - 1;
+
+	if (inputMappings->BrowseDown())
+	{
+		if (list->currentIndex < numberOfEntriesMinus1)
+		{
+			if (!pageOnly)
+			{
+				list->currentIndex++;
+				list->current = &list->entries[list->currentIndex];
+			}
+			if (list->currentIndex >= (offset + rows) && (list->currentIndex < list->entries.size()))
+				offset++;
+			dirty = true;
+		}
+	}
+	if (inputMappings->BrowseUp())
+	{
+		if (list->currentIndex > 0)
+		{
+			if (!pageOnly)
+			{
+				list->currentIndex--;
+				list->current = &list->entries[list->currentIndex];
+			}
+			if ((offset > 0) && (list->currentIndex < offset))
+				offset--;
+			dirty = true;
+		}
+	}
+	if ((lcdPgUpDown && inputMappings->BrowsePageDownLCD()) || (!lcdPgUpDown && inputMappings->BrowsePageDown()))
+	{
+		u32 rowsMinus1 = rows - 1;
+
+		if (list->currentIndex == offset + rowsMinus1)
+		{
+			// Need to move the screen window down so that the currentIndex is now at the top of the screen
+			offset = list->currentIndex;
+
+			// Current index now becomes the bottom one
+			if (offset + rowsMinus1 > numberOfEntriesMinus1)
+				list->currentIndex = numberOfEntriesMinus1; // Not enough entries to move another page just move to the last entry
+			else // Move the window down a page
+				list->currentIndex = offset + rowsMinus1;
+		}
+		else
+		{
+			// Need to move to list->offset + rowsMinus1
+			if (offset + rowsMinus1 > numberOfEntriesMinus1)
+				list->currentIndex = numberOfEntriesMinus1; // Run out of entries before we hit the bottom. Just move to the bottom.
+			else
+				list->currentIndex = offset + rowsMinus1; // Move the bottom of the screen
+		}
+		list->current = &list->entries[list->currentIndex];
+		dirty = true;
+	}
+	if ((lcdPgUpDown && inputMappings->BrowsePageUpLCD()) || (!lcdPgUpDown && inputMappings->BrowsePageUp()))
+	{
+		if (list->currentIndex == offset)
+		{
+			// If the cursor is already at the top of the window then page up
+			int offsetInWindow = (int)list->currentIndex - (int)rows;
+			if (offsetInWindow < 0) offset = 0;
+			else offset = (u32)offsetInWindow;
+			list->currentIndex = offset;
+		}
+		else
+		{
+			list->currentIndex = offset; // Move the cursor to the top of the window
+		}
+		list->current = &list->entries[list->currentIndex];
+		dirty = true;
+	}
+
+	return dirty;
+}
+
+void FileBrowser::BrowsableList::ClearSelections()
+{
+	u32 entryIndex;
+
+	for (entryIndex = 0; entryIndex < entries.size(); ++entryIndex)
+	{
+		entries[entryIndex].caddyIndex = -1;
+	}
+}
+
+void FileBrowser::BrowsableList::RefreshViews()
+{
+	u32 index;
+	for (index = 0; index < views.size(); ++index)
+	{
+		views[index].Refresh();
+	}
+}
+
+bool FileBrowser::BrowsableList::CheckBrowseNavigation()
+{
+	bool dirty = false;
+	u32 index;
+	for (index = 0; index < views.size(); ++index)
+	{
+		dirty |= views[index].CheckBrowseNavigation(index != 0);
+	}
+	return dirty;
+}
+
 FileBrowser::BrowsableList::Entry* FileBrowser::BrowsableList::FindEntry(const char* name)
 {
 	int index;
@@ -89,18 +285,38 @@ FileBrowser::BrowsableList::Entry* FileBrowser::BrowsableList::FindEntry(const c
 	return 0;
 }
 
-FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, unsigned deviceID, bool displayPNGIcons)
+FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, unsigned deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD)
 	: state(State_Folders)
-	, maxOnScreen(38)
 	, diskCaddy(diskCaddy)
 	, selectionsMade(false)
 	, roms(roms)
 	, deviceID(deviceID)
 	, displayPNGIcons(displayPNGIcons)
+	, screenMain(screenMain)
+	, screenLCD(screenLCD)
 {
-	maxOnScreen = (int)(38.0f * screen.GetScaleY());
-	if (maxOnScreen < 1)
-		maxOnScreen = 1;
+	u32 columns = screenMain->ScaleX(80);
+	u32 rows = (int)(38.0f * screenMain->GetScaleY());
+	u32 positionX = 0;
+	u32 positionY = 17;
+
+	if (rows < 1)
+		rows = 1;
+
+	folder.AddView(screenMain, columns, rows, positionX, positionY, false);
+
+	positionX = screenMain->ScaleX(1024 - 320);
+	caddySelections.AddView(screenMain, columns, rows, positionX, positionY, false);
+
+
+
+	columns = 128 / 8;
+	rows = 4;
+	positionX = 0;
+	positionY = 0;
+
+	if (screenLCD)
+		folder.AddView(screenLCD, columns, rows, positionX, positionY, true);
 }
 
 u32 FileBrowser::Colour(int index)
@@ -204,6 +420,7 @@ void FileBrowser::DisplayRoot()
 	FolderChanged();
 }
 
+/*
 void FileBrowser::RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* browsableList, int xOffset, bool showSelected)
 {
 	char buffer1[128] = { 0 };
@@ -219,7 +436,7 @@ void FileBrowser::RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* brow
 	if (terminal)
 		printf("\E[2J\E[f");
 
-	u32 maxCharacters = screen.ScaleX(80);
+	u32 maxCharacters = screenMain->ScaleX(80);
 
 	for (index = 0; index < maxOnScreen; ++index)
 	{
@@ -238,7 +455,7 @@ void FileBrowser::RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* brow
 				{
 					if (terminal)
 						printf("\E[34;47m%s\E[0m\r\n", buffer1);
-					screen.PrintText(false, x, y, buffer1, palette[VIC2_COLOUR_INDEX_LBLUE], RGBA(0xff, 0xff, 0xff, 0xff));
+					screenMain->PrintText(false, x, y, buffer1, palette[VIC2_COLOUR_INDEX_LBLUE], RGBA(0xff, 0xff, 0xff, 0xff));
 				}
 				else
 				{
@@ -246,7 +463,7 @@ void FileBrowser::RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* brow
 					if (entry->filImage.fattrib & AM_RDO)
 						colour = palette[VIC2_COLOUR_INDEX_RED];
 
-					screen.PrintText(false, x, y, buffer1, colour, RGBA(0xff, 0xff, 0xff, 0xff));
+					screenMain->PrintText(false, x, y, buffer1, colour, RGBA(0xff, 0xff, 0xff, 0xff));
 					if (terminal)
 						printf("\E[31;47m%s\E[0m\r\n", buffer1);
 				}
@@ -255,7 +472,7 @@ void FileBrowser::RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* brow
 			{
 				if (entry->filImage.fattrib & AM_DIR)
 				{
-					screen.PrintText(false, x, y, buffer1, palette[VIC2_COLOUR_INDEX_LBLUE], BkColour);
+					screenMain->PrintText(false, x, y, buffer1, palette[VIC2_COLOUR_INDEX_LBLUE], BkColour);
 					if (terminal)
 						printf("\E[34m%s\E[0m\r\n", buffer1);
 				}
@@ -264,7 +481,7 @@ void FileBrowser::RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* brow
 					colour = palette[VIC2_COLOUR_INDEX_LGREY];
 					if (entry->filImage.fattrib & AM_RDO)
 						colour = palette[VIC2_COLOUR_INDEX_PINK];
-					screen.PrintText(false, x, y, buffer1, colour, BkColour);
+					screenMain->PrintText(false, x, y, buffer1, colour, BkColour);
 					if (terminal)
 						printf("\E[0;m%s\E[0m\r\n", buffer1);
 				}
@@ -273,13 +490,14 @@ void FileBrowser::RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* brow
 		else
 		{
 			memset(buffer1, ' ', 80);
-			screen.PrintText(false, x, y, buffer1, BkColour, BkColour);
+			screenMain->PrintText(false, x, y, buffer1, BkColour, BkColour);
 			if (terminal)
 				printf("%s\r\n", buffer1);
 		}
 		y += 16;
 	}
 }
+*/
 
 void FileBrowser::RefeshDisplay()
 {
@@ -289,13 +507,16 @@ void FileBrowser::RefeshDisplay()
 		u32 textColour = Colour(VIC2_COLOUR_INDEX_LGREEN);
 		u32 bgColour = Colour(VIC2_COLOUR_INDEX_GREY);
 			
-		screen.ClearArea(0, 0, (int)screen.Width(), 17, bgColour);
-		screen.PrintText(false, 0, 0, buffer, textColour, bgColour);
+		screenMain->ClearArea(0, 0, (int)screenMain->Width(), 17, bgColour);
+		screenMain->PrintText(false, 0, 0, buffer, textColour, bgColour);
 	}
 
-	u32 offsetX = screen.ScaleX(1024 - 320);
-	RefeshDisplayForBrowsableList(&folder, 0);
-	RefeshDisplayForBrowsableList(&caddySelections, offsetX, false);
+	//u32 offsetX = screenMain->ScaleX(1024 - 320);
+	//RefeshDisplayForBrowsableList(&folder, 0);
+	//RefeshDisplayForBrowsableList(&caddySelections, offsetX, false);
+
+	folder.RefreshViews();
+	caddySelections.RefreshViews();
 
 	DisplayPNG();
 	DisplayStatusBar();
@@ -349,7 +570,7 @@ void FileBrowser::DisplayPNG(FILINFO& filIcon, int x, int y)
 			if (image && (w == PNG_WIDTH && h == PNG_HEIGHT))
 			{
 				//DEBUG_LOG("Opened PNG %s w = %d h = %d cif = %d\r\n", fileName, w, h, channels_in_file);
-				screen.PlotImage((u32*)image, x, y, w, h);
+				screenMain->PlotImage((u32*)image, x, y, w, h);
 			}
 			else
 			{
@@ -368,8 +589,8 @@ void FileBrowser::DisplayPNG()
 	if (displayPNGIcons && folder.current)
 	{
 		FileBrowser::BrowsableList::Entry* current = folder.current;
-		u32 x = screen.ScaleX(1024 - 320);
-		u32 y = screen.ScaleY(666) - 240;
+		u32 x = screenMain->ScaleX(1024 - 320);
+		u32 y = screenMain->ScaleY(666) - 240;
 		DisplayPNG(current->filIcon, x, y);
 	}
 }
@@ -409,11 +630,6 @@ void FileBrowser::UpdateInput()
 	}
 }
 
-FileBrowser::Folder* FileBrowser::GetCurrentFolder()
-{
-	return &folder;
-}
-
 bool FileBrowser::FillCaddyWithSelections()
 {
 	if (caddySelections.entries.size())
@@ -450,6 +666,7 @@ bool FileBrowser::AddToCaddy(FileBrowser::BrowsableList::Entry* current)
 		}
 		if (canAdd)
 		{
+			current->caddyIndex = caddySelections.entries.size();
 			caddySelections.entries.push_back(*current);
 			added = true;
 		}
@@ -464,7 +681,7 @@ void FileBrowser::UpdateInputFolders()
 
 	if (folder.entries.size() > 0)
 	{
-		u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
+		//u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
 		bool dirty = false;
 
 		if (inputMappings->BrowseSelect())
@@ -531,7 +748,7 @@ void FileBrowser::UpdateInputFolders()
 		}
 		else if (inputMappings->Exit())
 		{
-			caddySelections.Clear();
+			ClearSelections();
 			dirty = true;
 		}
 		else if (inputMappings->BrowseInsert())
@@ -560,71 +777,7 @@ void FileBrowser::UpdateInputFolders()
 				}
 			}
 
-			if (inputMappings->BrowseDown())
-			{
-				if (folder.currentIndex < numberOfEntriesMinus1)
-				{
-					folder.currentIndex++;
-					folder.current = &folder.entries[folder.currentIndex];
-					if (folder.currentIndex >= (folder.offset + maxOnScreen) && (folder.currentIndex < folder.entries.size()))
-						folder.offset++;
-					dirty = true;
-				}
-			}
-			if (inputMappings->BrowseUp())
-			{
-				if (folder.currentIndex > 0)
-				{
-					folder.currentIndex--;
-					folder.current = &folder.entries[folder.currentIndex];
-					if ((folder.offset > 0) && (folder.currentIndex < folder.offset))
-						folder.offset--;
-					dirty = true;
-				}
-			}
-			if (inputMappings->BrowsePageDown())
-			{
-				u32 maxOnScreenMinus1 = maxOnScreen - 1;
-
-				if (folder.currentIndex == folder.offset + maxOnScreenMinus1)
-				{
-					// Need to move the screen window down so that the currentIndex is now at the top of the screen
-					folder.offset = folder.currentIndex;
-
-					// Current index now becomes the bottom one
-					if (folder.offset + maxOnScreenMinus1 > numberOfEntriesMinus1)
-						folder.currentIndex = numberOfEntriesMinus1; // Not enough entries to move another page just move to the last entry
-					else // Move the window down a page
-						folder.currentIndex = folder.offset + maxOnScreenMinus1;
-				}
-				else
-				{
-					// Need to move to folder.offset + maxOnScreenMinus1
-					if (folder.offset + maxOnScreenMinus1 > numberOfEntriesMinus1)
-						folder.currentIndex = numberOfEntriesMinus1; // Run out of entries before we hit the bottom. Just move to the bottom.
-					else
-						folder.currentIndex = folder.offset + maxOnScreenMinus1; // Move the bottom of the screen
-				}
-				folder.current = &folder.entries[folder.currentIndex];
-				dirty = true;
-			}
-			if (inputMappings->BrowsePageUp())
-			{
-				if (folder.currentIndex == folder.offset)
-				{
-					// If the cursor is already at the top of the window then page up
-					int offset = (int)folder.currentIndex - (int)maxOnScreen;
-					if (offset < 0) folder.offset = 0;
-					else folder.offset = (u32)offset;
-					folder.currentIndex = folder.offset;
-				}
-				else
-				{
-					folder.currentIndex = folder.offset; // Move the cursor to the top of the window
-				}
-				folder.current = &folder.entries[folder.currentIndex];
-				dirty = true;
-			}
+			dirty = folder.CheckBrowseNavigation();
 		}
 
 		if (dirty) RefeshDisplay();
@@ -642,45 +795,41 @@ bool FileBrowser::SelectLST(const char* filenameLST)
 	//DEBUG_LOG("Selected %s\r\n", filenameLST);
 	if (DiskImage::IsLSTExtention(filenameLST))
 	{
-		FileBrowser::Folder* currentFolder = GetCurrentFolder();
-		if (currentFolder)
+		DiskImage::DiskType diskType;
+		FIL fp;
+		FRESULT res;
+		res = f_open(&fp, filenameLST, FA_READ);
+		if (res == FR_OK)
 		{
-			DiskImage::DiskType diskType;
-			FIL fp;
-			FRESULT res;
-			res = f_open(&fp, filenameLST, FA_READ);
-			if (res == FR_OK)
+			u32 bytesRead;
+			SetACTLed(true);
+			f_read(&fp, FileBrowser::LSTBuffer, FileBrowser::LSTBuffer_size, &bytesRead);
+			SetACTLed(false);
+			f_close(&fp);
+
+			TextParser textParser;
+
+			textParser.SetData((char*)FileBrowser::LSTBuffer);
+			char* token = textParser.GetToken(true);
+			while (token)
 			{
-				u32 bytesRead;
-				SetACTLed(true);
-				f_read(&fp, FileBrowser::LSTBuffer, FileBrowser::LSTBuffer_size, &bytesRead);
-				SetACTLed(false);
-				f_close(&fp);
-
-				TextParser textParser;
-
-				textParser.SetData((char*)FileBrowser::LSTBuffer);
-				char* token = textParser.GetToken(true);
-				while (token)
+				//DEBUG_LOG("LST token = %s\r\n", token);
+				diskType = DiskImage::GetDiskImageTypeViaExtention(token);
+				if (diskType == DiskImage::D64 || diskType == DiskImage::G64 || diskType == DiskImage::NIB || diskType == DiskImage::NBZ)
 				{
-					//DEBUG_LOG("LST token = %s\r\n", token);
-					diskType = DiskImage::GetDiskImageTypeViaExtention(token);
-					if (diskType == DiskImage::D64 || diskType == DiskImage::G64 || diskType == DiskImage::NIB || diskType == DiskImage::NBZ)
+					FileBrowser::BrowsableList::Entry* entry = folder.FindEntry(token);
+					if (entry && !(entry->filImage.fattrib & AM_DIR))
 					{
-						FileBrowser::BrowsableList::Entry* entry = currentFolder->FindEntry(token);
-						if (entry && !(entry->filImage.fattrib & AM_DIR))
-						{
-							bool readOnly = (entry->filImage.fattrib & AM_RDO) != 0;
-							if (diskCaddy->Insert(&entry->filImage, readOnly))
-								validImage = true;
-						}
+						bool readOnly = (entry->filImage.fattrib & AM_RDO) != 0;
+						if (diskCaddy->Insert(&entry->filImage, readOnly))
+							validImage = true;
 					}
-					else
-					{
-						roms->SelectROM(token);
-					}
-					token = textParser.GetToken(true);
 				}
+				else
+				{
+					roms->SelectROM(token);
+				}
+				token = textParser.GetToken(true);
 			}
 		}
 	}
@@ -717,17 +866,25 @@ void FileBrowser::UpdateInputDiskCaddy()
 void FileBrowser::DisplayStatusBar()
 {
 	u32 x = 0;
-	u32 y = screen.ScaleY(STATUS_BAR_POSITION_Y);
+	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y);
 
 	char bufferOut[128];
 	snprintf(bufferOut, 256, "LED 0 Motor 0 Track 00.0 ATN 0 DAT 0 CLK 0");
-	screen.PrintText(false, x, y, bufferOut, RGBA(0, 0, 0, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
+	screenMain->PrintText(false, x, y, bufferOut, RGBA(0, 0, 0, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
 }
 
 void FileBrowser::ClearScreen()
 {
 	u32 bgColour = palette[VIC2_COLOUR_INDEX_BLUE];
-	screen.Clear(bgColour);
+	screenMain->Clear(bgColour);
+}
+
+void FileBrowser::ClearSelections()
+{
+	selectionsMade = false;
+	caddySelections.Clear();
+
+	folder.ClearSelections();
 }
 
 void FileBrowser::ShowDeviceAndROM()
@@ -735,10 +892,10 @@ void FileBrowser::ShowDeviceAndROM()
 	char buffer[256];
 	u32 textColour = RGBA(0, 0, 0, 0xff);
 	u32 bgColour = RGBA(0xff, 0xff, 0xff, 0xff);
-	u32 y = screen.ScaleY(STATUS_BAR_POSITION_Y);
+	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y);
 
 	snprintf(buffer, 256, "Device %d %s               \r\n", deviceID, roms->ROMNames[roms->currentROMIndex]);
-	screen.PrintText(false, 43 * 8, y, buffer, textColour, bgColour);
+	screenMain->PrintText(false, 43 * 8, y, buffer, textColour, bgColour);
 }
 
 void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForIcon)
@@ -754,7 +911,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 	char name[17] = { 0 };
 	unsigned char buffer[260] = { 0 };
 	int charIndex;
-	u32 fontHeight = screen.GetCBMFontHeight();
+	u32 fontHeight = screenMain->GetFontHeight();
 	u32 x = 0;
 	u32 y = 0;
 	char bufferOut[128] = { 0 };
@@ -763,7 +920,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 
 	u32 usedColour = palette[VIC2_COLOUR_INDEX_RED];
 	u32 freeColour = palette[VIC2_COLOUR_INDEX_LGREEN];
-	u32 BAMOffsetX = screen.ScaleX(400);
+	u32 BAMOffsetX = screenMain->ScaleX(400);
 
 	ClearScreen();
 
@@ -798,12 +955,12 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 				if (!used)
 				{
 					snprintf(bufferOut, 128, "%c", screen2petscii(87));
-					screen.PrintText(true, x, y, bufferOut, usedColour, bgColour);
+					screenMain->PrintText(true, x, y, bufferOut, usedColour, bgColour);
 				}
 				else
 				{
 					snprintf(bufferOut, 128, "%c", screen2petscii(81));
-					screen.PrintText(true, x, y, bufferOut, freeColour, bgColour);
+					screenMain->PrintText(true, x, y, bufferOut, freeColour, bgColour);
 				}
 				x += 8;
 				bits <<= 1;
@@ -816,7 +973,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 			for (int bit = 0; bit < DiskImage::SectorsPerTrack[bamTrack]; bit++)
 			{
 				snprintf(bufferOut, 128, "%c", screen2petscii(87));
-				screen.PrintText(true, x, y, bufferOut, usedColour, bgColour);
+				screenMain->PrintText(true, x, y, bufferOut, usedColour, bgColour);
 				x += 8;
 			}
 			y += fontHeight;
@@ -824,10 +981,10 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 		x = 0;
 		y = 0;
 		snprintf(bufferOut, 128, "0");
-		screen.PrintText(true, x, y, bufferOut, textColour, bgColour);
+		screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
 		x = 16;
 		snprintf(bufferOut, 128, "\"%s\" %c%c%c%c%c%c", name, buffer[162], buffer[163], buffer[164], buffer[165], buffer[166], buffer[167]);
-		screen.PrintText(true, x, y, bufferOut, bgColour, textColour);
+		screenMain->PrintText(true, x, y, bufferOut, bgColour, textColour);
 		x = 0;
 		y += fontHeight;
 
@@ -876,10 +1033,10 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 
 							//DEBUG_LOG("%d name = %s %x\r\n", blocks, name, fileType);
 							snprintf(bufferOut, 128, "%d", blocks);
-							screen.PrintText(true, x, y, bufferOut, textColour, bgColour);
+							screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
 							x += 5 * 8;
 							snprintf(bufferOut, 128, "\"%s\"", name);
-							screen.PrintText(true, x, y, bufferOut, textColour, bgColour);
+							screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
 							x += 19 * 8;
 							char modifier = 0x20;
 							if ((fileType & 0x80) == 0)
@@ -887,7 +1044,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 							else if (fileType & 0x40)
 								modifier = screen2petscii(60);
 							snprintf(bufferOut, 128, "%s%c", fileTypes[fileType & 7], modifier);
-							screen.PrintText(true, x, y, bufferOut, textColour, bgColour);
+							screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
 							y += fontHeight;
 						}
 						entryOffset += 32;
@@ -903,7 +1060,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 		x = 0;
 		//DEBUG_LOG("%d blocks free\r\n", blocksFree);
 		snprintf(bufferOut, 128, "%d BLOCKS FREE.\r\n", blocksFree);
-		screen.PrintText(true, x, y, bufferOut, textColour, bgColour);
+		screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
 		y += fontHeight;
 	}
 
@@ -914,8 +1071,8 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 		FILINFO filIcon;
 		if (CheckForPNG(filenameForIcon, filIcon))
 		{
-			x = screen.ScaleX(1024) - 320;
-			y = screen.ScaleY(0);
+			x = screenMain->ScaleX(1024) - 320;
+			y = screenMain->ScaleY(0);
 			DisplayPNG(filIcon, x, y);
 		}
 	}
@@ -938,7 +1095,7 @@ void FileBrowser::AutoSelectTestImage()
 
 	if (index != maxEntries)
 	{
-		caddySelections.Clear();
+		ClearSelections();
 		caddySelections.entries.push_back(*current);
 		selectionsMade = FillCaddyWithSelections();
 	}

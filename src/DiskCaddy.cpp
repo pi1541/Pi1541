@@ -34,6 +34,8 @@ static u32 red = RGBA(0xff, 0, 0, 0xff);
 
 bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 {
+	int x;
+	int y;
 	bool success;
 	FIL fp;
 	FRESULT res = f_open(&fp, fileInfo->fname, FA_READ);
@@ -41,11 +43,26 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 	{
 		if (screen)
 		{
-			int x = screen->ScaleX(screenPosXCaddySelections);
-			int y = screen->ScaleY(screenPosYCaddySelections);
+			x = screen->ScaleX(screenPosXCaddySelections);
+			y = screen->ScaleY(screenPosYCaddySelections);
 
 			snprintf(buffer, 256, "Loading %s\r\n", fileInfo->fname);
 			screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+		}
+
+		if (screenLCD)
+		{
+			RGBA BkColour = RGBA(0, 0, 0, 0xFF);
+			screenLCD->Clear(BkColour);
+			x = 0;
+			y = 0;
+
+			snprintf(buffer, 256, "Loading");
+			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), BkColour);
+			y += 16;
+			snprintf(buffer, 256, "%s                ", fileInfo->fname);
+			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+			screenLCD->SwapBuffers();
 		}
 
 		u32 bytesRead;
@@ -146,12 +163,14 @@ bool DiskCaddy::InsertNBZ(const FILINFO* fileInfo, unsigned char* diskImageData,
 
 void DiskCaddy::Display()
 {
+	unsigned numberOfImages = GetNumberOfImages();
+	unsigned caddyIndex;
+	int x;
+	int y;
 	if (screen)
 	{
-		unsigned numberOfImages = GetNumberOfImages();
-		unsigned caddyIndex;
-		int x = screen->ScaleX(screenPosXCaddySelections);
-		int y = screen->ScaleY(screenPosYCaddySelections);
+		x = screen->ScaleX(screenPosXCaddySelections);
+		y = screen->ScaleY(screenPosYCaddySelections);
 
 		snprintf(buffer, 256, "Emulating\r\n");
 		screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
@@ -168,17 +187,71 @@ void DiskCaddy::Display()
 				y += 16;
 			}
 		}
-
-		ShowSelectedImage(0);
 	}
+
+	if (screenLCD)
+	{
+		RGBA BkColour = RGBA(0, 0, 0, 0xFF);
+		screenLCD->Clear(BkColour);
+	}
+	ShowSelectedImage(0);
 }
 
 void DiskCaddy::ShowSelectedImage(u32 index)
 {
-	u32 x = screen->ScaleX(screenPosXCaddySelections) - 16;
-	u32 y = screen->ScaleY(screenPosYCaddySelections) + 16 + 16 * index;
-	snprintf(buffer, 256, "*");
-	screen->PrintText(false, x, y, buffer, white, red);
+	u32 x;
+	u32 y;
+	if (screen)
+	{
+		x = screen->ScaleX(screenPosXCaddySelections) - 16;
+		y = screen->ScaleY(screenPosYCaddySelections) + 16 + 16 * index;
+		snprintf(buffer, 256, "*");
+		screen->PrintText(false, x, y, buffer, white, red);
+	}
+	if (screenLCD)
+	{
+		unsigned numberOfImages = GetNumberOfImages();
+		unsigned caddyIndex;
+
+		if (screenLCD)
+		{
+			RGBA BkColour = RGBA(0, 0, 0, 0xFF);
+			//screenLCD->Clear(BkColour);
+			x = 0;
+			y = 0;
+
+			snprintf(buffer, 256, "Emulating %d/%d           ", index + 1, numberOfImages);
+			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
+			y += 16;
+
+			if (numberOfImages > 3 && index > 2)
+			{
+				if (numberOfImages - index < 3)
+					caddyIndex = numberOfImages - 3;
+				else
+					caddyIndex = index;
+			}
+			else
+			{
+				caddyIndex = 0;
+			}
+
+			for (; caddyIndex < numberOfImages; ++caddyIndex)
+			{
+				DiskImage* image = GetImage(caddyIndex);
+				const char* name = image->GetName();
+				if (name)
+				{
+					snprintf(buffer, 256, "%d %s                 ", caddyIndex + 1, name);
+					screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), caddyIndex == index ? RGBA(0xff, 0xff, 0xff, 0xff) : BkColour);
+					y += 16;
+				}
+				if (y >= screenLCD->Height())
+					break;
+			}
+			screenLCD->SwapBuffers();
+		}
+	}
 }
 
 bool DiskCaddy::Update()
@@ -196,6 +269,11 @@ bool DiskCaddy::Update()
 			screen->PrintText(false, x, y, buffer, red, red);
 			oldCaddyIndex = caddyIndex;
 			ShowSelectedImage(oldCaddyIndex);
+		}
+
+		if (screenLCD)
+		{
+			
 		}
 
 		return true;

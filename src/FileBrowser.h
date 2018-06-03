@@ -25,6 +25,7 @@
 #include "DiskImage.h"
 #include "DiskCaddy.h"
 #include "ROMs.h"
+#include "ScreenBase.h"
 
 #define VIC2_COLOUR_INDEX_BLACK		0
 #define VIC2_COLOUR_INDEX_WHITE		1
@@ -51,51 +52,88 @@ class FileBrowser
 {
 public:
 
+	class BrowsableList;
+
+	class BrowsableListView
+	{
+	public:
+		BrowsableListView(BrowsableList* list, ScreenBase* screen, u32 columns, u32 rows, u32 positionX, u32 positionY, bool lcdPgUpDown)
+			: list(list)
+			, screen(screen)
+			, columns(columns)
+			, rows(rows)
+			, positionX(positionX)
+			, positionY(positionY)
+			, lcdPgUpDown(lcdPgUpDown)
+		{
+		}
+
+		void Refresh();
+		bool CheckBrowseNavigation(bool pageOnly);
+
+		BrowsableList* list;
+		u32 offset;
+
+		ScreenBase* screen;
+		u32 columns;
+		u32 rows;
+		u32 positionX;
+		u32 positionY;
+		bool lcdPgUpDown;
+	};
+
 	class BrowsableList
 	{
 	public:
 		BrowsableList()
 			: current(0)
 			, currentIndex(0)
-			, offset(0)
 		{
 		}
 
 		void Clear()
 		{
+			u32 index;
 			entries.clear();
 			current = 0;
 			currentIndex = 0;
-			offset = 0;
+			for (index = 0; index < views.size(); ++index)
+			{
+				views[index].offset = 0;
+			}
 		}
+
+		void AddView(ScreenBase* screen, u32 columns, u32 rows, u32 positionX, u32 positionY, bool lcdPgUpDown)
+		{
+			BrowsableListView view(this, screen, columns, rows, positionX, positionY, lcdPgUpDown);
+			views.push_back(view);
+		}
+
+		void ClearSelections();
 
 		struct Entry
 		{
+			Entry() : caddyIndex(-1)
+			{
+			}
 			FILINFO filImage;
 			FILINFO filIcon;
+			int caddyIndex;
 		};
 
 		Entry* FindEntry(const char* name);
 
+		void RefreshViews();
+		bool CheckBrowseNavigation();
+
 		std::vector<Entry> entries;
 		Entry* current;
 		u32 currentIndex;
-		u32 offset;
+
+		std::vector<BrowsableListView> views;
 	};
 
-	class Folder : public BrowsableList
-	{
-	public:
-		Folder()
-			: BrowsableList()
-			, name(0)
-		{
-		}
-
-		FILINFO* name;
-	};
-
-	FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, unsigned deviceID, bool displayPNGIcons);
+	FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, unsigned deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD);
 
 	void AutoSelectTestImage();
 	void DisplayRoot();
@@ -111,15 +149,13 @@ public:
 
 	bool SelectionsMade() { return selectionsMade; }
 	const char* LastSelectionName() { return lastSelectionName; }
-	void ClearSelections() { selectionsMade = false; caddySelections.Clear(); }
+	void ClearSelections();
 
 	void ShowDeviceAndROM();
 
 	void ClearScreen();
 
 	void SetDeviceID(u8 id) { deviceID = id; }
-
-	Folder* GetCurrentFolder();
 
 	static const long int LSTBuffer_size = 1024 * 8;
 	static unsigned char LSTBuffer[];
@@ -138,7 +174,7 @@ private:
 	void UpdateInputFolders();
 	void UpdateInputDiskCaddy();
 
-	void RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* browsableList, int xOffset, bool showSelected = true);
+	//void RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* browsableList, int xOffset, bool showSelected = true);
 
 	bool FillCaddyWithSelections();
 
@@ -153,8 +189,7 @@ private:
 		State_DiskCaddy
 	} state;
 
-	Folder folder;
-	u32 maxOnScreen;
+	BrowsableList folder;
 	DiskCaddy* diskCaddy;
 	bool selectionsMade;
 	const char* lastSelectionName;
@@ -163,6 +198,9 @@ private:
 	bool displayPNGIcons;
 
 	BrowsableList caddySelections;
+
+	ScreenBase* screenMain;
+	ScreenBase* screenLCD;
 
 	char PNG[FILEBROWSER_MAX_PNG_SIZE];
 };

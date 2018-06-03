@@ -29,10 +29,11 @@ public:
 	DiskCaddy()
 		: selectedIndex(0)
 		, screen(0)
+		, screenLCD(0)
 	{
 	}
 
-	void SetScreen(Screen* screen) { this->screen = screen;	}
+	void SetScreen(Screen* screen, ScreenBase* screenLCD) { this->screen = screen; this->screenLCD = screenLCD; }
 
 	void Empty()
 	{
@@ -106,6 +107,7 @@ private:
 	u32 oldCaddyIndex;
 
 	Screen* screen;
+	ScreenBase* screenLCD;
 };
 
 #endif

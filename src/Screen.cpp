@@ -148,14 +148,6 @@ void Screen::PlotPixel8(u32 pixel_offset, RGBA Colour)
 	framebuffer[pixel_offset++] = RED(Colour);
 }
 
-void Screen::ClipRect(u32& x1, u32& y1, u32& x2, u32& y2)
-{
-	if (x1 > width) x1 = width;
-	if (y1 > height) y1 = height;
-	if (x2 > width) x2 = width;
-	if (y2 > height) y2 = height;
-}
-
 void Screen::ClearArea(u32 x1, u32 y1, u32 x2, u32 y2, RGBA colour)
 {
 	ClipRect(x1, y1, x2, y2);
@@ -195,7 +187,7 @@ void Screen::Clear(RGBA colour)
 	ClearArea(0, 0, width, height, colour);
 }
 
-u32 Screen::GetCBMFontHeight()
+u32 Screen::GetFontHeight()
 {
 	if (CBMFont)
 		return 8;
