@@ -88,10 +88,35 @@ private:
 
 	void DumpTrack(unsigned track); // Used for debugging disk images.
 
-	u32 AdvanceSectorPositionR(int& byte_offset); // No reason why I seperate these into individual read and write versions. I was just trying to get the bit stream to line up when rewriting over existing data.
-	u32 AdvanceSectorPositionW(int& byte_offset);
-	bool GetNextBit();
-	void SetNextBit(bool value);
+	// No reason why I seperate these into individual read and write versions. I was just trying to get the bit stream to line up when rewriting over existing data.
+	inline u32 AdvanceSectorPositionR(int& byteOffset)
+	{
+		++headBitOffset %= bitsInTrack;
+		byteOffset = headBitOffset >> 3;
+		return (~headBitOffset) & 7;
+	}
+
+	inline u32 AdvanceSectorPositionW(int& byteOffset)
+	{
+		byteOffset = headBitOffset >> 3;
+		u32 bit = (~headBitOffset) & 7;
+		++headBitOffset %= bitsInTrack;
+		return bit;
+	}
+
+	inline bool GetNextBit()
+	{
+		int byteOffset;
+		int bit = AdvanceSectorPositionR(byteOffset);
+		return diskImage->GetNextBit(headTrackPos, byteOffset, bit);
+	}
+
+	inline void SetNextBit(bool value)
+	{
+		int byteOffset;
+		int bit = AdvanceSectorPositionW(byteOffset);
+		diskImage->SetBit(headTrackPos, byteOffset, bit, value);
+	}
 
 	DiskImage* diskImage;
 	// When swapping disks some code waits for the write protect signal to go high which will happen if a human ejects a disk.

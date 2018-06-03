@@ -386,35 +386,6 @@ void Drive::OnPortOut(void* pThis, unsigned char status)
 	pDrive->LED = (status & 8) != 0;
 }
 
-u32 Drive::AdvanceSectorPositionR(int& byteOffset)
-{
-	++headBitOffset %= bitsInTrack;
-	byteOffset = headBitOffset >> 3;
-	return (~headBitOffset) & 7;
-}
-
-u32 Drive::AdvanceSectorPositionW(int& byteOffset)
-{
-	byteOffset = headBitOffset >> 3;
-	u32 bit = (~headBitOffset) & 7;
-	++headBitOffset %= bitsInTrack;
-	return bit;
-}
-
-bool Drive::GetNextBit()
-{
-	int byteOffset;
-	int bit = AdvanceSectorPositionR(byteOffset);
-	return diskImage->GetNextBit(headTrackPos, byteOffset, bit);
-}
-
-void Drive::SetNextBit(bool value)
-{
-	int byteOffset;
-	int bit = AdvanceSectorPositionW(byteOffset);
-	diskImage->SetBit(headTrackPos, byteOffset, bit, value);
-}
-
 bool Drive::Update()
 {
 	bool dataReady = false;
