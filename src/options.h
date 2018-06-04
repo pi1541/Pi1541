@@ -65,6 +65,7 @@ public:
 
 	inline unsigned int ScreenWidth() const { return screenWidth; }
 	inline unsigned int ScreenHeight() const { return screenHeight; }
+	inline unsigned int I2CBusMaster() const { return i2cBusMaster; }
 
 	// Page up and down will jump a different amount based on the maximum number rows displayed.
 	// Perhaps we should use some keyboard modifier to the the other screen?
@@ -92,6 +93,8 @@ private:
 
 	unsigned int screenWidth;
 	unsigned int screenHeight;
+
+	unsigned int i2cBusMaster;
 
 	unsigned int keyboardBrowseLCDScreen;
 

@@ -80,7 +80,6 @@ const long int CBMFont_size = 4096;
 unsigned char CBMFontData[4096];
 unsigned char* CBMFont = 0;
 
-//u8 s_u8Memory[0x800];
 u8 s_u8Memory[0xc000];
 
 DiskCaddy diskCaddy;
@@ -974,11 +973,11 @@ static void LoadOptions()
 	{
 		u32 bytesRead;
 		SetACTLed(true);
-		f_read(&fp, tempBuffer, tempBufferSize, &bytesRead);
+		f_read(&fp, s_u8Memory, sizeof(s_u8Memory), &bytesRead);
 		SetACTLed(false);
 		f_close(&fp);
 
-		options.Process((char*)tempBuffer);
+		options.Process((char*)s_u8Memory);
 
 		screenWidth = options.ScreenWidth();
 		screenHeight = options.ScreenHeight();
@@ -1150,10 +1149,12 @@ extern "C"
 
 		CheckOptions();
 
+
+		int i2cBusMaster = options.I2CBusMaster();
 		if (strcasecmp(options.GetLCDName(), "ssd1306_128x64") == 0)
 		{
 			screenLCD = new ScreenLCD();
-			screenLCD->Open(128, 64, 1, options.SplitIECLines() ? 1 : 0);
+			screenLCD->Open(128, 64, 1, i2cBusMaster);
 		}
 		else
 		{

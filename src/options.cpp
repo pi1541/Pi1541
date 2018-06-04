@@ -135,6 +135,7 @@ Options::Options(void)
 	, ignoreReset(0)
 	, screenWidth(1024)
 	, screenHeight(768)
+	, i2cBusMaster(1)
 	, keyboardBrowseLCDScreen(0)
 {
 	strcpy(ROMFontName, "chargen");
@@ -187,6 +188,7 @@ void Options::Process(char* buffer)
 		ELSE_CHECK_DECIMAL_OPTION(ignoreReset)
 		ELSE_CHECK_DECIMAL_OPTION(screenWidth)
 		ELSE_CHECK_DECIMAL_OPTION(screenHeight)
+		ELSE_CHECK_DECIMAL_OPTION(i2cBusMaster)
 		ELSE_CHECK_DECIMAL_OPTION(keyboardBrowseLCDScreen)
 		else if ((strcasecmp(pOption, "StarFileName") == 0))
 		{
@@ -231,7 +233,11 @@ void Options::Process(char* buffer)
 	}
 
 	if (!SplitIECLines())
+	{
 		invertIECInputs = false;
+		// If using non split lines then only the 2nd bus master can be used (as ATN is using the 1st)
+		i2cBusMaster = 1;
+	}
 }
 
 unsigned Options::GetDecimal(char* pString)
