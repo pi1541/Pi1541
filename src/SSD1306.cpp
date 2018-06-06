@@ -185,6 +185,20 @@ void SSD1306::RefreshScreen()
 	}
 }
 
+void SSD1306::RefreshRows(u8 start, u8 amountOfRows)
+{
+	MoveCursorCharacter(start, 0);
+	start *= 128;
+
+	int i;
+	int end = start + amountOfRows * 128;
+
+	for (i = start * 128; i < end; i++)
+	{
+		SendData(frame[i]);
+	}
+}
+
 void SSD1306::ClearScreen()
 {
 	memset(frame, 0, sizeof(frame));

@@ -51,6 +51,8 @@ public:
 
 	void SwapBuffers();
 
+	void RefreshRows(u8 start, u8 amountOfRows);
+
 private:
 	SSD1306* ssd1306 = 0;
 };

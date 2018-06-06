@@ -492,6 +492,13 @@ void UpdateScreen()
 			snprintf(tempBuffer, tempBufferSize, "%02d.%d", (oldTrack >> 1) + 1, oldTrack & 1 ? 5 : 0);
 			screen.PrintText(false, 20 * 8, y, tempBuffer, textColour, bgColour);
 			//refreshUartStatusDisplay = true;
+
+			if (screenLCD)
+			{
+				screenLCD->PrintText(false, 0, 0, tempBuffer, RGBA(0xff, 0xff, 0xff, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
+				screenLCD->RefreshRows(0, 2); //SwapBuffers();
+			}
+
 		}
 
 		if (emulating)

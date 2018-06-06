@@ -97,3 +97,7 @@ void ScreenLCD::SwapBuffers()
 	ssd1306->RefreshScreen();
 }
 
+void ScreenLCD::RefreshRows(u8 start, u8 amountOfRows)
+{
+	ssd1306->RefreshRows(start, amountOfRows);
+}

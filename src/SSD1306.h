@@ -25,9 +25,9 @@ extern "C"
 }
 
 // 8 pages * (128 columns * 8 bits)
-//0                                                    127
-//0                                                    127
-//0                                                    127
+//0                      127 0                         127
+//0                      127 0                         127
+//0                      127 0                         127
 //________________________________________________________
 //7777777					|    						 7
 //6666666					|							 6
@@ -82,6 +82,7 @@ public:
 
 	void ClearScreen();
 	void RefreshScreen();
+	void RefreshRows(u8 start, u8 amountOfRows);
 
 protected:
 	void SendCommand(u8 command);
