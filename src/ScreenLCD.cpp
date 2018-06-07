@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include "debug.h"
 
-void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int BSCMaster)
+void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int BSCMaster, int LCDAddress)
 {
 	bpp = 1;
 
@@ -38,7 +38,7 @@ void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int B
 	width = widthDesired;
 	height = heightDesired;
 
-	ssd1306 = new SSD1306(BSCMaster);
+	ssd1306 = new SSD1306(BSCMaster, LCDAddress);
 	ssd1306->DisplayOn();
 	ssd1306->Plottext(5, 1, "Pi1541", false);
 	ssd1306->RefreshScreen();
