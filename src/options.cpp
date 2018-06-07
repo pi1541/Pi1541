@@ -235,8 +235,8 @@ void Options::Process(char* buffer)
 	if (!SplitIECLines())
 	{
 		invertIECInputs = false;
-		// If using non split lines then only the 2nd bus master can be used (as ATN is using the 1st)
-		i2cBusMaster = 1;
+		// If using non split lines then only the 1st bus master can be used (as ATN is using the 2nd)
+		i2cBusMaster = 0;
 	}
 }
 

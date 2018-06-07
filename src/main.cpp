@@ -45,7 +45,7 @@ extern "C"
 #include "sample.h"
 
 unsigned versionMajor = 1;
-unsigned versionMinor = 3;
+unsigned versionMinor = 4;
 
 // When the emulated CPU starts we execute the first million odd cycles in non-real-time (ie as fast as possible so the emulated 1541 becomes responsive to CBM-Browser asap)
 // During these cycles the CPU is executing the ROM self test routines (these do not need to be cycle accurate)
@@ -732,6 +732,8 @@ void emulator()
 			diskCaddy.Display();
 
 			inputMappings->directDiskSwapRequest = 0;
+			// Force an update on all the buttons now before we start emulation mode. 
+			IEC_Bus::ReadBrowseMode();
 
 			bool extraRAM = options.GetExtraRAM();
 			DataBusReadFn dataBusRead = extraRAM ? read6502ExtraRAM : read6502;
