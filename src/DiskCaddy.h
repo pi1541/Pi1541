@@ -35,16 +35,7 @@ public:
 
 	void SetScreen(Screen* screen, ScreenBase* screenLCD) { this->screen = screen; this->screenLCD = screenLCD; }
 
-	void Empty()
-	{
-		int index;
-		for (index = 0; index < (int)disks.size(); ++index)
-		{
-			disks[index].Close();
-		}
-		disks.clear();
-		selectedIndex = 0;
-	}
+	void Empty();
 
 	bool Insert(const FILINFO* fileInfo, bool readOnly);
 

@@ -113,6 +113,8 @@ public:
 
 	unsigned LastTrackUsed();
 
+	bool IsDirty() const { return dirty; }
+
 	static unsigned char readBuffer[READBUFFER_SIZE];
 
 private:

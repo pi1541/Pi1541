@@ -32,6 +32,69 @@ static char buffer[256] = { 0 };
 static u32 white = RGBA(0xff, 0xff, 0xff, 0xff);
 static u32 red = RGBA(0xff, 0, 0, 0xff);
 
+void DiskCaddy::Empty()
+{
+	int x;
+	int y;
+	int index;
+	for (index = 0; index < (int)disks.size(); ++index)
+	{
+		if (disks[index].IsDirty())
+		{
+			if (screen)
+			{
+				x = screen->ScaleX(screenPosXCaddySelections);
+				y = screen->ScaleY(screenPosYCaddySelections);
+
+				snprintf(buffer, 256, "Saving %s\r\n", disks[index].GetName());
+				screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+			}
+
+			if (screenLCD)
+			{
+				RGBA BkColour = RGBA(0, 0, 0, 0xFF);
+				screenLCD->Clear(BkColour);
+				x = 0;
+				y = 0;
+
+				snprintf(buffer, 256, "Saving");
+				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), BkColour);
+				y += 16;
+				snprintf(buffer, 256, "%s                ", disks[index].GetName());
+				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+				screenLCD->SwapBuffers();
+			}
+		}
+		disks[index].Close();
+	}
+	if (screen)
+	{
+		x = screen->ScaleX(screenPosXCaddySelections);
+		y = screen->ScaleY(screenPosYCaddySelections);
+
+		snprintf(buffer, 256, "Saving Complete             \r\n");
+		screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+	}
+
+	if (screenLCD)
+	{
+		RGBA BkColour = RGBA(0, 0, 0, 0xFF);
+		screenLCD->Clear(BkColour);
+		x = 0;
+		y = 0;
+
+		snprintf(buffer, 256, "Saving");
+		screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), BkColour);
+		y += 16;
+		snprintf(buffer, 256, "Complete                ");
+		screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+		screenLCD->SwapBuffers();
+	}
+
+	disks.clear();
+	selectedIndex = 0;
+}
+
 bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 {
 	int x;
