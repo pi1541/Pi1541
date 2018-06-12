@@ -76,6 +76,7 @@ public:
 	const char* GetLCDName() const { return LCDName; }
 
 	static unsigned GetDecimal(char* pString);
+	static float GetFloat(char* pString);
 
 private:
 	unsigned int deviceID;

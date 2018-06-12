@@ -17,6 +17,8 @@
 // along with Pi1541. If not, see <http://www.gnu.org/licenses/>.
 
 #include "options.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>
@@ -158,6 +160,13 @@ Options::Options(void)
 		if ((nValue = GetDecimal(pValue)) != INVALID_VALUE) \
 			Name = nValue; \
 	}
+#define ELSE_CHECK_FLOAT_OPTION(Name) \
+	else if (strcasecmp(pOption, #Name) == 0) \
+	{ \
+		unsigned nValue = 0; \
+		if ((nValue = GetFloat(pValue)) != INVALID_VALUE) \
+			Name = nValue; \
+	}
 
 void Options::Process(char* buffer)
 {
@@ -265,6 +274,14 @@ unsigned Options::GetDecimal(char* pString)
 	}
 
 	return nResult;
+}
+
+float Options::GetFloat(char* pString)
+{
+	if (pString == 0 || *pString == '\0')
+		return 0;
+
+	return atof(pString);
 }
 
 const char* Options::GetRomName(int index) const
