@@ -867,8 +867,8 @@ void emulator()
 					//	- will write back all changed/dirty/written to disk images now
 					//		- TDOO: need to display the image names as they write back
 					//	- pass in a call back function?
-					diskCaddy.Empty();
-					IEC_Bus::WaitMicroSeconds(2 * 1000000);
+					if (diskCaddy.Empty())
+						IEC_Bus::WaitMicroSeconds(2 * 1000000);
 
 					fileBrowser->ClearSelections();
 					fileBrowser->RefeshDisplay(); // Just redisplay the current folder.

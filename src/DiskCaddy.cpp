@@ -32,7 +32,7 @@ static char buffer[256] = { 0 };
 static u32 white = RGBA(0xff, 0xff, 0xff, 0xff);
 static u32 red = RGBA(0xff, 0, 0, 0xff);
 
-void DiskCaddy::Empty()
+bool DiskCaddy::Empty()
 {
 	int x;
 	int y;
@@ -100,6 +100,7 @@ void DiskCaddy::Empty()
 
 	disks.clear();
 	selectedIndex = 0;
+	return anyDirty;
 }
 
 bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)

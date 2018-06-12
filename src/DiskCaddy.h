@@ -35,7 +35,7 @@ public:
 
 	void SetScreen(Screen* screen, ScreenBase* screenLCD) { this->screen = screen; this->screenLCD = screenLCD; }
 
-	void Empty();
+	bool Empty();
 
 	bool Insert(const FILINFO* fileInfo, bool readOnly);
 
