@@ -37,10 +37,13 @@ void DiskCaddy::Empty()
 	int x;
 	int y;
 	int index;
+	bool anyDirty = false;
+
 	for (index = 0; index < (int)disks.size(); ++index)
 	{
 		if (disks[index].IsDirty())
 		{
+			anyDirty = true;
 			if (screen)
 			{
 				x = screen->ScaleX(screenPosXCaddySelections);
@@ -67,28 +70,32 @@ void DiskCaddy::Empty()
 		}
 		disks[index].Close();
 	}
-	if (screen)
+
+	if (anyDirty)
 	{
-		x = screen->ScaleX(screenPosXCaddySelections);
-		y = screen->ScaleY(screenPosYCaddySelections);
+		if (screen)
+		{
+			x = screen->ScaleX(screenPosXCaddySelections);
+			y = screen->ScaleY(screenPosYCaddySelections);
 
-		snprintf(buffer, 256, "Saving Complete             \r\n");
-		screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
-	}
+			snprintf(buffer, 256, "Saving Complete             \r\n");
+			screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+		}
 
-	if (screenLCD)
-	{
-		RGBA BkColour = RGBA(0, 0, 0, 0xFF);
-		screenLCD->Clear(BkColour);
-		x = 0;
-		y = 0;
+		if (screenLCD)
+		{
+			RGBA BkColour = RGBA(0, 0, 0, 0xFF);
+			screenLCD->Clear(BkColour);
+			x = 0;
+			y = 0;
 
-		snprintf(buffer, 256, "Saving");
-		screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), BkColour);
-		y += 16;
-		snprintf(buffer, 256, "Complete                ");
-		screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
-		screenLCD->SwapBuffers();
+			snprintf(buffer, 256, "Saving");
+			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), BkColour);
+			y += 16;
+			snprintf(buffer, 256, "Complete                ");
+			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+			screenLCD->SwapBuffers();
+		}
 	}
 
 	disks.clear();
