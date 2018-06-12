@@ -719,10 +719,8 @@ void emulator()
 			unsigned caddyIndex;
 			int headSoundCounter = 0;
 			int headSoundFreqCounter = 0;
-			//const int headSoundFreq = 3333;	// 300Hz = 1/300 * 10^6;
-			//const int headSoundFreq = 1666;	// 600Hz = 1/600 * 10^6;
 //			const int headSoundFreq = 833;	// 1200Hz = 1/1200 * 10^6;
-			const int headSoundFreq = options.SoundOnGPIOFreq();	// 1200Hz = 1/1200 * 10^6;
+			const int headSoundFreq = 1000000 / options.SoundOnGPIOFreq();	// 1200Hz = 1/1200 * 10^6;
 			unsigned char oldHeadDir;
 
 			unsigned numberOfImages = diskCaddy.GetNumberOfImages();
@@ -802,7 +800,7 @@ void emulator()
 						oldHeadDir = headDir;
 						if (options.SoundOnGPIO())
 						{
-							headSoundCounter = options.SoundOnGPIOCounter();
+							headSoundCounter = 1000 * options.SoundOnGPIODuration();
 							headSoundFreqCounter = headSoundFreq;
 						}
 						else

@@ -58,7 +58,7 @@ public:
 	inline unsigned int QuickBoot() const { return quickBoot; }
 	inline unsigned int DisplayPNGIcons() const { return displayPNGIcons; }
 	inline unsigned int SoundOnGPIO() const { return soundOnGPIO; }
-	inline unsigned int SoundOnGPIOCounter() const { return soundOnGPIOCounter; }
+	inline unsigned int SoundOnGPIODuration() const { return soundOnGPIODuration; }
 	inline unsigned int SoundOnGPIOFreq() const { return soundOnGPIOFreq; }
 	inline unsigned int SplitIECLines() const { return splitIECLines; }
 	inline unsigned int InvertIECInputs() const { return invertIECInputs; }
@@ -90,7 +90,7 @@ private:
 	unsigned int quickBoot;
 	unsigned int displayPNGIcons;
 	unsigned int soundOnGPIO;
-	unsigned int soundOnGPIOCounter;
+	unsigned int soundOnGPIODuration;
 	unsigned int soundOnGPIOFreq;
 	unsigned int invertIECInputs;
 	unsigned int invertIECOutputs;
