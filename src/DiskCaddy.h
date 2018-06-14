@@ -55,7 +55,9 @@ public:
 
 	DiskImage* PrevDisk()
 	{
-		selectedIndex = (selectedIndex - 1) % (u32)disks.size();
+		--selectedIndex;
+		if ((int)selectedIndex < 0)
+			selectedIndex += (u32)disks.size();
 		return GetCurrentDisk();
 	}
 
