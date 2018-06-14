@@ -116,9 +116,15 @@ void IEC_Bus::ReadEmulationMode(void)
 	IOPort* portB = 0;
 	unsigned gplev0 = read32(ARM_GPIO_GPLEV0);
 
-	UpdateButton(emulationModeCheckButtonIndex, gplev0);
-	emulationModeCheckButtonIndex++;
-	emulationModeCheckButtonIndex %= buttonCount;
+	int buttonIndex;
+	for (buttonIndex = 0; buttonIndex < 3; ++buttonIndex)
+	{
+		UpdateButton(buttonIndex, gplev0);
+	}
+	// Doing it this way screws with the debounce counters.
+	//UpdateButton(emulationModeCheckButtonIndex, gplev0);
+	//emulationModeCheckButtonIndex++;
+	//emulationModeCheckButtonIndex %= buttonCount;
 
 	portB = VIA->GetPortB();
 
