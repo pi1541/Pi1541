@@ -531,10 +531,10 @@ public:
 		invertIECInputs = value;
 		if (value)
 		{
-			PI_Atn = ~PI_Atn;
-			PI_Data = ~PI_Data;
-			PI_Clock = ~PI_Clock;
-			PI_Reset = ~PI_Reset;
+			PI_Atn = !PI_Atn;
+			PI_Data = !PI_Data;
+			PI_Clock = !PI_Clock;
+			PI_Reset = !PI_Reset;
 		}
 	}
 

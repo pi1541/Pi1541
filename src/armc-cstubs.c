@@ -87,6 +87,17 @@ void _exit(int status)
   }
 }
 
+void _fini(int status)
+{
+  /* Stop the compiler complaining about unused variables by "using" it */
+  (void) status;
+
+  while (1)
+  {
+    /* TRAP HERE */
+  }
+}
+
 /* There's currently no implementation of a file system because there's no
  file system! */
 int _close(int file)
