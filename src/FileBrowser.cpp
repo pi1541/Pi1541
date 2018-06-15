@@ -892,10 +892,11 @@ void FileBrowser::ShowDeviceAndROM()
 	char buffer[256];
 	u32 textColour = RGBA(0, 0, 0, 0xff);
 	u32 bgColour = RGBA(0xff, 0xff, 0xff, 0xff);
-	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y);
+	u32 x = 0; // 43 * 8
+	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y - 20);
 
-	snprintf(buffer, 256, "Device %d %s               \r\n", deviceID, roms->ROMNames[roms->currentROMIndex]);
-	screenMain->PrintText(false, 43 * 8, y, buffer, textColour, bgColour);
+	snprintf(buffer, 256, "Device %d %s\r\n", deviceID, roms->ROMNames[roms->currentROMIndex]);
+	screenMain->PrintText(false, x, y, buffer, textColour, bgColour);
 }
 
 void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForIcon)
