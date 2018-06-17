@@ -13,18 +13,25 @@ Commodore Plus4
 
 See www.pi1541.com for SD card and hardware configurations.
 
-Building
---------
+Toolchain Installation
+----------------------
 
 On Windows use GNU Tools ARM Embedded tool chain 5.4.1 using make.
 https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads/5-2016-q2-update
 
 On dpkg based linux systems install:
-binutils-arm-none-eabi
-gcc-arm-none-eabi
-libnewlib-arm-none-eabi
-libstdc++-arm-none-eabi-newlib
+(Tested on osmc/rpi3)
+```
+apt-get install binutils-arm-none-eabi gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+```
 
+On RHEL/Centos/Fedora systems follow the guide at:
+https://web1.foxhollow.ca/?menu=centos7arm
+(Tested on Centos7/x64 with GCC7)
+https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads/7-2017-q4-major
+
+Building
+--------
 ```
 make
 ```

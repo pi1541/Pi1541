@@ -56,7 +56,7 @@ void _cstartup( unsigned int r0, unsigned int r1, unsigned int r2 )
     while( bss < bss_end )
         *bss++ = 0;
 
-	__libc_init_array();
+    __libc_init_array();
 
     /* We should never return from main ... */
     kernel_main( r0, r1, r2 );

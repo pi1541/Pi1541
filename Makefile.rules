@@ -29,7 +29,7 @@ $(error RASPPI must be one of: 0, 1, 2, 3)
 endif
 
 AFLAGS	 += $(ARCH)
-CFLAGS	 += $(ARCH) -Wall -Wno-psabi -fsigned-char -fno-builtin -Ofast -DNDEBUG
+CFLAGS	 += $(ARCH) -Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-psabi -fsigned-char -fno-builtin -Ofast -DNDEBUG
 CPPFLAGS := $(CFLAGS) $(CPPFLAGS) -fno-exceptions -fno-rtti -std=c++0x -Wno-write-strings
 CFLAGS	 += -fno-delete-null-pointer-checks -fdata-sections -ffunction-sections -u _printf_float -std=gnu99
 
