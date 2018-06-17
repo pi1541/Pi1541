@@ -1170,6 +1170,7 @@ extern "C"
 		{
 			screenLCD = new ScreenLCD();
 			screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress);
+			IEC_Bus::WaitMicroSeconds(3 * 1000000);
 		}
 		else
 		{

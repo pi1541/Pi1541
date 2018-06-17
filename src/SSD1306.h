@@ -83,6 +83,8 @@ public:
 	void ClearScreen();
 	void RefreshScreen();
 	void RefreshRows(u8 start, u8 amountOfRows);
+	void PlotPixel(int x, int y, bool c);
+	void PlotImage(const unsigned char * source);
 
 protected:
 	void SendCommand(u8 command);
