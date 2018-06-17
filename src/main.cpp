@@ -970,8 +970,7 @@ static void DisplayLogo()
 
 	screen.PlotImage((u32*)image, 0, 0, w, h);
 
-	if (versionMinor < 10) snprintf(tempBuffer, tempBufferSize, "V%d.0%d", versionMajor, versionMinor);
-	else snprintf(tempBuffer, tempBufferSize, "V%d.%d", versionMajor, versionMinor);
+	snprintf(tempBuffer, tempBufferSize, "V%d.%02d", versionMajor, versionMinor);
 	screen.PrintText(false, 20, 180, tempBuffer, FileBrowser::Colour(VIC2_COLOUR_INDEX_BLUE));
 }
 
