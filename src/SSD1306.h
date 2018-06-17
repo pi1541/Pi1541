@@ -65,7 +65,11 @@ extern "C"
 //1111111					|							 1
 //0000000					|							 0
 //________________________________________________________
-#define SSD1306_128x64_BYTES ((128 * 64) / 8)
+
+#define SSD1306_LCDWIDTH 128
+#define SSD1306_LCDHEIGHT 64
+
+#define SSD1306_128x64_BYTES ((SSD1306_LCDWIDTH * SSD1306_LCDHEIGHT) / 8)
 
 class SSD1306
 {
@@ -83,6 +87,8 @@ public:
 	void ClearScreen();
 	void RefreshScreen();
 	void RefreshRows(u8 start, u8 amountOfRows);
+	void PlotPixel(int x, int y, int c);
+	void PlotImage(const unsigned char * source);
 
 protected:
 	void SendCommand(u8 command);

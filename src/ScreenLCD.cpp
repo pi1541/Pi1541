@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "debug.h"
+#include "ssd_logo.h"
 
 void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int BSCMaster, int LCDAddress)
 {
@@ -40,7 +41,10 @@ void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int B
 
 	ssd1306 = new SSD1306(BSCMaster, LCDAddress);
 	ssd1306->DisplayOn();
-	ssd1306->Plottext(5, 1, "Pi1541", false);
+
+	ssd1306->PlotImage(logo_ssd);
+	ssd1306->Plottext(5, 0, "Pi1541", false);
+
 	ssd1306->RefreshScreen();
 
 	opened = true;
