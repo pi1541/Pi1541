@@ -1025,7 +1025,9 @@ static void CheckOptions()
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", options.InvertIECOutputs());
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		snprintf(tempBuffer, tempBufferSize, "i2cBusAddress = %d\r\n", options.I2CLcdAddress());
+		snprintf(tempBuffer, tempBufferSize, "i2cLcdAddress = %d\r\n", options.I2CLcdAddress());
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		snprintf(tempBuffer, tempBufferSize, "i2cLcdFlip = %d\r\n", options.I2CLcdFlip());
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		IEC_Bus::WaitMicroSeconds(5 * 1000000);
 	}
@@ -1166,10 +1168,11 @@ extern "C"
 
 		int i2cBusMaster = options.I2CBusMaster();
 		int i2cLcdAddress = options.I2CLcdAddress();
+		int i2cLcdFlip = options.I2CLcdFlip();
 		if (strcasecmp(options.GetLCDName(), "ssd1306_128x64") == 0)
 		{
 			screenLCD = new ScreenLCD();
-			screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress);
+			screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip);
 		}
 		else
 		{

@@ -57,7 +57,7 @@ extern "C"
 
 unsigned char frame[SSD1306_128x64_BYTES];
 
-SSD1306::SSD1306(int BSCMaster, u8 address)
+SSD1306::SSD1306(int BSCMaster, u8 address, int flip)
 	: BSCMaster(BSCMaster)
 	, address(address)
 {
@@ -73,9 +73,13 @@ SSD1306::SSD1306(int BSCMaster, u8 address)
 
 	SendCommand(SSD1306_CMD_SET_START_LINE | 0x0);
 
-	SendCommand(0xA1);  // Set Segment Re-Map
-
-	SendCommand(0xC8);  // Set COM Output Scan Direction
+	if (flip) {
+		SendCommand(0xA0);  // No Segment Re-Map
+		SendCommand(0xC0);  // No COM Output Scan Direction
+	} else {
+		SendCommand(0xA1);  // Set Segment Re-Map
+		SendCommand(0xC8);  // Set COM Output Scan Direction
+	}
 
 	SendCommand(SSD1306_CMD_SET_COM_PINS);	// Layout and direction
 	SendCommand(0x12);

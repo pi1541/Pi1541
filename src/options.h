@@ -70,6 +70,7 @@ public:
 
 	inline unsigned int I2CBusMaster() const { return i2cBusMaster; }
 	inline unsigned int I2CLcdAddress() const { return i2cLcdAddress; }
+	inline unsigned int I2CLcdFlip() const { return i2cLcdFlip; }
 
 	// Page up and down will jump a different amount based on the maximum number rows displayed.
 	// Perhaps we should use some keyboard modifier to the the other screen?
@@ -103,6 +104,7 @@ private:
 
 	unsigned int i2cBusMaster;
 	unsigned int i2cLcdAddress;
+	unsigned int i2cLcdFlip;
 
 	unsigned int keyboardBrowseLCDScreen;
 

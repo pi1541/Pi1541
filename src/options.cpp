@@ -141,6 +141,7 @@ Options::Options(void)
 	, screenHeight(768)
 	, i2cBusMaster(1)
 	, i2cLcdAddress(0x3C)
+	, i2cLcdFlip(0)
 	, keyboardBrowseLCDScreen(0)
 {
 	strcpy(ROMFontName, "chargen");
@@ -204,6 +205,7 @@ void Options::Process(char* buffer)
 		ELSE_CHECK_DECIMAL_OPTION(screenHeight)
 		ELSE_CHECK_DECIMAL_OPTION(i2cBusMaster)
 		ELSE_CHECK_DECIMAL_OPTION(i2cLcdAddress)
+		ELSE_CHECK_DECIMAL_OPTION(i2cLcdFlip)
 		ELSE_CHECK_DECIMAL_OPTION(keyboardBrowseLCDScreen)
 		else if ((strcasecmp(pOption, "StarFileName") == 0))
 		{
