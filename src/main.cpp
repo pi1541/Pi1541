@@ -765,8 +765,6 @@ void emulator()
 								// Exit full emulation back to IEC commands level simulation.
 								snoopIndex = 0;
 								emulating = false;
-								IEC_Bus::Reset(); // TO CHECK - remove this
-								break;
 							}
 						}
 						else
@@ -860,7 +858,7 @@ void emulator()
 				}
 
 				bool reset = IEC_Bus::IsReset();
-				if (reset || exitEmulation)
+				if (!emulating || reset || exitEmulation)
 				{
 					// Clearing the caddy now
 					//	- will write back all changed/dirty/written to disk images now
