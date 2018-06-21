@@ -57,9 +57,10 @@ extern "C"
 
 unsigned char frame[SSD1306_128x64_BYTES];
 
-SSD1306::SSD1306(int BSCMaster, u8 address, int flip)
+SSD1306::SSD1306(int BSCMaster, u8 address, int flip, int type)
 	: BSCMaster(BSCMaster)
 	, address(address)
+	, type(type)
 {
 	RPI_I2CInit(BSCMaster, 1);
 

@@ -1167,10 +1167,18 @@ extern "C"
 		int i2cBusMaster = options.I2CBusMaster();
 		int i2cLcdAddress = options.I2CLcdAddress();
 		int i2cLcdFlip = options.I2CLcdFlip();
+		int i2cLcdOnBright = options.I2CLcdOnBright();
+		int i2cLcdDimBright = options.I2CLcdDimBright();
+		int i2cLcdDimTime = options.I2CLcdDimTime();
 		if (strcasecmp(options.GetLCDName(), "ssd1306_128x64") == 0)
 		{
 			screenLCD = new ScreenLCD();
-			screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip);
+			screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, 1306);
+		}
+		else if (strcasecmp(options.GetLCDName(), "sh1106_128x64") == 0)
+		{
+			screenLCD = new ScreenLCD();
+			screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, 1106);
 		}
 		else
 		{
