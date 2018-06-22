@@ -79,6 +79,7 @@ public:
 
 	void DisplayOn();
 	void DisplayOff();
+	void SetContrast(u8 value);
 
 	void ClearScreen();
 	void RefreshScreen();

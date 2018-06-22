@@ -222,6 +222,12 @@ void SSD1306::DisplayOff()
 	SendCommand(SSD1306_CMD_DISPLAY_OFF);
 }
 
+void SSD1306::SetContrast(u8 value)
+{
+	SendCommand(SSD1306_CMD_SET_CONTRAST_CONTROL);
+	SendCommand(value);
+}
+
 void SSD1306::Plottext(int x, int y, char* str, bool inverse)
 {
 	int i;

@@ -60,6 +60,11 @@ void ScreenLCD::Clear(RGBA colour)
 	ssd1306->ClearScreen();
 }
 
+void ScreenLCD::SetContrast(u8 value)
+{
+	ssd1306->SetContrast(value);
+}
+
 void ScreenLCD::WriteChar(bool petscii, u32 x, u32 y, unsigned char c, RGBA colour)
 {
 	if (opened)

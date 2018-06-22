@@ -71,8 +71,8 @@ public:
 	inline unsigned int I2CBusMaster() const { return i2cBusMaster; }
 	inline unsigned int I2CLcdAddress() const { return i2cLcdAddress; }
 	inline unsigned int I2CLcdFlip() const { return i2cLcdFlip; }
-	inline unsigned int I2CLcdOnBright() const { return i2cLcdOnBright; }
-	inline unsigned int I2CLcdDimBright() const { return i2cLcdDimBright; }
+	inline unsigned int I2CLcdOnContrast() const { return i2cLcdOnContrast; }
+	inline unsigned int I2CLcdDimContrast() const { return i2cLcdDimContrast; }
 	inline unsigned int I2CLcdDimTime() const { return i2cLcdDimTime; }
 
 	// Page up and down will jump a different amount based on the maximum number rows displayed.
@@ -108,8 +108,8 @@ private:
 	unsigned int i2cBusMaster;
 	unsigned int i2cLcdAddress;
 	unsigned int i2cLcdFlip;
-	unsigned int i2cLcdOnBright;
-	unsigned int i2cLcdDimBright;
+	unsigned int i2cLcdOnContrast = 127;
+	unsigned int i2cLcdDimContrast;
 	unsigned int i2cLcdDimTime;
 
 	unsigned int keyboardBrowseLCDScreen;

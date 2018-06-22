@@ -37,6 +37,8 @@ public:
 	void ClearArea(u32 x1, u32 y1, u32 x2, u32 y2, RGBA colour);
 	void Clear(RGBA colour);
 
+	void SetContrast(u8 value);
+
 	void ScrollArea(u32 x1, u32 y1, u32 x2, u32 y2);
 
 	void WriteChar(bool petscii, u32 x, u32 y, unsigned char c, RGBA colour);
