@@ -1028,6 +1028,8 @@ static void CheckOptions()
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		snprintf(tempBuffer, tempBufferSize, "i2cLcdFlip = %d\r\n", options.I2CLcdFlip());
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		snprintf(tempBuffer, tempBufferSize, "LCDName = %s\r\n", options.GetLCDName());
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		IEC_Bus::WaitMicroSeconds(5 * 1000000);
 	}
 

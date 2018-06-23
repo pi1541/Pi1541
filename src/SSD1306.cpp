@@ -108,8 +108,7 @@ SSD1306::SSD1306(int BSCMaster, u8 address, int flip, int type)
 	SendCommand(SSD1306_ENABLE_CHARGE_PUMP);	// Enable charge pump regulator
 	SendCommand(0x14);  // external = 0x10 internal = 0x14
 
-/*
-// only for page mode addressing 
+/* only for page mode addressing?  so can be deleted
 	SendCommand(0x00);  // Set Lower Column Start Address
 	SendCommand(0x10);  // Set Higher Column Start Address
 	SendCommand(0xB0);  // Set Page Start Address for Page Addressing Mode
@@ -118,6 +117,9 @@ SSD1306::SSD1306(int BSCMaster, u8 address, int flip, int type)
 	SendCommand(SSD1306_CMD_SET_MEMORY_ADDRESSING_MODE);  // Set Memory Addressing Mode
 	SendCommand(0x00);	// 00 - Horizontal Addressing Mode
 
+	Home();
+
+/* replaced by Home
 	SendCommand(SSD1306_CMD_SET_COLUMN_ADDRESS);  // 0x21 Set Column Address (only for horizontal or vertical mode)
 	SendCommand(0x00);	// start 0
 	SendCommand(0x7F);	// end 127
@@ -125,6 +127,7 @@ SSD1306::SSD1306(int BSCMaster, u8 address, int flip, int type)
 	SendCommand(SSD1306_CMD_SET_PAGE_ADDRESS);  // 0x22
 	SendCommand(0x00);	// start 0
 	SendCommand(0x07);	// end 7 (so 8 vertical bytes == 64 row display)
+*/
 
 	SendCommand(SSD1306_CMD_DEACTIVATE_SCROLL);
 }
@@ -151,12 +154,7 @@ void SSD1306::SendData(u8 data)
 
 void SSD1306::Home()
 {
-	SendCommand(0x21); // column range
-	SendCommand(0x00); // set start to 0
-	SendCommand(0x7F); // set end to 0x7F
-	SendCommand(0x22); // row range
-	SendCommand(0x00); // set start to 0
-	SendCommand(0x07); // set end to 0x07
+	MoveCursorByte(0, 0);
 }
 
 void SSD1306::MoveCursorByte(u8 row, u8 col)
@@ -164,12 +162,18 @@ void SSD1306::MoveCursorByte(u8 row, u8 col)
 	if (col > 127) { col = 127; }
 	if (row > 7) { row = 7; }
 
+	if (type == 1106)
+		SetDisplayWindow(col+2, 129, row, 7);	// sh1106 has 132x64 ram, display is centreed
+	else
+		SetDisplayWindow(col+0, 127, row, 7);
+/*
 	SendCommand(0x21); // set column
 	SendCommand(col);  // start = col
 	SendCommand(0x7F); // end = col max
 	SendCommand(0x22); // set row
 	SendCommand(row);  // start = row
 	SendCommand(0x07); // end = row max
+*/
 }
 
 void SSD1306::MoveCursorCharacter(u8 row, u8 col)
@@ -233,6 +237,17 @@ void SSD1306::SetVCOMDeselect(u8 value)
 {
 	SendCommand(SSD1306_CMD_SET_VCOMH_DESELECT_LEVEL);
 	SendCommand( (value & 7) << 4 );
+}
+
+void SSD1306::SetDisplayWindow(u8 x1, u8 x2, u8 y1, u8 y2)
+{
+	SendCommand(SSD1306_CMD_SET_COLUMN_ADDRESS);  // 0x21 Set Column Address (only for horizontal or vertical mode)
+	SendCommand(x1);	// start 0
+	SendCommand(x2);	// end 127
+
+	SendCommand(SSD1306_CMD_SET_PAGE_ADDRESS);  // 0x22
+	SendCommand(y1);	// start 0
+	SendCommand(y2);	// end 7 (so 8 vertical bytes == 64 row display)
 }
 
 void SSD1306::Plottext(int x, int y, char* str, bool inverse)
