@@ -343,6 +343,21 @@ void InitialiseHardware()
 	RPI_PropertyProcess();
 }
 
+void InitialiseLCD()
+{
+	int i2cBusMaster = options.I2CBusMaster();
+	int i2cLcdAddress = options.I2CLcdAddress();
+	int i2cLcdFlip = options.I2CLcdFlip();
+	if (strcasecmp(options.GetLCDName(), "ssd1306_128x64") == 0)
+	{
+		screenLCD = new ScreenLCD();
+		screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip);
+	}
+	else
+	{
+	}
+}
+
 //void UpdateUartControls(bool refreshStatusDisplay, bool LED, bool Motor, bool ATN, bool DATA, bool CLOCK, u32 Track, u32 romIndex)
 //{
 //	//InputMappings* inputMappings = InputMappings::Instance();
@@ -994,6 +1009,25 @@ static void LoadOptions()
 	}
 }
 
+void DisplayOptions(int y_pos)
+{
+	// print confirmation of parsed options
+	snprintf(tempBuffer, tempBufferSize, "ignoreReset = %d\r\n", options.IgnoreReset());
+	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "RAMBOard = %d\r\n", options.GetRAMBOard());
+	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "splitIECLines = %d\r\n", options.SplitIECLines());
+	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "invertIECInputs = %d\r\n", options.InvertIECInputs());
+	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", options.InvertIECOutputs());
+	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "i2cLcdAddress = %d\r\n", options.I2CLcdAddress());
+	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "i2cLcdFlip = %d\r\n", options.I2CLcdFlip());
+	screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+}
+
 static void CheckOptions()
 {
 	FIL fp;
@@ -1007,28 +1041,6 @@ static void CheckOptions()
 
 	deviceID = (u8)options.GetDeviceID();
 	DEBUG_LOG("DeviceID = %d\r\n", deviceID);
-
-
-	// print confirmation of parsed options
-	if (0) {
-		screen.Clear(COLOUR_BLACK);
-		int y_pos = 200;
-		snprintf(tempBuffer, tempBufferSize, "ignoreReset = %d\r\n", options.IgnoreReset());
-		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		snprintf(tempBuffer, tempBufferSize, "RAMBOard = %d\r\n", options.GetRAMBOard());
-		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		snprintf(tempBuffer, tempBufferSize, "splitIECLines = %d\r\n", options.SplitIECLines());
-		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		snprintf(tempBuffer, tempBufferSize, "invertIECInputs = %d\r\n", options.InvertIECInputs());
-		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", options.InvertIECOutputs());
-		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		snprintf(tempBuffer, tempBufferSize, "i2cLcdAddress = %d\r\n", options.I2CLcdAddress());
-		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		snprintf(tempBuffer, tempBufferSize, "i2cLcdFlip = %d\r\n", options.I2CLcdFlip());
-		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		IEC_Bus::WaitMicroSeconds(5 * 1000000);
-	}
 
 	ROMName = options.GetRomFontName();
 	if (ROMName)
@@ -1129,6 +1141,9 @@ extern "C"
 		write32(ARM_GPIO_GPCLR0, 0xFFFFFFFF);
 
 		DisplayLogo();
+
+		InitialiseLCD();
+
 		int y_pos = 184;
 		snprintf(tempBuffer, tempBufferSize, "Copyright(C) 2018 Stephen White");
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
@@ -1137,6 +1152,8 @@ extern "C"
 		snprintf(tempBuffer, tempBufferSize, "This is free software, and you are welcome to redistribute it.");
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 
+		if (options.ShowOptions())
+			DisplayOptions(y_pos+32);
 
 		if (!options.QuickBoot())
 			IEC_Bus::WaitMicroSeconds(3 * 1000000);
@@ -1162,19 +1179,6 @@ extern "C"
 
 
 		CheckOptions();
-
-
-		int i2cBusMaster = options.I2CBusMaster();
-		int i2cLcdAddress = options.I2CLcdAddress();
-		int i2cLcdFlip = options.I2CLcdFlip();
-		if (strcasecmp(options.GetLCDName(), "ssd1306_128x64") == 0)
-		{
-			screenLCD = new ScreenLCD();
-			screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip);
-		}
-		else
-		{
-		}
 
 		IEC_Bus::SetSplitIECLines(options.SplitIECLines());
 		IEC_Bus::SetInvertIECInputs(options.InvertIECInputs());
