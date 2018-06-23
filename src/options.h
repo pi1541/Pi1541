@@ -56,6 +56,7 @@ public:
 
 	inline unsigned int GraphIEC() const { return graphIEC; }
 	inline unsigned int QuickBoot() const { return quickBoot; }
+	inline unsigned int ShowOptions() const { return showOptions; }
 	inline unsigned int DisplayPNGIcons() const { return displayPNGIcons; }
 	inline unsigned int SoundOnGPIO() const { return soundOnGPIO; }
 	inline unsigned int SoundOnGPIODuration() const { return soundOnGPIODuration; }
@@ -90,6 +91,7 @@ private:
 	unsigned int supportUARTInput;
 	unsigned int graphIEC;
 	unsigned int quickBoot;
+	unsigned int showOptions;
 	unsigned int displayPNGIcons;
 	unsigned int soundOnGPIO;
 	unsigned int soundOnGPIODuration;
