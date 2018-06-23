@@ -80,6 +80,7 @@ public:
 	void DisplayOn();
 	void DisplayOff();
 	void SetContrast(u8 value);
+	void SetVCOMDeselect(u8 value);
 
 	void ClearScreen();
 	void RefreshScreen();

@@ -28,6 +28,7 @@ extern "C"
 
 #define SSD1306_CMD_SET_MEMORY_ADDRESSING_MODE 0x20
 
+#define SSD1306_CMD_SET_COLUMN_ADDRESS 0x21
 #define SSD1306_CMD_SET_PAGE_ADDRESS 0x22
 #define SSD1306_CMD_DEACTIVATE_SCROLL 0x2E
 #define SSD1306_CMD_ACTIVATE_SCROLL 0x2F
@@ -65,24 +66,24 @@ SSD1306::SSD1306(int BSCMaster, u8 address, int flip, int type)
 	RPI_I2CInit(BSCMaster, 1);
 
 	// SSD1306 data sheet configuration flow
-	SendCommand(SSD1306_CMD_DISPLAY_OFF);
-	SendCommand(SSD1306_CMD_MULTIPLEX_RATIO);
+	SendCommand(SSD1306_CMD_DISPLAY_OFF);	// 0xAE
+	SendCommand(SSD1306_CMD_MULTIPLEX_RATIO);  // 0xA8
 	SendCommand(0x3F);	// SSD1306_LCDHEIGHT - 1
 
-	SendCommand(SSD1306_CMD_SET_DISPLAY_OFFSET);
+	SendCommand(SSD1306_CMD_SET_DISPLAY_OFFSET);  // 0xD3 Vertical scroll position
 	SendCommand(0x00);  // no Offset
 
-	SendCommand(SSD1306_CMD_SET_START_LINE | 0x0);
+	SendCommand(SSD1306_CMD_SET_START_LINE | 0x0);  // 0x40
 
 	if (flip) {
 		SendCommand(0xA0);  // No Segment Re-Map
 		SendCommand(0xC0);  // No COM Output Scan Direction
 	} else {
-		SendCommand(0xA1);  // Set Segment Re-Map
-		SendCommand(0xC8);  // Set COM Output Scan Direction
+		SendCommand(0xA1);  // Set Segment Re-Map (horizontal flip)
+		SendCommand(0xC8);  // Set COM Output Scan Direction (vertical flip)
 	}
 
-	SendCommand(SSD1306_CMD_SET_COM_PINS);	// Layout and direction
+	SendCommand(SSD1306_CMD_SET_COM_PINS);	// 0xDA Layout and direction
 	SendCommand(0x12);
 
 	SendCommand(SSD1306_CMD_SET_CONTRAST_CONTROL);
@@ -90,11 +91,12 @@ SSD1306::SSD1306(int BSCMaster, u8 address, int flip, int type)
 
 	SendCommand(SSD1306_CMD_ENTIRE_DISPLAY_ON);
 
-	SendCommand(SSD1306_CMD_NORMAL_DISPLAY);
-	SendCommand(0xD5);
-	SendCommand(0x80);
+	SendCommand(SSD1306_CMD_NORMAL_DISPLAY);  // 0xA6 = non inverted
 
-	SendCommand(SSD1306_CMD_SET_PRE_CHARGE_PERIOD);
+//	SendCommand(0xD5);  // CLOCK_DIVIDER_FREQ
+//	SendCommand(0x80);  // 7:4 oscillator f, 3:0 divider
+
+	SendCommand(SSD1306_CMD_SET_PRE_CHARGE_PERIOD);  // 0xD9
 	SendCommand(0xF1);
 
 	SendCommand(SSD1306_CMD_SET_VCOMH_DESELECT_LEVEL);
@@ -106,25 +108,23 @@ SSD1306::SSD1306(int BSCMaster, u8 address, int flip, int type)
 	SendCommand(SSD1306_ENABLE_CHARGE_PUMP);	// Enable charge pump regulator
 	SendCommand(0x14);  // external = 0x10 internal = 0x14
 
-
-
-
+/*
+// only for page mode addressing 
 	SendCommand(0x00);  // Set Lower Column Start Address
-
 	SendCommand(0x10);  // Set Higher Column Start Address
-
 	SendCommand(0xB0);  // Set Page Start Address for Page Addressing Mode
+*/
 
 	SendCommand(SSD1306_CMD_SET_MEMORY_ADDRESSING_MODE);  // Set Memory Addressing Mode
 	SendCommand(0x00);	// 00 - Horizontal Addressing Mode
 
-	SendCommand(0x21);  // Set Column Address (only for horizontal or vertical mode)
-	SendCommand(0x00);
-	SendCommand(0x7F);
+	SendCommand(SSD1306_CMD_SET_COLUMN_ADDRESS);  // 0x21 Set Column Address (only for horizontal or vertical mode)
+	SendCommand(0x00);	// start 0
+	SendCommand(0x7F);	// end 127
 
-	SendCommand(SSD1306_CMD_SET_PAGE_ADDRESS);
-	SendCommand(0x00);
-	SendCommand(0x07);
+	SendCommand(SSD1306_CMD_SET_PAGE_ADDRESS);  // 0x22
+	SendCommand(0x00);	// start 0
+	SendCommand(0x07);	// end 7 (so 8 vertical bytes == 64 row display)
 
 	SendCommand(SSD1306_CMD_DEACTIVATE_SCROLL);
 }
@@ -226,6 +226,13 @@ void SSD1306::SetContrast(u8 value)
 {
 	SendCommand(SSD1306_CMD_SET_CONTRAST_CONTROL);
 	SendCommand(value);
+	SetVCOMDeselect( value >> 5);
+}
+
+void SSD1306::SetVCOMDeselect(u8 value)
+{
+	SendCommand(SSD1306_CMD_SET_VCOMH_DESELECT_LEVEL);
+	SendCommand( (value & 7) << 4 );
 }
 
 void SSD1306::Plottext(int x, int y, char* str, bool inverse)

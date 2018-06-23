@@ -496,7 +496,7 @@ void UpdateScreen()
 			if (screenLCD)
 			{
 				screenLCD->PrintText(false, 0, 0, tempBuffer, RGBA(0xff, 0xff, 0xff, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
-//				screenLCD->SetContrast(3*track);
+//				screenLCD->SetContrast(255.0/79.0*track);
 				screenLCD->RefreshRows(0, 2);
 			}
 
