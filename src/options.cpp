@@ -145,6 +145,7 @@ Options::Options(void)
 	, i2cLcdFlip(0)
 	, keyboardBrowseLCDScreen(0)
 {
+	autoMountImageName[0] = 0;
 	strcpy(ROMFontName, "chargen");
 	starFileName[0] = 0;
 	ROMName[0] = 0;
@@ -185,6 +186,10 @@ void Options::Process(char* buffer)
 		if ((strcasecmp(pOption, "Font") == 0))
 		{
 			strncpy(ROMFontName, pValue, 255);
+		}
+		else if ((strcasecmp(pOption, "AutoMountImage") == 0))
+		{
+			strncpy(autoMountImageName, pValue, 255);
 		}
 		ELSE_CHECK_DECIMAL_OPTION(deviceID)
 		ELSE_CHECK_DECIMAL_OPTION(onResetChangeToStartingFolder)

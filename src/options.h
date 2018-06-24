@@ -46,6 +46,7 @@ public:
 
 	inline unsigned int GetDeviceID() const { return deviceID; }
 	inline unsigned int GetOnResetChangeToStartingFolder() const { return onResetChangeToStartingFolder; }
+	inline const char* GetAutoMountImageName() const { return autoMountImageName; }
 	inline const char* GetRomFontName() const { return ROMFontName; }
 	const char* GetRomName(int index) const;
 	inline const char* GetStarFileName() const { return starFileName; }
@@ -119,6 +120,7 @@ private:
 	char starFileName[256];
 	char LCDName[256];
 
+	char autoMountImageName[256];
 	char ROMFontName[256];
 	char ROMName[256];
 	char ROMNameSlot2[256];

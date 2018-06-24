@@ -593,6 +593,16 @@ static void SetVIAsDeviceID(u8 id)
 	if (id & 2) pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, true);
 }
 
+static void CheckAutoMountImage(bool CD_, FileBrowser* fileBrowser)
+{
+	if (CD_ == false)
+	{
+		const char* autoMountImageName = options.GetAutoMountImageName();
+		if (autoMountImageName[0] != 0)
+			fileBrowser->AutoSelectImage(autoMountImageName);
+	}
+}
+
 void emulator()
 {
 	bool oldLED = false;
@@ -603,6 +613,7 @@ void emulator()
 	bool selectedViaIECCommands = false;
 	InputMappings* inputMappings = InputMappings::Instance();
 	FileBrowser* fileBrowser;
+	bool CD_ = false;
 
 	roms.lastManualSelectedROMIndex = 0;
 
@@ -642,6 +653,8 @@ void emulator()
 			{
 				m_IEC_Commands.SimulateIECBegin();
 
+				CheckAutoMountImage(CD_, fileBrowser);
+
 				while (!emulating)
 				{
 					IEC_Commands::UpdateAction updateAction = m_IEC_Commands.SimulateIECUpdate();
@@ -653,10 +666,10 @@ void emulator()
 								fileBrowser->DisplayRoot();
 							IEC_Bus::Reset();
 							m_IEC_Commands.SimulateIECBegin();
+							CheckAutoMountImage(false, fileBrowser);
 							break;
 						case IEC_Commands::NONE:
 							{
-								//fileBrowser->AutoSelectTestImage();
 								fileBrowser->UpdateInput();
 
 								// Check selections made via FileBrowser
@@ -791,6 +804,7 @@ void emulator()
 								// Exit full emulation back to IEC commands level simulation.
 								snoopIndex = 0;
 								emulating = false;
+								CD_ = true;
 							}
 						}
 						else
@@ -902,6 +916,8 @@ void emulator()
 						fileBrowser->DisplayRoot();//m_IEC_Commands.ChangeToRoot(); // TO CHECK
 					emulating = false;
 					resetWhileEmulating = true;
+					if (reset || exitEmulation)
+						CD_ = false;
 					break;
 
 				}

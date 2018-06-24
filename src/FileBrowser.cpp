@@ -1079,7 +1079,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 	}
 }
 
-void FileBrowser::AutoSelectTestImage()
+void FileBrowser::AutoSelectImage(const char* image)
 {
 	FileBrowser::BrowsableList::Entry* current = 0;
 	int index;
@@ -1088,7 +1088,7 @@ void FileBrowser::AutoSelectTestImage()
 	for (index = 0; index < maxEntries; ++index)
 	{
 		current = &folder.entries[index];
-		if (strcmp(current->filImage.fname, "someimage.g64") == 0)
+		if (strcasecmp(current->filImage.fname, image) == 0)
 		{
 			break;
 		}

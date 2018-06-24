@@ -135,7 +135,7 @@ public:
 
 	FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, unsigned deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD);
 
-	void AutoSelectTestImage();
+	void AutoSelectImage(const char* image);
 	void DisplayRoot();
 	void UpdateInput();
 
