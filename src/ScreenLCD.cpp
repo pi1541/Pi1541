@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include "debug.h"
 
-void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int BSCMaster, int LCDAddress, int LCDFlip)
+void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int BSCMaster, int LCDAddress, int LCDFlip, int LCDType)
 {
 	bpp = 1;
 
@@ -38,7 +38,7 @@ void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int B
 	width = widthDesired;
 	height = heightDesired;
 
-	ssd1306 = new SSD1306(BSCMaster, LCDAddress, LCDFlip);
+	ssd1306 = new SSD1306(BSCMaster, LCDAddress, LCDFlip, LCDType);
 	ssd1306->DisplayOn();
 	ssd1306->Plottext(5, 1, "Pi1541", false);
 	ssd1306->RefreshScreen();
@@ -58,6 +58,11 @@ void ScreenLCD::ScrollArea(u32 x1, u32 y1, u32 x2, u32 y2)
 void ScreenLCD::Clear(RGBA colour)
 {
 	ssd1306->ClearScreen();
+}
+
+void ScreenLCD::SetContrast(u8 value)
+{
+	ssd1306->SetContrast(value);
 }
 
 void ScreenLCD::WriteChar(bool petscii, u32 x, u32 y, unsigned char c, RGBA colour)

@@ -496,7 +496,8 @@ void UpdateScreen()
 			if (screenLCD)
 			{
 				screenLCD->PrintText(false, 0, 0, tempBuffer, RGBA(0xff, 0xff, 0xff, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
-				screenLCD->RefreshRows(0, 2); //SwapBuffers();
+//				screenLCD->SetContrast(255.0/79.0*track);
+				screenLCD->RefreshRows(0, 2);
 			}
 
 		}
@@ -1027,6 +1028,8 @@ static void CheckOptions()
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		snprintf(tempBuffer, tempBufferSize, "i2cLcdFlip = %d\r\n", options.I2CLcdFlip());
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		snprintf(tempBuffer, tempBufferSize, "LCDName = %s\r\n", options.GetLCDName());
+		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		IEC_Bus::WaitMicroSeconds(5 * 1000000);
 	}
 
@@ -1167,10 +1170,20 @@ extern "C"
 		int i2cBusMaster = options.I2CBusMaster();
 		int i2cLcdAddress = options.I2CLcdAddress();
 		int i2cLcdFlip = options.I2CLcdFlip();
+		int i2cLcdOnContrast = options.I2CLcdOnContrast();
+		int i2cLcdDimContrast = options.I2CLcdDimContrast();
+		int i2cLcdDimTime = options.I2CLcdDimTime();
 		if (strcasecmp(options.GetLCDName(), "ssd1306_128x64") == 0)
 		{
 			screenLCD = new ScreenLCD();
-			screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip);
+			screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, 1306);
+			screenLCD->SetContrast(i2cLcdOnContrast);
+		}
+		else if (strcasecmp(options.GetLCDName(), "sh1106_128x64") == 0)
+		{
+			screenLCD = new ScreenLCD();
+			screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, 1106);
+			screenLCD->SetContrast(i2cLcdOnContrast);
 		}
 		else
 		{

@@ -72,17 +72,20 @@ class SSD1306
 public:
 	// 128x32 0x3C
 	// 128x64 0x3D or 0x3C (if SA0 is grounded)
-	SSD1306(int BSCMaster = 1, u8 address = 0x3C, int flip = 0);
+	SSD1306(int BSCMaster = 1, u8 address = 0x3C, int flip = 0, int type=1306);
 
 	void PlotCharacter(int x, int y, char ascii, bool inverse);
 	void Plottext(int x, int y, char* str, bool inverse);
 
 	void DisplayOn();
 	void DisplayOff();
+	void SetContrast(u8 value);
+	void SetVCOMDeselect(u8 value);
 
 	void ClearScreen();
 	void RefreshScreen();
 	void RefreshRows(u8 start, u8 amountOfRows);
+	void SetDisplayWindow(u8 x1, u8 y1, u8 x2, u8 y2);
 
 protected:
 	void SendCommand(u8 command);
@@ -96,5 +99,6 @@ protected:
 
 	int BSCMaster;
 	u8 address;
+	int type;
 };
 #endif
