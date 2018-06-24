@@ -296,3 +296,18 @@ void SSD1306::PlotCharacter(int x, int y, char c, bool inverse)
 	memcpy(frame + (y * 256) + (x * 8) + 128, b, 8);
 }
 
+void SSD1306::PlotPixel(int x, int y, int c)
+{
+	switch (c)
+	{
+		case 1:   frame[x+ (y/8)*SSD1306_LCDWIDTH] |=  (1 << (y&7)); break;
+		case 0:   frame[x+ (y/8)*SSD1306_LCDWIDTH] &= ~(1 << (y&7)); break;
+		case -1:  frame[x+ (y/8)*SSD1306_LCDWIDTH] ^=  (1 << (y&7)); break;
+	}
+}
+
+// expects source in ssd1306 native vertical byte format
+void SSD1306::PlotImage(const unsigned char * source)
+{
+	memcpy (frame, source, SSD1306_128x64_BYTES);
+}
