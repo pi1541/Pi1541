@@ -1,0 +1,54 @@
+// If you would like to change the dirve number then spcity it here (8 is the default)
+//deviceID = 9
+
+// If you are using the split line hardware option (ie Option B) then you need to specify this option
+//splitIECLines = 1
+// If you are using some type of hardware that requires the lines to be inverted then specify these options here
+//invertIECInputs = 1
+//If you are using a 7407
+//invertIECOutputs = 0
+
+// If you are using the Pi's composite video out then these options allow you to experiment with the display resolution
+//ScreenWidth = 512
+//ScreenHeight = 384
+
+// You can specify additional ROMS here (up to 10)
+// You can then use the number keys on the keyboard to change which on you would like to use (only in browse more and not in emulation mode)
+// .LST files can also specify one of these ROMS that will automatically selected when the LST file is loaded.
+//ROM2 = Jiffy.bin
+//ROM3 = d1541II
+
+// If using CBMFileBrowser then it is best to specify this option. When the computer resets the Pi will always revert back to the root folder ready to load CBMFileBrowser again.
+OnResetChangeToStartingFolder = 1
+
+// If you use FB64 (CBMFileBrowser) and want to use a fast loader cartridge (AR6, EFL, FC3) to load it then use this option to autmatically mount it. 
+//autoMountImage = fb.d64
+
+// If you would ever like to disable browse mode completely ypu can do so here
+//DisableSD2IECCommands = 1
+
+// This option displays the IEC bus activity on the bottom of the Pi's screen
+GraphIEC = 1
+
+// If you have hardware with a peizo buzzer (the type without a generator) then you can use this option to hear the head step
+//SoundOnGPIO = 1
+//soundOnGPIODuration = 1000 // Length of buzz in micro seconds
+//soundOnGPIOFreq = 1200 // Frequency of buzz in Hz
+
+// You can create 320x240 PNG files with the same name as your disk images. With this option turned on they will be displayed on the Pi's screen.
+//displayPNGIcons = 1
+
+// If you would like to specify what file will be loaded by LOAD"*" in browse mode then specify it here
+//starFileName = somefile
+
+// If you are using a LCD screen then specify it here
+//LCDName = ssd1306_128x64
+// If you are using a LCD screen and you would like PageUp and PageDown keys to work with it then specify this option
+//keyboardBrowseLCDScreen = 1
+
+// If you are using I2C LCD you can optionally change what pins it is connected to.
+// (defaults to 0 for non-split lines (Option A) or 1 for split lines (Option B))
+//i2cBusMaster = 0 //SDA - pin 27 SCL - pin 28
+//i2cBusMaster = 1 //SDA - pin 3 SCL - pin 5
+//i2cLcdFlip = 1 // Flips i2c LCD screen vertically
+//i2cLcdOnContrast = 127 // Allows you to adjust the contrast on your i2c LCD screen
