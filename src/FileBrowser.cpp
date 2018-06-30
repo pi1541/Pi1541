@@ -893,7 +893,7 @@ void FileBrowser::ShowDeviceAndROM()
 	u32 textColour = RGBA(0, 0, 0, 0xff);
 	u32 bgColour = RGBA(0xff, 0xff, 0xff, 0xff);
 	u32 x = 0; // 43 * 8
-	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y - 20);
+	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y) - 20;
 
 	snprintf(buffer, 256, "Device %d %s\r\n", deviceID, roms->ROMNames[roms->currentROMIndex]);
 	screenMain->PrintText(false, x, y, buffer, textColour, bgColour);
