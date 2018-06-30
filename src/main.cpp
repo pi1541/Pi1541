@@ -761,6 +761,7 @@ void emulator()
 //			const int headSoundFreq = 833;	// 1200Hz = 1/1200 * 10^6;
 			const int headSoundFreq = 1000000 / options.SoundOnGPIOFreq();	// 1200Hz = 1/1200 * 10^6;
 			unsigned char oldHeadDir;
+			int resetCount = 0;
 
 			unsigned numberOfImages = diskCaddy.GetNumberOfImages();
 			unsigned numberOfImagesMax = numberOfImages;
@@ -898,7 +899,12 @@ void emulator()
 				}
 
 				bool reset = IEC_Bus::IsReset();
-				if (!emulating || reset || exitEmulation)
+				if (reset)
+					resetCount++;
+				else
+					resetCount = 0;
+
+				if (!emulating || (resetCount > 10) || exitEmulation)
 				{
 					// Clearing the caddy now
 					//	- will write back all changed/dirty/written to disk images now
