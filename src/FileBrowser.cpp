@@ -869,7 +869,7 @@ void FileBrowser::DisplayStatusBar()
 	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y);
 
 	char bufferOut[128];
-	snprintf(bufferOut, 256, "LED 0 Motor 0 Track 00.0 ATN 0 DAT 0 CLK 0");
+	snprintf(bufferOut, 256, "LED 0 Motor 0 Track 18.0 ATN 0 DAT 0 CLK 0");
 	screenMain->PrintText(false, x, y, bufferOut, RGBA(0, 0, 0, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
 }
 
