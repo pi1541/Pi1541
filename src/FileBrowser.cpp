@@ -1023,30 +1023,32 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 							u8 fileType = buffer[DIR_ENTRY_OFFSET_TYPE + entryOffset];
 							u16 blocks = (buffer[DIR_ENTRY_OFFSET_BLOCKS + entryOffset + 1] << 8) | buffer[DIR_ENTRY_OFFSET_BLOCKS + entryOffset];
 
-							x = 0;
-							for (charIndex = 0; charIndex < DIR_ENTRY_NAME_LENGTH; ++charIndex)
-							{
-								char c = buffer[DIR_ENTRY_OFFSET_NAME + entryOffset + charIndex];
-								if (c == 0xa0) c = 0x20;
-								name[charIndex] = c;
-							}
-							name[charIndex] = 0;
+							if (fileType != 0) { // hide scratched files
+								x = 0;
+								for (charIndex = 0; charIndex < DIR_ENTRY_NAME_LENGTH; ++charIndex)
+								{
+									char c = buffer[DIR_ENTRY_OFFSET_NAME + entryOffset + charIndex];
+									if (c == 0xa0) c = 0x20;
+									name[charIndex] = c;
+								}
+								name[charIndex] = 0;
 
-							//DEBUG_LOG("%d name = %s %x\r\n", blocks, name, fileType);
-							snprintf(bufferOut, 128, "%d", blocks);
-							screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
-							x += 5 * 8;
-							snprintf(bufferOut, 128, "\"%s\"", name);
-							screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
-							x += 19 * 8;
-							char modifier = 0x20;
-							if ((fileType & 0x80) == 0)
-								modifier = screen2petscii(42);
-							else if (fileType & 0x40)
-								modifier = screen2petscii(60);
-							snprintf(bufferOut, 128, "%s%c", fileTypes[fileType & 7], modifier);
-							screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
-							y += fontHeight;
+								//DEBUG_LOG("%d name = %s %x\r\n", blocks, name, fileType);
+								snprintf(bufferOut, 128, "%d", blocks);
+								screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
+								x += 5 * 8;
+								snprintf(bufferOut, 128, "\"%s\"", name);
+								screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
+								x += 19 * 8;
+								char modifier = 0x20;
+								if ((fileType & 0x80) == 0)
+									modifier = screen2petscii(42);
+								else if (fileType & 0x40)
+									modifier = screen2petscii(60);
+								snprintf(bufferOut, 128, "%s%c", fileTypes[fileType & 7], modifier);
+								screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
+								y += fontHeight;
+							}
 						}
 						entryOffset += 32;
 					}
