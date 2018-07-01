@@ -923,6 +923,10 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 	u32 freeColour = palette[VIC2_COLOUR_INDEX_LGREEN];
 	u32 BAMOffsetX = screenMain->ScaleX(400);
 
+	u32 bmBAMOffsetX = BAMOffsetX+200;
+	u32 x_px = 0;
+	u32 y_px = 0;
+
 	ClearScreen();
 
 	if (diskImage->GetDecodedSector(track, sectorNo, buffer))
@@ -948,6 +952,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 				blocksFree += buffer[BAM_OFFSET + bamTrack * BAM_ENTRY_SIZE];
 
 			x = BAMOffsetX;
+			x_px = bmBAMOffsetX;
 			for (int bit = 0; bit < DiskImage::SectorsPerTrack[bamTrack]; bit++)
 			{
 				u32 bits = buffer[BAM_OFFSET + 1 + (bit >> 3) + bamTrack * BAM_ENTRY_SIZE];
@@ -957,16 +962,22 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 				{
 					snprintf(bufferOut, 128, "%c", screen2petscii(87));
 					screenMain->PrintText(true, x, y, bufferOut, usedColour, bgColour);
+					screenMain->PlotPixel(x_px, y_px, usedColour);
+					screenMain->PlotPixel(x_px+1, y_px, usedColour);
 				}
 				else
 				{
 					snprintf(bufferOut, 128, "%c", screen2petscii(81));
 					screenMain->PrintText(true, x, y, bufferOut, freeColour, bgColour);
+					screenMain->PlotPixel(x_px, y_px, freeColour);
+					screenMain->PlotPixel(x_px+1, y_px, freeColour);
 				}
 				x += 8;
+				x_px += 3;
 				bits <<= 1;
 			}
 			y += fontHeight;
+			y_px += 2;
 		}
 		for (; bamTrack < lastTrackUsed; ++bamTrack)
 		{
@@ -1023,30 +1034,32 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 							u8 fileType = buffer[DIR_ENTRY_OFFSET_TYPE + entryOffset];
 							u16 blocks = (buffer[DIR_ENTRY_OFFSET_BLOCKS + entryOffset + 1] << 8) | buffer[DIR_ENTRY_OFFSET_BLOCKS + entryOffset];
 
-							x = 0;
-							for (charIndex = 0; charIndex < DIR_ENTRY_NAME_LENGTH; ++charIndex)
-							{
-								char c = buffer[DIR_ENTRY_OFFSET_NAME + entryOffset + charIndex];
-								if (c == 0xa0) c = 0x20;
-								name[charIndex] = c;
-							}
-							name[charIndex] = 0;
+							if (fileType != 0) { // hide scratched files
+								x = 0;
+								for (charIndex = 0; charIndex < DIR_ENTRY_NAME_LENGTH; ++charIndex)
+								{
+									char c = buffer[DIR_ENTRY_OFFSET_NAME + entryOffset + charIndex];
+									if (c == 0xa0) c = 0x20;
+									name[charIndex] = c;
+								}
+								name[charIndex] = 0;
 
-							//DEBUG_LOG("%d name = %s %x\r\n", blocks, name, fileType);
-							snprintf(bufferOut, 128, "%d", blocks);
-							screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
-							x += 5 * 8;
-							snprintf(bufferOut, 128, "\"%s\"", name);
-							screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
-							x += 19 * 8;
-							char modifier = 0x20;
-							if ((fileType & 0x80) == 0)
-								modifier = screen2petscii(42);
-							else if (fileType & 0x40)
-								modifier = screen2petscii(60);
-							snprintf(bufferOut, 128, "%s%c", fileTypes[fileType & 7], modifier);
-							screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
-							y += fontHeight;
+								//DEBUG_LOG("%d name = %s %x\r\n", blocks, name, fileType);
+								snprintf(bufferOut, 128, "%d", blocks);
+								screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
+								x += 5 * 8;
+								snprintf(bufferOut, 128, "\"%s\"", name);
+								screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
+								x += 19 * 8;
+								char modifier = 0x20;
+								if ((fileType & 0x80) == 0)
+									modifier = screen2petscii(42);
+								else if (fileType & 0x40)
+									modifier = screen2petscii(60);
+								snprintf(bufferOut, 128, "%s%c", fileTypes[fileType & 7], modifier);
+								screenMain->PrintText(true, x, y, bufferOut, textColour, bgColour);
+								y += fontHeight;
+							}
 						}
 						entryOffset += 32;
 					}
