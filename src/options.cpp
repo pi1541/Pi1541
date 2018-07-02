@@ -183,7 +183,7 @@ void Options::Process(char* buffer)
 		/*char* equals = */GetToken();
 		char* pValue = GetToken();
 
-		if ((strcasecmp(pOption, "Font") == 0))
+		if ((strcasecmp(pOption, "Font") == 0) || (strcasecmp(pOption, "ChargenFont") == 0))
 		{
 			strncpy(ROMFontName, pValue, 255);
 		}
