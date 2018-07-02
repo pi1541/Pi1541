@@ -1002,6 +1002,8 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 
 		if (track != 0)
 		{
+			unsigned trackPrev = 0xff;
+			unsigned sectorPrev = 0xff;
 			bool complete = false;
 			// Blocks 1 through 19 on track 18 contain the file entries. The first two bytes of a block point to the next directory block with file entries. If no more directory blocks follow, these bytes contain $00 and $FF, respectively.
 			while (!complete)
@@ -1013,8 +1015,11 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 					unsigned sectorNoNext = buffer[1];
 
 					complete = (track == trackNext) && (sectorNo == sectorNoNext);	// Detect looping directory entries (raid over moscow ntsc)
+					complete |= (trackNext == trackPrev) && (sectorNoNext == sectorPrev);	// Detect looping directory entries (IndustrialBreakdown)
 					complete |= (trackNext == 00) || (sectorNoNext == 0xff);
 					complete |= (trackNext == 18) && (sectorNoNext == 1);
+					trackPrev = track;
+					sectorPrev = sectorNo;
 					track = trackNext;
 					sectorNo = sectorNoNext;
 
