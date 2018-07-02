@@ -1466,23 +1466,26 @@ bool IEC_Commands::FindFirst(DIR& dir, const char* matchstr, FILINFO& filInfo)
 	// SOMELONGDISKIMAGENAME.D64 to SOMELONGDISKIMAGENAME*.D64
 	// so the actual SOMELONGDISKIMAGENAMETHATISWAYTOOLONGFORCBMFILEBROWSERTODISPLAY.D64 will be found.
 	strcpy(pattern, matchstr);
-	char* ext = strrchr(matchstr, '.');
-	if (ext)
+	if (strlen(pattern) > 12)
 	{
-		char* ptr = strrchr(pattern, '.');
-		*ptr++ = '*';
-		for (int i = 0; i < 4; i++)
+		char* ext = strrchr(matchstr, '.');
+		if (ext)
 		{
-			*ptr++ = *ext++;
+			char* ptr = strrchr(pattern, '.');
+			*ptr++ = '*';
+			for (int i = 0; i < 4; i++)
+			{
+				*ptr++ = *ext++;
+			}
+			*ptr = 0;
 		}
-		*ptr = 0;
-	}
-	else
-	{
-		// For folders we do the same except we need to change the last character to a *
-		int len = strlen(matchstr);
-		if (len >= CBM_NAME_LENGTH)
-			pattern[CBM_NAME_LENGTH - 1] = '*';
+		else
+		{
+			// For folders we do the same except we need to change the last character to a *
+			int len = strlen(matchstr);
+			if (len >= CBM_NAME_LENGTH)
+				pattern[CBM_NAME_LENGTH - 1] = '*';
+		}
 	}
 	//DEBUG_LOG("Pattern %s -> %s\r\n", matchstr, pattern);
 	res = f_findfirst(&dir, &filInfo, ".", (const TCHAR*)pattern);
