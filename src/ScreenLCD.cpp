@@ -42,10 +42,6 @@ void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int B
 	ssd1306 = new SSD1306(BSCMaster, LCDAddress, LCDFlip, LCDType);
 	ssd1306->DisplayOn();
 
-//	ssd1306->Plottext(5, 0, "Pi1541", false);
-//	ssd1306->PlotImage(logo_ssd_1541ii);
-	ssd1306->PlotImage(logo_ssd_1541classic);
-
 	ssd1306->RefreshScreen();
 
 	opened = true;
@@ -85,6 +81,14 @@ void ScreenLCD::PlotImage(u32* image, int x, int y, int w, int h)
 {
 }
 
+void ScreenLCD::PlotRawImage(const u8* image, int x, int y, int w, int h)
+{
+	if (x==0 && y==0 && w==128 && h==64)
+	{
+		ssd1306->PlotImage(image);
+	}
+}
+
 u32 ScreenLCD::PrintText(bool petscii, u32 x, u32 y, char *ptr, RGBA TxtColour, RGBA BkColour, bool measureOnly, u32* width, u32* height)
 {
 	int len = 0;
@@ -100,6 +104,11 @@ u32 ScreenLCD::MeasureText(bool petscii, char *ptr, u32* width, u32* height)
 u32 ScreenLCD::GetFontHeight()
 {
 	return 16;
+}
+
+void ScreenLCD::RefreshScreen()
+{
+	ssd1306->RefreshScreen();
 }
 
 void ScreenLCD::SwapBuffers()

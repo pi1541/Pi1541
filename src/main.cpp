@@ -43,6 +43,7 @@ extern "C"
 
 #include "logo.h"
 #include "sample.h"
+#include "ssd_logo.h"
 
 unsigned versionMajor = 1;
 unsigned versionMinor = 7;
@@ -355,6 +356,20 @@ void InitialiseLCD()
 	{
 		screenLCD = new ScreenLCD();
 		screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, 1306);
+
+		if (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0)
+		{
+			screenLCD->PlotRawImage(logo_ssd_1541ii, 0, 0, 128, 64);
+			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
+			screenLCD->PrintText(0, 16, 0, tempBuffer, 0xffffffff);
+			screenLCD->RefreshScreen();
+		}
+		if (strcasecmp(options.GetLcdLogoName(), "1541classic") == 0)
+		{
+			screenLCD->PlotRawImage(logo_ssd_1541classic, 0, 0, 128, 64);
+			screenLCD->RefreshScreen();
+		}
+
 		screenLCD->SetContrast(i2cLcdOnContrast);
 	}
 	else if (strcasecmp(options.GetLCDName(), "sh1106_128x64") == 0)
@@ -1059,6 +1074,8 @@ void DisplayOptions(int y_pos)
 	snprintf(tempBuffer, tempBufferSize, "i2cLcdFlip = %d\r\n", options.I2CLcdFlip());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "LCDName = %s\r\n", options.GetLCDName());
+	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "LcdLogoName = %s\r\n", options.GetLcdLogoName());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 }
 

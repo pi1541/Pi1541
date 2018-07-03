@@ -49,9 +49,12 @@ public:
 
 	void PlotImage(u32* image, int x, int y, int w, int h);
 
+	void PlotRawImage(const u8* image, int x, int y, int w, int h);
+
 	u32 GetFontHeight();
 
 	void SwapBuffers();
+	void RefreshScreen();
 
 	void RefreshRows(u8 start, u8 amountOfRows);
 

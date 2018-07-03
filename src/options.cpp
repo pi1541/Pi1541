@@ -221,6 +221,10 @@ void Options::Process(char* buffer)
 		{
 			strncpy(starFileName, pValue, 255);
 		}
+		else if ((strcasecmp(pOption, "LCDLogoName") == 0))
+		{
+			strncpy(LcdLogoName, pValue, 255);
+		}
 		else if ((strcasecmp(pOption, "LCDName") == 0))
 		{
 			strncpy(LCDName, pValue, 255);

@@ -55,6 +55,9 @@ GraphIEC = 1
 // If you are using a LCD screen and you would like PageUp and PageDown keys to work with it then specify this option
 //KeyboardBrowseLCDScreen = 1
 
+// change startup logo on oled - 1541ii or 1541classic
+//LcdLogoName = 1541ii
+
 // If you are using I2C LCD you can optionally change what pins it is connected to.
 // (defaults to 0 for non-split lines (Option A) or 1 for split lines (Option B))
 //i2cBusMaster = 0 //SDA - pin 27 SCL - pin 28
