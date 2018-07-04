@@ -358,12 +358,7 @@ void InitialiseLCD()
 	int i2cLcdOnContrast = options.I2CLcdOnContrast();
 	int i2cLcdDimContrast = options.I2CLcdDimContrast();
 	int i2cLcdDimTime = options.I2CLcdDimTime();
-
-	int i2cLcdModel = 0;
-	if (strcasecmp(options.GetLCDName(), "ssd1306_128x64") == 0)
-		i2cLcdModel = 1306;
-	else if (strcasecmp(options.GetLCDName(), "sh1106_128x64") == 0)
-		i2cLcdModel = 1106;
+	int i2cLcdModel = options.I2CLcdModel();
 
 	if (i2cLcdModel)
 	{
