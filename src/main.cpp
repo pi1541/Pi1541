@@ -81,6 +81,9 @@ const long int CBMFont_size = 4096;
 unsigned char CBMFontData[4096];
 unsigned char* CBMFont = 0;
 
+#define LCD_LOGO_MAX_SIZE 1024
+u8 LcdLogoFile[LCD_LOGO_MAX_SIZE];
+
 u8 s_u8Memory[0xc000];
 
 DiskCaddy diskCaddy;
@@ -346,40 +349,66 @@ void InitialiseHardware()
 
 void InitialiseLCD()
 {
+
+	FILINFO filLcdIcon;
+
 	int i2cBusMaster = options.I2CBusMaster();
 	int i2cLcdAddress = options.I2CLcdAddress();
 	int i2cLcdFlip = options.I2CLcdFlip();
 	int i2cLcdOnContrast = options.I2CLcdOnContrast();
 	int i2cLcdDimContrast = options.I2CLcdDimContrast();
 	int i2cLcdDimTime = options.I2CLcdDimTime();
+
+	int i2cLcdModel = 0;
 	if (strcasecmp(options.GetLCDName(), "ssd1306_128x64") == 0)
+		i2cLcdModel = 1306;
+	else if (strcasecmp(options.GetLCDName(), "sh1106_128x64") == 0)
+		i2cLcdModel = 1106;
+
+	if (i2cLcdModel)
 	{
 		screenLCD = new ScreenLCD();
-		screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, 1306);
+		screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
 
+		bool logo_done = false;
 		if (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0)
 		{
 			screenLCD->PlotRawImage(logo_ssd_1541ii, 0, 0, 128, 64);
 			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
 			screenLCD->PrintText(0, 16, 0, tempBuffer, 0xffffffff);
-			screenLCD->RefreshScreen();
+			logo_done = true;
 		}
-		if (strcasecmp(options.GetLcdLogoName(), "1541classic") == 0)
+		else if (strcasecmp(options.GetLcdLogoName(), "1541classic") == 0)
 		{
 			screenLCD->PlotRawImage(logo_ssd_1541classic, 0, 0, 128, 64);
-			screenLCD->RefreshScreen();
+			logo_done = true;
+		}
+		else if (f_stat(options.GetLcdLogoName(), &filLcdIcon) == FR_OK && filLcdIcon.fsize <= LCD_LOGO_MAX_SIZE)
+		{
+			FIL fp;
+			FRESULT res;
+
+			res = f_open(&fp, filLcdIcon.fname, FA_READ);
+			if (res == FR_OK)
+			{
+				u32 bytesRead;
+				f_read(&fp, LcdLogoFile, LCD_LOGO_MAX_SIZE, &bytesRead);
+				f_close(&fp);
+				screenLCD->PlotRawImage(LcdLogoFile, 0, 0, 128, 64);
+				logo_done = true;
+			}
 		}
 
+		if (!logo_done)
+		{
+			snprintf(tempBuffer, tempBufferSize, "Pixxxx V%d.%02d", versionMajor, versionMinor);
+			int x = (128 - 8*strlen(tempBuffer) ) /2;
+			int y = (64-16)/2;
+			screenLCD->PrintText(0, x, y, tempBuffer, 0x0);
+		}
+		screenLCD->RefreshScreen();
+
 		screenLCD->SetContrast(i2cLcdOnContrast);
-	}
-	else if (strcasecmp(options.GetLCDName(), "sh1106_128x64") == 0)
-	{
-		screenLCD = new ScreenLCD();
-		screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, 1106);
-		screenLCD->SetContrast(i2cLcdOnContrast);
-	}
-	else
-	{
 	}
 }
 
