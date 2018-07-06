@@ -81,10 +81,11 @@ public:
 	void PlotCharacter(int x, int y, char ascii, bool inverse);
 	void Plottext(int x, int y, char* str, bool inverse);
 
-	void SetupScreen();
+	void InitHardware();
 	void DisplayOn();
 	void DisplayOff();
 	void SetContrast(u8 value);
+	u8 GetContrast() { return contrast; }
 	void SetVCOMDeselect(u8 value);
 
 	void ClearScreen();
@@ -108,6 +109,7 @@ protected:
 	u8 address;
 	int type;
 	int flip;
+	int contrast;
 };
 #endif
 

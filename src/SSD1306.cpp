@@ -32,16 +32,18 @@ SSD1306::SSD1306(int BSCMaster, u8 address, int flip, int type)
 	, address(address)
 	, type(type)
 	, flip(flip)
+	, contrast(127)
 {
 	RPI_I2CInit(BSCMaster, 1);
 
-	SetupScreen();
+	InitHardware();
 }
 
-void SSD1306::SetupScreen()
+void SSD1306::InitHardware()
 {
 	// SSD1306 data sheet configuration flow
 	SendCommand(SSD1306_CMD_DISPLAY_OFF);	// 0xAE
+
 	SendCommand(SSD1306_CMD_MULTIPLEX_RATIO);  // 0xA8
 	SendCommand(0x3F);	// SSD1306_LCDHEIGHT - 1
 
@@ -61,8 +63,7 @@ void SSD1306::SetupScreen()
 	SendCommand(SSD1306_CMD_SET_COM_PINS);	// 0xDA Layout and direction
 	SendCommand(0x12);
 
-	SendCommand(SSD1306_CMD_SET_CONTRAST_CONTROL);
-	SendCommand(0x7F);
+	SetContrast(GetContrast());
 
 	SendCommand(SSD1306_CMD_ENTIRE_DISPLAY_ON);
 
@@ -176,6 +177,7 @@ void SSD1306::DisplayOff()
 
 void SSD1306::SetContrast(u8 value)
 {
+	contrast = value;
 	SendCommand(SSD1306_CMD_SET_CONTRAST_CONTROL);
 	SendCommand(value);
 	SetVCOMDeselect( value >> 5);

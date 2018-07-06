@@ -36,6 +36,7 @@ public:
 
 	void ClearArea(u32 x1, u32 y1, u32 x2, u32 y2, RGBA colour);
 	void Clear(RGBA colour);
+	void ClearInit(RGBA colour);
 
 	void SetContrast(u8 value);
 

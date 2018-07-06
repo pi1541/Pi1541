@@ -364,6 +364,7 @@ void InitialiseLCD()
 	{
 		screenLCD = new ScreenLCD();
 		screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
+		screenLCD->SetContrast(i2cLcdOnContrast);
 
 		bool logo_done = false;
 		if (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0)
@@ -402,8 +403,6 @@ void InitialiseLCD()
 			screenLCD->PrintText(0, x, y, tempBuffer, 0x0);
 		}
 		screenLCD->RefreshScreen();
-
-		screenLCD->SetContrast(i2cLcdOnContrast);
 	}
 }
 
@@ -1282,6 +1281,8 @@ extern "C"
 		pi1541.VIA[0].GetPortB()->SetPortOut(0, IEC_Bus::PortB_OnPortOut);
 
 		IEC_Bus::Initialise();
+
+		screenLCD->ClearInit(0);
 
 #ifdef HAS_MULTICORE
 		start_core(3, _spin_core);

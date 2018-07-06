@@ -61,6 +61,14 @@ void ScreenLCD::Clear(RGBA colour)
 	ssd1306->ClearScreen();
 }
 
+void ScreenLCD::ClearInit(RGBA colour)
+{
+	ssd1306->InitHardware();
+	ssd1306->ClearScreen();
+	ssd1306->SetContrast(ssd1306->GetContrast());
+	ssd1306->DisplayOn();
+}
+
 void ScreenLCD::SetContrast(u8 value)
 {
 	ssd1306->SetContrast(value);
