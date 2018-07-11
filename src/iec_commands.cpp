@@ -47,6 +47,10 @@
 extern unsigned versionMajor;
 extern unsigned versionMinor;
 
+extern "C" {
+	extern void reboot_now(void);
+}
+
 #define WaitWhile(checkStatus) \
 	do\
 	{\
@@ -1278,9 +1282,12 @@ void IEC_Commands::User(void)
 
 		case 'J':
 		case ':':
-		case 202:
 			// Hard reset
 			Error(ERROR_73_DOSVERSION);
+		break;
+		case 202:
+			// Really hard reset - reboot Pi
+			reboot_now();
 		break;
 		case '0':
 			//OPEN1,8,15,"U0>"+CHR$(9):CLOSE1

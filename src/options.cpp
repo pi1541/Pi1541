@@ -143,10 +143,13 @@ Options::Options(void)
 	, i2cBusMaster(1)
 	, i2cLcdAddress(0x3C)
 	, i2cLcdFlip(0)
+	, i2cLcdOnContrast(127)
+	, i2cLcdModel(0)
 	, keyboardBrowseLCDScreen(0)
 {
 	autoMountImageName[0] = 0;
 	strcpy(ROMFontName, "chargen");
+	strcpy(LcdLogoName, "1541ii");
 	starFileName[0] = 0;
 	ROMName[0] = 0;
 	ROMNameSlot2[0] = 0;
@@ -221,9 +224,18 @@ void Options::Process(char* buffer)
 		{
 			strncpy(starFileName, pValue, 255);
 		}
+		else if ((strcasecmp(pOption, "LCDLogoName") == 0))
+		{
+			strncpy(LcdLogoName, pValue, 255);
+		}
 		else if ((strcasecmp(pOption, "LCDName") == 0))
 		{
 			strncpy(LCDName, pValue, 255);
+			if (strcasecmp(pValue, "ssd1306_128x64") == 0)
+				i2cLcdModel = 1306;
+			else if (strcasecmp(pValue, "sh1106_128x64") == 0)
+				i2cLcdModel = 1106;
+
 		}
 		else if ((strcasecmp(pOption, "ROM") == 0) || (strcasecmp(pOption, "ROM1") == 0))
 		{

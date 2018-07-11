@@ -337,3 +337,4 @@ void Screen::PlotImage(u32* image, int x, int y, int w, int h)
 		}
 	}
 }
+

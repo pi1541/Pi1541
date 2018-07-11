@@ -81,9 +81,11 @@ public:
 	void PlotCharacter(int x, int y, char ascii, bool inverse);
 	void Plottext(int x, int y, char* str, bool inverse);
 
+	void InitHardware();
 	void DisplayOn();
 	void DisplayOff();
 	void SetContrast(u8 value);
+	u8 GetContrast() { return contrast; }
 	void SetVCOMDeselect(u8 value);
 
 	void ClearScreen();
@@ -106,5 +108,31 @@ protected:
 	int BSCMaster;
 	u8 address;
 	int type;
+	int flip;
+	int contrast;
 };
 #endif
+
+
+#define SSD1306_CMD_SET_MEMORY_ADDRESSING_MODE 0x20
+#define SSD1306_CMD_SET_COLUMN_ADDRESS 0x21
+#define SSD1306_CMD_SET_PAGE_ADDRESS 0x22
+#define SSD1306_CMD_DEACTIVATE_SCROLL 0x2E
+#define SSD1306_CMD_ACTIVATE_SCROLL 0x2F
+#define SSD1306_CMD_SET_CONTRAST_CONTROL 0x81	//  Set Contrast Control for BANK0 
+#define SSD1306_ENABLE_CHARGE_PUMP 0x8D
+#define SSD1306_CMD_ENTIRE_DISPLAY_ON 0xA4
+#define SSD1306_CMD_ENTIRE_DISPLAY_OFF 0xA5
+#define SSD1306_CMD_NORMAL_DISPLAY 0xA6	// 1 = on pixel
+#define SSD1306_CMD_INVERT_DISPLAY 0xA7	// 0 = on pixel
+#define SSD1306_CMD_DISPLAY_OFF 0xAE
+#define SSD1306_CMD_DISPLAY_ON 0xAF
+#define SSD1306_CMD_MULTIPLEX_RATIO 0xA8
+#define SSD1306_CMD_SET_START_LINE 0x40
+#define SSD1306_CMD_SET_DISPLAY_OFFSET 0xD3
+#define SSD1306_CMD_SET_DISPLAY_CLOCK_DIVIDE_RATIO 0xD5
+#define SSD1306_CMD_SET_PRE_CHARGE_PERIOD 0xD9
+#define SSD1306_CMD_SET_COM_PINS 0xDA
+#define SSD1306_CMD_SET_VCOMH_DESELECT_LEVEL 0xDB
+#define SSD1306_CONTROL_REG 0x00
+#define SSD1306_DATA_REG 0x40

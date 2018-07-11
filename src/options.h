@@ -76,6 +76,8 @@ public:
 	inline unsigned int I2CLcdOnContrast() const { return i2cLcdOnContrast; }
 	inline unsigned int I2CLcdDimContrast() const { return i2cLcdDimContrast; }
 	inline unsigned int I2CLcdDimTime() const { return i2cLcdDimTime; }
+	inline unsigned int I2CLcdModel() const { return i2cLcdModel; }
+	inline const char* GetLcdLogoName() const { return LcdLogoName; }
 
 	// Page up and down will jump a different amount based on the maximum number rows displayed.
 	// Perhaps we should use some keyboard modifier to the the other screen?
@@ -111,14 +113,16 @@ private:
 	unsigned int i2cBusMaster;
 	unsigned int i2cLcdAddress;
 	unsigned int i2cLcdFlip;
-	unsigned int i2cLcdOnContrast = 127;
+	unsigned int i2cLcdOnContrast;
 	unsigned int i2cLcdDimContrast;
 	unsigned int i2cLcdDimTime;
+	unsigned int i2cLcdModel;
 
 	unsigned int keyboardBrowseLCDScreen;
 
 	char starFileName[256];
 	char LCDName[256];
+	char LcdLogoName[256];
 
 	char autoMountImageName[256];
 	char ROMFontName[256];
