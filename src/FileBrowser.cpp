@@ -35,7 +35,6 @@ extern "C"
 #define PNG_WIDTH 320
 #define PNG_HEIGHT 200
 
-
 unsigned char FileBrowser::LSTBuffer[FileBrowser::LSTBuffer_size];
 
 const unsigned FileBrowser::SwapKeys[30] =

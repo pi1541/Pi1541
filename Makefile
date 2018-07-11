@@ -1,6 +1,6 @@
 OBJS	= armc-start.o armc-cstartup.o armc-cstubs.o armc-cppstubs.o \
 	exception.o main.o rpi-aux.o rpi-i2c.o rpi-mailbox-interface.o rpi-mailbox.o \
-	rpi-gpio.o rpi-interrupts.o cache.o ff.o interrupt.o Keyboard.o \
+	rpi-gpio.o rpi-interrupts.o cache.o ff.o interrupt.o Keyboard.o performance.o \
 	Pi1541.o DiskImage.o iec_bus.o iec_commands.o m6502.o m6522.o \
 	Drive.o gcr.o prot.o lz.o emmc.o diskio.o options.o Screen.o SSD1306.o ScreenLCD.o \
 	Timer.o FileBrowser.o DiskCaddy.o ROMs.o InputMappings.o xga_font_data.o
