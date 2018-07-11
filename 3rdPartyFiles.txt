@@ -22,6 +22,8 @@ rpi-gpio.c
 rpi-mailbox-interface.h (Added some missing ones)
 rpi-mailbox-interface.c
 linker.ld
+performance.h
+performance.c
 
 R Stange's USPi
 https://github.com/rsta2/uspi
