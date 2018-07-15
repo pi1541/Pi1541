@@ -34,7 +34,7 @@ scrollHighlightRate = 0.07
 OnResetChangeToStartingFolder = 1
 
 // If you use FB64 (CBMFileBrowser) and want to use a fast loader cartridge (AR6, EFL, FC3) to load it then use this option to autmatically mount it. 
-//AutoMountImage = fb.d64
+//AutoMountImage = fb.d64 // You MUST have a disk image in \1541 with this filename
 
 // If you would ever like to disable browse mode completely ypu can do so here
 //DisableSD2IECCommands = 1
