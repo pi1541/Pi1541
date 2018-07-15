@@ -336,7 +336,6 @@ void InitialiseHardware()
 	RPI_GpioVirtInit();
 	RPI_TouchInit();
 #endif
-	RPI_AuxMiniUartInit(115200, 8);
 
 	screen.Open(screenWidth, screenHeight, 16);
 
@@ -568,7 +567,7 @@ void UpdateScreen()
 			{
 				screenLCD->PrintText(false, 0, 0, tempBuffer, RGBA(0xff, 0xff, 0xff, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
 //				screenLCD->SetContrast(255.0/79.0*track);
-				screenLCD->RefreshRows(0, 2);
+				screenLCD->RefreshRows(0, 1);
 			}
 
 		}
@@ -673,7 +672,7 @@ void emulator()
 	roms.lastManualSelectedROMIndex = 0;
 
 	diskCaddy.SetScreen(&screen, screenLCD);
-	fileBrowser = new FileBrowser(&diskCaddy, &roms, deviceID, options.DisplayPNGIcons(), &screen, screenLCD);
+	fileBrowser = new FileBrowser(&diskCaddy, &roms, deviceID, options.DisplayPNGIcons(), &screen, screenLCD, options.ScrollHighlightRate());
 	fileBrowser->DisplayRoot();
 	pi1541.Initialise();
 
@@ -725,7 +724,7 @@ void emulator()
 							break;
 						case IEC_Commands::NONE:
 							{
-								fileBrowser->UpdateInput();
+								fileBrowser->Update();
 
 								// Check selections made via FileBrowser
 								if (fileBrowser->SelectionsMade())
@@ -792,6 +791,7 @@ void emulator()
 						default:
 							break;
 					}
+					usDelay(1);
 				}
 			}
 			else
@@ -800,10 +800,11 @@ void emulator()
 				{
 					if (keyboard->CheckChanged())
 					{
-						fileBrowser->UpdateInput();
+						fileBrowser->Update();
 						if (fileBrowser->SelectionsMade())
 							emulating = BeginEmulating(fileBrowser, fileBrowser->LastSelectionName());
 					}
+					usDelay(1);
 				}
 			}
 		}
@@ -1224,6 +1225,8 @@ extern "C"
 		disk_setEMM(&m_EMMC);
 		m_EMMC.Initialize();
 		f_mount(&fileSystem, "", 1);
+
+		RPI_AuxMiniUartInit(115200, 8);
 
 		LoadOptions();
 

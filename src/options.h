@@ -79,6 +79,8 @@ public:
 	inline unsigned int I2CLcdModel() const { return i2cLcdModel; }
 	inline const char* GetLcdLogoName() const { return LcdLogoName; }
 
+	inline float ScrollHighlightRate() const { return scrollHighlightRate; }
+
 	// Page up and down will jump a different amount based on the maximum number rows displayed.
 	// Perhaps we should use some keyboard modifier to the the other screen?
 	inline unsigned int KeyboardBrowseLCDScreen() const { return keyboardBrowseLCDScreen; }
@@ -117,6 +119,8 @@ private:
 	unsigned int i2cLcdDimContrast;
 	unsigned int i2cLcdDimTime;
 	unsigned int i2cLcdModel;
+
+	float scrollHighlightRate;
 
 	unsigned int keyboardBrowseLCDScreen;
 

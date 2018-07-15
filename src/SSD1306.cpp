@@ -143,15 +143,19 @@ void SSD1306::RefreshScreen()
 	}
 }
 
-void SSD1306::RefreshRows(u8 start, u8 amountOfRows)
+void SSD1306::RefreshRows(u32 start, u32 amountOfRows)
 {
-	MoveCursorCharacter(start, 0);
-	start *= 128;
-
 	int i;
+
+	start <<= 1;
+	amountOfRows <<= 1;
+
+	MoveCursorCharacter(start, 0);
+
+	start *= 128;
 	int end = start + amountOfRows * 128;
 
-	for (i = start * 128; i < end; i++)
+	for (i = start; i < end; i++)
 	{
 		SendData(frame[i]);
 	}

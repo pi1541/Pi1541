@@ -145,6 +145,7 @@ Options::Options(void)
 	, i2cLcdFlip(0)
 	, i2cLcdOnContrast(127)
 	, i2cLcdModel(0)
+	, scrollHighlightRate(0.125f)
 	, keyboardBrowseLCDScreen(0)
 {
 	autoMountImageName[0] = 0;
@@ -171,9 +172,9 @@ Options::Options(void)
 #define ELSE_CHECK_FLOAT_OPTION(Name) \
 	else if (strcasecmp(pOption, #Name) == 0) \
 	{ \
-		unsigned nValue = 0; \
-		if ((nValue = GetFloat(pValue)) != INVALID_VALUE) \
-			Name = nValue; \
+		float value = 0; \
+		if ((value = GetFloat(pValue)) != INVALID_VALUE) \
+			Name = value; \
 	}
 
 void Options::Process(char* buffer)
@@ -219,6 +220,7 @@ void Options::Process(char* buffer)
 		ELSE_CHECK_DECIMAL_OPTION(i2cLcdOnContrast)
 		ELSE_CHECK_DECIMAL_OPTION(i2cLcdDimContrast)
 		ELSE_CHECK_DECIMAL_OPTION(i2cLcdDimTime)
+		ELSE_CHECK_FLOAT_OPTION(scrollHighlightRate)
 		ELSE_CHECK_DECIMAL_OPTION(keyboardBrowseLCDScreen)
 		else if ((strcasecmp(pOption, "StarFileName") == 0))
 		{

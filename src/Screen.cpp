@@ -24,8 +24,6 @@
 #include "Petscii.h"
 #include "stb_image_config.h"
 
-#define MAX(x, y) (((x) > (y)) ? (x) : (y))
-
 extern "C"
 {
 	#include "rpi-mailbox-interface.h"

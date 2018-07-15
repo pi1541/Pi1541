@@ -30,6 +30,8 @@ typedef u32 RGBA;
 
 #define RGBA(r, g, b, a)  ( ((u32)((u8)(r))) | ((u32)((u8)(g)) << 8) | ((u32)((u8)(b)) << 16) | ((u32)((u8)(a)) << 24) )
 
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
 class ScreenBase
 {
 
@@ -66,9 +68,11 @@ public:
 	virtual u32 ScaleX(u32 x) { return x; }
 	virtual u32 ScaleY(u32 y) { return y; }
 
+	virtual u32 GetFontWidth() { return 8; }
 	virtual u32 GetFontHeight() = 0;
 
 	virtual void SwapBuffers() = 0;
+	virtual void RefreshRows(u32 start, u32 amountOfRows) {}
 
 	bool IsMonocrome() const { return bpp == 1; }
 

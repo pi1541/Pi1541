@@ -57,7 +57,7 @@ public:
 	void SwapBuffers();
 	void RefreshScreen();
 
-	void RefreshRows(u8 start, u8 amountOfRows);
+	void RefreshRows(u32 start, u32 amountOfRows);
 
 private:
 	SSD1306* ssd1306 = 0;

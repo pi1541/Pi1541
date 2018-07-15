@@ -90,7 +90,7 @@ public:
 
 	void ClearScreen();
 	void RefreshScreen();
-	void RefreshRows(u8 start, u8 amountOfRows);
+	void RefreshRows(u32 start, u32 amountOfRows);
 	void SetDisplayWindow(u8 x1, u8 y1, u8 x2, u8 y2);
 	void PlotPixel(int x, int y, int c);
 	void PlotImage(const unsigned char * source);

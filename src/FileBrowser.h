@@ -65,10 +65,16 @@ public:
 			, positionX(positionX)
 			, positionY(positionY)
 			, lcdPgUpDown(lcdPgUpDown)
+			, highlightScrollOffset(0)
+			, highlightScrollStartCount(0)
+			, highlightScrollEndCount(0)
+			, scrollHighlightRate()
 		{
 		}
 
 		void Refresh();
+		void RefreshLine(u32 entryIndex, u32 x, u32 y, bool selected);
+		void RefreshHighlightScroll();
 		bool CheckBrowseNavigation(bool pageOnly);
 
 		BrowsableList* list;
@@ -80,6 +86,10 @@ public:
 		u32 positionX;
 		u32 positionY;
 		bool lcdPgUpDown;
+		u32 highlightScrollOffset;
+		u32 highlightScrollStartCount;
+		u32 highlightScrollEndCount;
+		float scrollHighlightRate;
 	};
 
 	class BrowsableList
@@ -88,6 +98,8 @@ public:
 		BrowsableList()
 			: current(0)
 			, currentIndex(0)
+			, currentHighlightTime(0)
+			, scrollHighlightRate(0)
 		{
 		}
 
@@ -111,6 +123,23 @@ public:
 
 		void ClearSelections();
 
+		void SetCurrent()
+		{
+			if (entries.size() > 0)
+			{
+				Entry* currentEntry = &entries[currentIndex];
+				if (currentEntry != current)
+				{
+					current = currentEntry;
+					currentHighlightTime = scrollHighlightRate;
+				}
+			}
+			else
+			{
+				current = 0;
+			}
+		}
+
 		struct Entry
 		{
 			Entry() : caddyIndex(-1)
@@ -124,20 +153,23 @@ public:
 		Entry* FindEntry(const char* name);
 
 		void RefreshViews();
+		void RefreshViewsHighlightScroll();
 		bool CheckBrowseNavigation();
 
 		std::vector<Entry> entries;
 		Entry* current;
 		u32 currentIndex;
+		float currentHighlightTime;
+		float scrollHighlightRate;
 
 		std::vector<BrowsableListView> views;
 	};
 
-	FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, unsigned deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD);
+	FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, unsigned deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate);
 
 	void AutoSelectImage(const char* image);
 	void DisplayRoot();
-	void UpdateInput();
+	void Update();
 
 	void RefeshDisplay();
 	void DisplayDiskInfo(DiskImage* diskImage, const char* filenameForIcon);
@@ -164,8 +196,9 @@ public:
 
 	static u32 Colour(int index);
 
-
 	bool SelectLST(const char* filenameLST);
+
+	void SetScrollHighlightRate(float value) { scrollHighlightRate = value; }
 
 private:
 	void DisplayPNG(FILINFO& filIcon, int x, int y);
@@ -173,6 +206,8 @@ private:
 
 	void UpdateInputFolders();
 	void UpdateInputDiskCaddy();
+
+	void UpdateCurrentHighlight();
 
 	//void RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* browsableList, int xOffset, bool showSelected = true);
 
@@ -201,6 +236,8 @@ private:
 
 	ScreenBase* screenMain;
 	ScreenBase* screenLCD;
+
+	float scrollHighlightRate;
 
 	char PNG[FILEBROWSER_MAX_PNG_SIZE];
 };
