@@ -40,9 +40,9 @@ void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int B
 	height = heightDesired;
 
 	ssd1306 = new SSD1306(BSCMaster, LCDAddress, LCDFlip, LCDType);
-	ssd1306->DisplayOn();
-
+	ssd1306->ClearScreen();
 	ssd1306->RefreshScreen();
+	ssd1306->DisplayOn();
 
 	opened = true;
 }
