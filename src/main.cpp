@@ -411,6 +411,10 @@ void InitialiseLCD()
 		}
 		screenLCD->RefreshScreen();
 	}
+	else
+	{
+		screenLCD = 0;
+	}
 }
 
 //void UpdateUartControls(bool refreshStatusDisplay, bool LED, bool Motor, bool ATN, bool DATA, bool CLOCK, u32 Track, u32 romIndex)
@@ -1304,7 +1308,8 @@ extern "C"
 
 		IEC_Bus::Initialise();
 
-		screenLCD->ClearInit(0);
+		if (screenLCD)
+			screenLCD->ClearInit(0);
 
 #ifdef HAS_MULTICORE
 		start_core(3, _spin_core);
