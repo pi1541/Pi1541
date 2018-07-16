@@ -82,7 +82,6 @@ void SSD1306::InitHardware()
 	SendCommand(0x14);  // external = 0x10 internal = 0x14
 
 	SendCommand(SSD1306_CMD_SET_MEMORY_ADDRESSING_MODE);  // 0x20	Set Memory Addressing Mode
-//	SendCommand(0x00);	// 00 - Horizontal Addressing Mode
 	SendCommand(0x10);	// 10 - Page Addressing Mode for SH1106 compatibility
 
 	Home();
@@ -122,11 +121,11 @@ void SSD1306::MoveCursorByte(u8 row, u8 col)
 	if (row > 7) { row = 7; }
 
 	if (type == 1106)
-		col += 2;
+		col += 2;	// sh1106 uses columns 2..129
 
-	SendCommand(0xB0 + row);		// page address
-	SendCommand(0x00 | (col & 0xf));	// column address lower bits
-	SendCommand(0x10 | (col >> 4));		// column address upper bits
+	SendCommand(SSD1306_CMD_SET_PAGE | row);		// 0xB0 page address
+	SendCommand(SSD1306_CMD_SET_COLUMN_LOW | (col & 0xf));	// 0x00 column address lower bits
+	SendCommand(SSD1306_CMD_SET_COLUMN_HIGH | (col >> 4));	// 0x10 column address upper bits
 }
 
 void SSD1306::RefreshScreen()
@@ -138,12 +137,13 @@ void SSD1306::RefreshScreen()
 	}
 }
 
-void SSD1306::RefreshRows(u32 start, u32 numRows)
+void SSD1306::RefreshRows(u32 start, u32 amountOfRows)
 {
-	start <<=1;
-	numRows <<=1;
-	u32 i;
-	for (i = start; i < start+numRows; i++)
+	int i;
+
+	start <<= 1;
+	amountOfRows <<= 1;
+	for (i = start; i < start+amountOfRows; i++)
 	{
 		RefreshPage(i);
 	}
@@ -151,12 +151,11 @@ void SSD1306::RefreshRows(u32 start, u32 numRows)
 
 void SSD1306::RefreshPage(u32 page)
 {
-	MoveCursorByte(page, 0);
-
 	int i;
 	int start = page*128;
 	int end = page*128 + 128;
 
+	MoveCursorByte(page, 0);
 	for (i = start; i < end; i++)
 	{
 		SendData(frame[i]);
