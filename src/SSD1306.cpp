@@ -65,7 +65,7 @@ void SSD1306::InitHardware()
 
 	SetContrast(GetContrast());
 
-	SendCommand(SSD1306_CMD_ENTIRE_DISPLAY_ON);	// 0xA4 - DONT force entire display on
+	SendCommand(SSD1306_CMD_TEST_DISPLAY_OFF);	// 0xA4 - DONT force entire display on
 
 	SendCommand(SSD1306_CMD_NORMAL_DISPLAY);  // 0xA6 = non inverted
 
@@ -129,14 +129,6 @@ void SSD1306::MoveCursorByte(u8 row, u8 col)
 	SendCommand(0x10 | (col >> 4));		// column address upper bits
 }
 
-void SSD1306::MoveCursorCharacter(u8 row, u8 col)
-{
-	if (col > 15) { col = 15; }
-	if (row > 7) { row = 7; }
-
-	MoveCursorByte(row, col << 3);
-}
-
 void SSD1306::RefreshScreen()
 {
 	int i;
@@ -146,36 +138,17 @@ void SSD1306::RefreshScreen()
 	}
 }
 
-/*
 void SSD1306::RefreshRows(u32 start, u32 numRows)
 {
 	start <<=1;
 	numRows <<=1;
-	int i;
-	for (i = start; i < numRows; i++)
+	u32 i;
+	for (i = start; i < start+numRows; i++)
 	{
 		RefreshPage(i);
 	}
 }
-*/
 
-void SSD1306::RefreshRows(u32 start, u32 amountOfRows)
-{
-	int i;
-
-	start <<= 1;
-	amountOfRows <<= 1;
-
-	MoveCursorCharacter(start, 0);
-
-	start *= 128;
-	int end = start + amountOfRows * 128;
-
-	for (i = start; i < end; i++)
-	{
-		SendData(frame[i]);
-	}
-}
 void SSD1306::RefreshPage(u32 page)
 {
 	MoveCursorByte(page, 0);

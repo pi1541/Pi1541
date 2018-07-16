@@ -372,6 +372,7 @@ void InitialiseLCD()
 		screenLCD = new ScreenLCD();
 		screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
 		screenLCD->SetContrast(i2cLcdOnContrast);
+		screenLCD->ClearInit(0);
 
 		bool logo_done = false;
 		if (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0)

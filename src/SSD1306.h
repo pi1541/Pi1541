@@ -102,7 +102,6 @@ protected:
 
 	void Home();
 	void MoveCursorByte(u8 row, u8 col);
-	void MoveCursorCharacter(u8 row, u8 col);
 
 	unsigned char frame[SSD1306_128x64_BYTES];
 
@@ -122,8 +121,8 @@ protected:
 #define SSD1306_CMD_ACTIVATE_SCROLL 0x2F
 #define SSD1306_CMD_SET_CONTRAST_CONTROL 0x81	//  Set Contrast Control for BANK0 
 #define SSD1306_ENABLE_CHARGE_PUMP 0x8D
-#define SSD1306_CMD_ENTIRE_DISPLAY_ON 0xA4
-#define SSD1306_CMD_ENTIRE_DISPLAY_OFF 0xA5
+#define SSD1306_CMD_TEST_DISPLAY_OFF 0xA4
+#define SSD1306_CMD_TEST_DISPLAY_ON 0xA5
 #define SSD1306_CMD_NORMAL_DISPLAY 0xA6	// 1 = on pixel
 #define SSD1306_CMD_INVERT_DISPLAY 0xA7	// 0 = on pixel
 #define SSD1306_CMD_DISPLAY_OFF 0xAE
