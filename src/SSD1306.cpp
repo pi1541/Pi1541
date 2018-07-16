@@ -193,7 +193,7 @@ void SSD1306::SetVCOMDeselect(u8 value)
 	SendCommand( (value & 7) << 4 );
 }
 
-void SSD1306::Plottext(int x, int y, char* str, bool inverse)
+void SSD1306::PlotText(int x, int y, char* str, bool inverse)
 {
 	int i;
 	i = 0;
