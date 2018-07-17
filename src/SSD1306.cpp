@@ -139,7 +139,7 @@ void SSD1306::RefreshScreen()
 
 void SSD1306::RefreshRows(u32 start, u32 amountOfRows)
 {
-	int i;
+	unsigned int i;
 
 	start <<= 1;
 	amountOfRows <<= 1;
