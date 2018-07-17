@@ -372,6 +372,7 @@ void InitialiseLCD()
 		screenLCD = new ScreenLCD();
 		screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
 		screenLCD->SetContrast(i2cLcdOnContrast);
+		screenLCD->ClearInit(0); // sh1106 needs this
 
 		bool logo_done = false;
 		if (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0)
@@ -404,7 +405,7 @@ void InitialiseLCD()
 
 		if (!logo_done)
 		{
-			snprintf(tempBuffer, tempBufferSize, "Pixxxx V%d.%02d", versionMajor, versionMinor);
+			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
 			int x = (128 - 8*strlen(tempBuffer) ) /2;
 			int y = (64-16)/2;
 			screenLCD->PrintText(0, x, y, tempBuffer, 0x0);
