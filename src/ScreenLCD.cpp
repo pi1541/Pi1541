@@ -40,9 +40,9 @@ void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int B
 	height = heightDesired;
 
 	ssd1306 = new SSD1306(BSCMaster, LCDAddress, LCDFlip, LCDType);
-	ssd1306->DisplayOn();
-
+	ssd1306->ClearScreen();
 	ssd1306->RefreshScreen();
+	ssd1306->DisplayOn();
 
 	opened = true;
 }
@@ -100,7 +100,7 @@ void ScreenLCD::PlotRawImage(const u8* image, int x, int y, int w, int h)
 u32 ScreenLCD::PrintText(bool petscii, u32 x, u32 y, char *ptr, RGBA TxtColour, RGBA BkColour, bool measureOnly, u32* width, u32* height)
 {
 	int len = 0;
-	ssd1306->Plottext(x >> 3, y >> 4, ptr, (BkColour & 0xffffff) != 0);
+	ssd1306->PlotText(x >> 3, y >> 4, ptr, (BkColour & 0xffffff) != 0);
 	return len;
 }
 
