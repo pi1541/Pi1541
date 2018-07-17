@@ -184,3 +184,32 @@ int RPI_I2CWrite(int BSCMaster, unsigned char slaveAddress, void* buffer, unsign
 	//DEBUG_LOG("I2C Write %d %d\r\n", count, success);
 	return success;
 }
+
+int RPI_I2CScan(int BSCMaster, unsigned char slaveAddress)
+{
+	int success = 1;
+	if (slaveAddress < 0x80)
+	{
+		unsigned baseAddress = GetBaseAddress(BSCMaster);
+
+		write32(baseAddress + I2C_BSC_A, slaveAddress);
+		write32(baseAddress + I2C_BSC_C, CONTROL_BIT_CLEAR1);
+		write32(baseAddress + I2C_BSC_S, STATUS_BIT_CLKT | STATUS_BIT_ERR | STATUS_BIT_DONE);
+		write32(baseAddress + I2C_BSC_DLEN, 1);
+		write32(baseAddress + I2C_BSC_C, CONTROL_BIT_I2CEN | CONTROL_BIT_ST | CONTROL_BIT_READ);
+
+		while (!(read32(baseAddress + I2C_BSC_S) & STATUS_BIT_DONE))
+		{
+		}
+
+		unsigned status = read32(baseAddress + I2C_BSC_S);
+		if (status & (STATUS_BIT_ERR | STATUS_BIT_CLKT) )
+		{
+			success = 0;
+		}
+
+		write32(baseAddress + I2C_BSC_S, STATUS_BIT_CLKT | STATUS_BIT_ERR | STATUS_BIT_DONE);
+	}
+	return success;
+}
+

@@ -1126,6 +1126,31 @@ void DisplayOptions(int y_pos)
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 }
 
+void DisplayI2CScan(int y_pos)
+{
+	int BSCMaster = options.I2CBusMaster();
+
+	snprintf(tempBuffer, tempBufferSize, "Scanning i2c devices on bus %d ...\r\n", BSCMaster);
+	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	RPI_I2CInit(BSCMaster, 1);
+	int address = 0;
+	for (int y=0; y<8; y++)
+	{
+		int x=0;
+		for (x=0; x<16; x++)
+		{
+			int ret = RPI_I2CScan(BSCMaster, address);
+			if (ret)
+				tempBuffer[x] = '*';
+			else
+				tempBuffer[x] = '.';
+			address++;
+		}
+		tempBuffer[x] = 0;
+		screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	}
+}
+
 static void CheckOptions()
 {
 	FIL fp;
@@ -1254,6 +1279,9 @@ extern "C"
 
 		if (options.ShowOptions())
 			DisplayOptions(y_pos+32);
+
+//		if (options.I2CScan())
+			DisplayI2CScan(y_pos+32);
 
 		if (!options.QuickBoot())
 			IEC_Bus::WaitMicroSeconds(3 * 1000000);
