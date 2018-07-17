@@ -183,7 +183,8 @@ void SSD1306::SetContrast(u8 value)
 	contrast = value;
 	SendCommand(SSD1306_CMD_SET_CONTRAST_CONTROL);
 	SendCommand(value);
-	SetVCOMDeselect( value >> 5);
+	if (type == 1306)
+		SetVCOMDeselect( value >> 8);
 }
 
 void SSD1306::SetVCOMDeselect(u8 value)
