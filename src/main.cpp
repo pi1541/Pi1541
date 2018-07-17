@@ -1127,6 +1127,32 @@ void DisplayOptions(int y_pos)
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 }
 
+void DisplayI2CScan(int y_pos)
+{
+	int BSCMaster = options.I2CBusMaster();
+
+	snprintf(tempBuffer, tempBufferSize, "Scanning i2c bus %d ...\r\n", BSCMaster);
+	screen.PrintText(false, 0, y_pos , tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+
+	RPI_I2CInit(BSCMaster, 1);
+
+	int count=0;
+	int ptr = 0;
+	ptr = snprintf (tempBuffer+ptr, tempBufferSize-ptr, "Found ");
+	for (int address = 0; address<128; address++)
+	{
+		if (RPI_I2CScan(BSCMaster, address))
+		{
+			ptr += snprintf (tempBuffer+ptr, tempBufferSize-ptr, "%3d ", address);
+			count++;
+		}
+	}
+	if (count == 0)
+		ptr += snprintf (tempBuffer+ptr, tempBufferSize-ptr, "Nothing");
+
+	screen.PrintText(false, 0, y_pos+16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+}
+
 static void CheckOptions()
 {
 	FIL fp;
@@ -1253,8 +1279,11 @@ extern "C"
 		snprintf(tempBuffer, tempBufferSize, "This is free software, and you are welcome to redistribute it.");
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 
+		if (options.I2CScan())
+			DisplayI2CScan(y_pos+=32);
+
 		if (options.ShowOptions())
-			DisplayOptions(y_pos+32);
+			DisplayOptions(y_pos+=32);
 
 		if (!options.QuickBoot())
 			IEC_Bus::WaitMicroSeconds(3 * 1000000);

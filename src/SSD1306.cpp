@@ -139,7 +139,7 @@ void SSD1306::RefreshScreen()
 
 void SSD1306::RefreshRows(u32 start, u32 amountOfRows)
 {
-	int i;
+	unsigned int i;
 
 	start <<= 1;
 	amountOfRows <<= 1;
@@ -183,7 +183,8 @@ void SSD1306::SetContrast(u8 value)
 	contrast = value;
 	SendCommand(SSD1306_CMD_SET_CONTRAST_CONTROL);
 	SendCommand(value);
-	SetVCOMDeselect( value >> 5);
+	if (type == 1306)
+		SetVCOMDeselect( value >> 8);
 }
 
 void SSD1306::SetVCOMDeselect(u8 value)
