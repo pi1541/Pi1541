@@ -72,11 +72,13 @@ public:
 
 	inline unsigned int I2CBusMaster() const { return i2cBusMaster; }
 	inline unsigned int I2CLcdAddress() const { return i2cLcdAddress; }
+	inline unsigned int I2CScan() const { return i2cScan; }
 	inline unsigned int I2CLcdFlip() const { return i2cLcdFlip; }
 	inline unsigned int I2CLcdOnContrast() const { return i2cLcdOnContrast; }
 	inline unsigned int I2CLcdDimContrast() const { return i2cLcdDimContrast; }
 	inline unsigned int I2CLcdDimTime() const { return i2cLcdDimTime; }
 	inline unsigned int I2CLcdModel() const { return i2cLcdModel; }
+
 	inline const char* GetLcdLogoName() const { return LcdLogoName; }
 
 	inline float ScrollHighlightRate() const { return scrollHighlightRate; }
@@ -114,6 +116,7 @@ private:
 
 	unsigned int i2cBusMaster;
 	unsigned int i2cLcdAddress;
+	unsigned int i2cScan;
 	unsigned int i2cLcdFlip;
 	unsigned int i2cLcdOnContrast;
 	unsigned int i2cLcdDimContrast;
