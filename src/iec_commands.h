@@ -128,6 +128,8 @@ protected:
 	void CloseAllChannels();
 	void SendError();
 
+	int CreateD64(char* filenameNew, char* ID);
+
 	bool Enter(DIR& dir, FILINFO& filInfo);
 	bool FindFirst(DIR& dir, const char* matchstr, FILINFO& filInfo);
 
@@ -169,3 +171,4 @@ protected:
 	const char* starFileName;
 };
 #endif
+
