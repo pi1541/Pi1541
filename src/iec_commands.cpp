@@ -1107,6 +1107,8 @@ void IEC_Commands::New(void)
 
 		if (ret==0)
 		{
+			updateAction = REFRESH;
+
 			// Mount the new disk? Shoud we do this or let them do it manually?
 			if (f_stat(filenameNew, &filInfo) == FR_OK)
 			{
@@ -1187,6 +1189,7 @@ void IEC_Commands::Scratch(void)
 				f_unlink(filInfo.fname);
 			}
 			res = f_findnext(&dir, &filInfo);
+			updateAction = REFRESH;
 		}
 		text = ParseNextName(text, filename, true);
 	}

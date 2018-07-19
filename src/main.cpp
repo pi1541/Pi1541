@@ -697,8 +697,10 @@ void emulator()
 			fileBrowser->ClearSelections();
 
 			// Go back to the root folder so you can load fb* again?
-			if ((resetWhileEmulating && options.GetOnResetChangeToStartingFolder()) || selectedViaIECCommands) fileBrowser->DisplayRoot(); // Go back to the root folder and display it.
-			else fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
+//			if ((resetWhileEmulating && options.GetOnResetChangeToStartingFolder()) || selectedViaIECCommands)
+//				fileBrowser->DisplayRoot(); // Go back to the root folder and display it.
+//			else
+				fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
 
 			resetWhileEmulating = false;
 			selectedViaIECCommands = false;
@@ -979,12 +981,14 @@ void emulator()
 
 					IEC_Bus::WaitUntilReset();
 					//DEBUG_LOG("6502 resetting\r\n");
-					if (options.GetOnResetChangeToStartingFolder() || selectedViaIECCommands)
-						fileBrowser->DisplayRoot();//m_IEC_Commands.ChangeToRoot(); // TO CHECK
 					emulating = false;
 					resetWhileEmulating = true;
 					if (reset)
+					{
 						exitReason = EXIT_RESET;
+						if (options.GetOnResetChangeToStartingFolder() || selectedViaIECCommands)
+							fileBrowser->DisplayRoot(); // TO CHECK
+					}
 					if (exitEmulation)
 						exitReason = EXIT_KEYBOARD;
 					break;
