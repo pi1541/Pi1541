@@ -793,7 +793,7 @@ void emulator()
 							deviceID = m_IEC_Commands.GetDeviceId();
 							fileBrowser->SetDeviceID(deviceID);
 							fileBrowser->ShowDeviceAndROM();
-							SetVIAsDeviceID(deviceID);	// Let the emilated VIA know
+							SetVIAsDeviceID(deviceID);	// Let the emulated VIA know
 							break;
 						default:
 							break;
@@ -1361,3 +1361,4 @@ extern "C"
 #endif
 	}
 }
+

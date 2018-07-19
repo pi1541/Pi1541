@@ -344,5 +344,9 @@ public:
 	{
 		return (keyStatus[0] | keyStatus[1]);
 	}
+	inline bool KeyLeftAlt()
+	{
+		return (modifier & 1<<2);
+	}
 };
 #endif

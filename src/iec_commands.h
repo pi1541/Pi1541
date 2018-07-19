@@ -78,6 +78,9 @@ public:
 	const char* GetNameOfImageSelected() const { return selectedImageName; }
 	const FILINFO* GetImageSelected() const { return &filInfoSelectedImage; }
 	void SetStarFileName(const char* fileName) { starFileName = fileName; }
+
+	int CreateD64(char* filenameNew, char* ID);
+
 protected:
 	enum ATNSequence 
 	{
@@ -128,7 +131,6 @@ protected:
 	void CloseAllChannels();
 	void SendError();
 
-	int CreateD64(char* filenameNew, char* ID);
 
 	bool Enter(DIR& dir, FILINFO& filInfo);
 	bool FindFirst(DIR& dir, const char* matchstr, FILINFO& filInfo);

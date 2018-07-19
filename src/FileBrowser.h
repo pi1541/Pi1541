@@ -151,6 +151,7 @@ public:
 		};
 
 		Entry* FindEntry(const char* name);
+		int FindNextAutoName(const char* basename);
 
 		void RefreshViews();
 		void RefreshViewsHighlightScroll();

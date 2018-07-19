@@ -32,6 +32,9 @@ extern "C"
 #include "rpi-gpio.h"
 }
 
+#include "iec_commands.h"
+extern IEC_Commands m_IEC_Commands;
+
 #define PNG_WIDTH 320
 #define PNG_HEIGHT 200
 
@@ -892,6 +895,14 @@ void FileBrowser::UpdateInputFolders()
 				dirty = AddToCaddy(current);
 			}
 		}
+		else if (inputMappings->BrowseNewD64())
+		{
+			char newFileName[64];
+			int num = folder.FindNextAutoName("testfile");
+			snprintf(newFileName, 64, "testfile%03d.d64", num);
+			m_IEC_Commands.CreateD64(newFileName, "42");
+			FolderChanged();
+		}
 		else
 		{
 			unsigned keySetIndex;
@@ -1240,4 +1251,22 @@ void FileBrowser::AutoSelectImage(const char* image)
 		caddySelections.entries.push_back(*current);
 		selectionsMade = FillCaddyWithSelections();
 	}
+}
+
+int FileBrowser::BrowsableList::FindNextAutoName(const char* basename)
+{
+	int index;
+	int len = (int)entries.size();
+	int baselen = strlen(basename);
+	int lastNumber = 0;
+
+	for (index = 0; index < len; ++index)
+	{
+		Entry* entry = &entries[index];
+		if (!(entry->filImage.fattrib & AM_DIR) && strncasecmp(basename, entry->filImage.fname, baselen) == 0)
+		{
+			lastNumber = 55;
+		}
+	}
+	return lastNumber+1;
 }
