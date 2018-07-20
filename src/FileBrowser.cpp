@@ -1259,13 +1259,23 @@ int FileBrowser::BrowsableList::FindNextAutoName(const char* basename)
 	int len = (int)entries.size();
 	int baselen = strlen(basename);
 	int lastNumber = 0;
+	char matchname[64];
+
+	strcpy (matchname, basename);
+	strncat (matchname, "%d",2);
+
+	int foundnumber;
 
 	for (index = 0; index < len; ++index)
 	{
 		Entry* entry = &entries[index];
-		if (!(entry->filImage.fattrib & AM_DIR) && strncasecmp(basename, entry->filImage.fname, baselen) == 0)
+		if (	!(entry->filImage.fattrib & AM_DIR) 
+			&& strncasecmp(basename, entry->filImage.fname, baselen) == 0
+			&& sscanf(entry->filImage.fname, matchname, &foundnumber) == 1
+			)
 		{
-			lastNumber = 55;
+			if (foundnumber > lastNumber)
+				lastNumber = foundnumber;
 		}
 	}
 	return lastNumber+1;
