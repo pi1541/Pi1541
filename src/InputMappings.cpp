@@ -170,7 +170,7 @@ bool InputMappings::CheckKeyboardBrowseMode()
 	//	SetKeyboardFlag(PAGEUP_LCD_FLAG);
 	//else if (keyboard->KeyHeld(KEY_END))
 	//	SetKeyboardFlag(PAGEDOWN_LCD_FLAG);
-	else if (keyboard->KeyHeld(KEY_N))
+	else if (keyboard->KeyHeld(KEY_N) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(NEWD64_FLAG);
 	else
 	{
