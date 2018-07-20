@@ -79,7 +79,7 @@ public:
 	const FILINFO* GetImageSelected() const { return &filInfoSelectedImage; }
 	void SetStarFileName(const char* fileName) { starFileName = fileName; }
 
-	int CreateD64(char* filenameNew, char* ID);
+	int CreateD64(char* filenameNew, char* ID, bool automount);
 
 protected:
 	enum ATNSequence 

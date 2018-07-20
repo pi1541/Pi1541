@@ -902,7 +902,7 @@ void FileBrowser::UpdateInputFolders()
 			char newFileName[64];
 			strncpy (newFileName, options.GetAutoBaseName(), 63);
 			int num = folder.FindNextAutoName( newFileName );
-			m_IEC_Commands.CreateD64(newFileName, "42");
+			m_IEC_Commands.CreateD64(newFileName, "42", true);
 			FolderChanged();
 		}
 		else

@@ -1103,23 +1103,12 @@ void IEC_Commands::New(void)
 		if(!(strstr(filenameNew, ".d64") || strstr(filenameNew, ".D64")))
 			strcat(filenameNew, ".d64");
 
-		int ret = CreateD64(filenameNew, ID);
+		int ret = CreateD64(filenameNew, ID, true);
 
 		if (ret==0)
-		{
 			updateAction = REFRESH;
-
-			// Mount the new disk? Shoud we do this or let them do it manually?
-			if (f_stat(filenameNew, &filInfo) == FR_OK)
-			{
-				DIR dir;
-				Enter(dir, filInfo);
-			}
-		}
 		else
-		{
 			Error(ret);
-		}
 	}
 }
 
@@ -1884,7 +1873,7 @@ void IEC_Commands::CloseFile(u8 secondary)
 	channel.Close();
 }
 
-int IEC_Commands::CreateD64(char* filenameNew, char* ID)
+int IEC_Commands::CreateD64(char* filenameNew, char* ID, bool automount)
 {
 	FILINFO filInfo;
 	FRESULT res;
@@ -1940,6 +1929,12 @@ int IEC_Commands::CreateD64(char* filenameNew, char* ID)
 					break;
 			}
 			f_close(&fpOut);
+		}
+		// Mount the new disk? Shoud we do this or let them do it manually?
+		if (automount && f_stat(filenameNew, &filInfo) == FR_OK)
+		{
+			DIR dir;
+			Enter(dir, filInfo);
 		}
 		return(ERROR_00_OK);
 	}
