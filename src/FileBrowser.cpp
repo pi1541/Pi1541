@@ -34,6 +34,8 @@ extern "C"
 
 #include "iec_commands.h"
 extern IEC_Commands m_IEC_Commands;
+extern Options options;
+
 
 #define PNG_WIDTH 320
 #define PNG_HEIGHT 200
@@ -898,8 +900,8 @@ void FileBrowser::UpdateInputFolders()
 		else if (inputMappings->BrowseNewD64())
 		{
 			char newFileName[64];
-			int num = folder.FindNextAutoName("testfile");
-			snprintf(newFileName, 64, "testfile%03d.d64", num);
+			strncpy (newFileName, options.GetAutoBaseName(), 63);
+			int num = folder.FindNextAutoName( newFileName );
 			m_IEC_Commands.CreateD64(newFileName, "42");
 			FolderChanged();
 		}
@@ -1253,16 +1255,17 @@ void FileBrowser::AutoSelectImage(const char* image)
 	}
 }
 
-int FileBrowser::BrowsableList::FindNextAutoName(const char* basename)
+int FileBrowser::BrowsableList::FindNextAutoName(char* filename)
 {
 	int index;
 	int len = (int)entries.size();
-	int baselen = strlen(basename);
-	int lastNumber = 0;
-	char matchname[64];
 
-	strcpy (matchname, basename);
-	strncat (matchname, "%d",2);
+	int inputlen = strlen(filename);
+	int lastNumber = 0;
+
+	char scanfname[64];
+	strncpy (scanfname, filename, 54);
+	strncat (scanfname, "%d",2);
 
 	int foundnumber;
 
@@ -1270,13 +1273,14 @@ int FileBrowser::BrowsableList::FindNextAutoName(const char* basename)
 	{
 		Entry* entry = &entries[index];
 		if (	!(entry->filImage.fattrib & AM_DIR) 
-			&& strncasecmp(basename, entry->filImage.fname, baselen) == 0
-			&& sscanf(entry->filImage.fname, matchname, &foundnumber) == 1
+			&& strncasecmp(filename, entry->filImage.fname, inputlen) == 0
+			&& sscanf(entry->filImage.fname, scanfname, &foundnumber) == 1
 			)
 		{
 			if (foundnumber > lastNumber)
 				lastNumber = foundnumber;
 		}
 	}
+	snprintf(filename + inputlen, 54, "%03d.d64", lastNumber+1);
 	return lastNumber+1;
 }
