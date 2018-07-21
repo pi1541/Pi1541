@@ -639,8 +639,15 @@ static void PlaySoundDMA()
 
 static void SetVIAsDeviceID(u8 id)
 {
-	if (id & 1) pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, true);
-	if (id & 2) pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, true);
+	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, id & 1);
+	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, id & 2);
+}
+
+void GlobalSetDeviceID(u8 id)
+{
+	deviceID = id;
+	m_IEC_Commands.SetDeviceId(id);
+	SetVIAsDeviceID(id);
 }
 
 static void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
@@ -677,7 +684,7 @@ void emulator()
 	roms.lastManualSelectedROMIndex = 0;
 
 	diskCaddy.SetScreen(&screen, screenLCD);
-	fileBrowser = new FileBrowser(&diskCaddy, &roms, deviceID, options.DisplayPNGIcons(), &screen, screenLCD, options.ScrollHighlightRate());
+	fileBrowser = new FileBrowser(&diskCaddy, &roms, &deviceID, options.DisplayPNGIcons(), &screen, screenLCD, options.ScrollHighlightRate());
 	fileBrowser->DisplayRoot();
 	pi1541.Initialise();
 
@@ -788,10 +795,8 @@ void emulator()
 							fileBrowser->FolderChanged();
 							break;
 						case IEC_Commands::DEVICEID_CHANGED:
-							deviceID = m_IEC_Commands.GetDeviceId();
-							fileBrowser->SetDeviceID(deviceID);
+							GlobalSetDeviceID( m_IEC_Commands.GetDeviceId() );
 							fileBrowser->ShowDeviceAndROM();
-							SetVIAsDeviceID(deviceID);	// Let the emilated VIA know
 							break;
 						default:
 							break;

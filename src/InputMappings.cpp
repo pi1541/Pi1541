@@ -173,7 +173,7 @@ bool InputMappings::CheckKeyboardBrowseMode()
 	else
 	{
 		unsigned index;
-		for (index = 0; index < 10; ++index)
+		for (index = 0; index < 11; ++index)
 		{
 			unsigned keySetIndexBase = index * 3;
 			if (keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 1]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 2]))

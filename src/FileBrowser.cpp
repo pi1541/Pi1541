@@ -35,9 +35,11 @@ extern "C"
 #define PNG_WIDTH 320
 #define PNG_HEIGHT 200
 
+extern void GlobalSetDeviceID(u8 id);
+
 unsigned char FileBrowser::LSTBuffer[FileBrowser::LSTBuffer_size];
 
-const unsigned FileBrowser::SwapKeys[30] =
+const unsigned FileBrowser::SwapKeys[33] =
 {
 	KEY_F1, KEY_KP1, KEY_1,
 	KEY_F2, KEY_KP2, KEY_2,
@@ -48,7 +50,8 @@ const unsigned FileBrowser::SwapKeys[30] =
 	KEY_F7, KEY_KP7, KEY_7,
 	KEY_F8, KEY_KP8, KEY_8,
 	KEY_F9, KEY_KP9, KEY_9,
-	KEY_F10, KEY_KP0, KEY_0
+	KEY_F10, KEY_KP0, KEY_0,
+	KEY_F11, KEY_KPMINUS, KEY_MINUS
 };
 
 static const u32 palette[] = 
@@ -370,7 +373,7 @@ FileBrowser::BrowsableList::Entry* FileBrowser::BrowsableList::FindEntry(const c
 	return 0;
 }
 
-FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, unsigned deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate)
+FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate)
 	: state(State_Folders)
 	, diskCaddy(diskCaddy)
 	, selectionsMade(false)
@@ -895,16 +898,23 @@ void FileBrowser::UpdateInputFolders()
 		else
 		{
 			unsigned keySetIndex;
-			for (keySetIndex = 0; keySetIndex < ROMs::MAX_ROMS; ++keySetIndex)
+			for (keySetIndex = 0; keySetIndex < 11; ++keySetIndex)
 			{
 				unsigned keySetIndexBase = keySetIndex * 3;
-				if (keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase]) || keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 1]) || keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 2]))
+				if (keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase]) 
+				|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 1]) 
+				|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 2]))
 				{
-					if (roms->ROMValid[keySetIndex])
+					if ( (keySetIndex < ROMs::MAX_ROMS) && (roms->ROMValid[keySetIndex]) )
 					{
 						roms->currentROMIndex = keySetIndex;
 						roms->lastManualSelectedROMIndex = keySetIndex;
 						DEBUG_LOG("Swap ROM %d %s\r\n", keySetIndex, roms->ROMNames[keySetIndex]);
+						ShowDeviceAndROM();
+					}
+					else if ( (keySetIndex >= 7) && (keySetIndex <= 10 ) )
+					{
+						GlobalSetDeviceID( keySetIndex+1 );
 						ShowDeviceAndROM();
 					}
 				}
@@ -1028,7 +1038,7 @@ void FileBrowser::ShowDeviceAndROM()
 	u32 x = 0; // 43 * 8
 	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y) - 20;
 
-	snprintf(buffer, 256, "Device %d %s\r\n", deviceID, roms->ROMNames[roms->currentROMIndex]);
+	snprintf(buffer, 256, "Device %2d %s\r\n", *deviceID, roms->ROMNames[roms->currentROMIndex]);
 	screenMain->PrintText(false, x, y, buffer, textColour, bgColour);
 }
 
