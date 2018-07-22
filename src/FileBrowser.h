@@ -230,6 +230,7 @@ private:
 	ROMs* roms;
 	u8* deviceID;
 	bool displayPNGIcons;
+	bool buttonChangedDevice;
 
 	BrowsableList caddySelections;
 
