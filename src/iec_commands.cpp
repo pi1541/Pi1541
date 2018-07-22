@@ -1100,9 +1100,6 @@ void IEC_Commands::New(void)
 	{
 		FILINFO filInfo;
 
-		if(!(strstr(filenameNew, ".d64") || strstr(filenameNew, ".D64")))
-			strcat(filenameNew, ".d64");
-
 		int ret = CreateD64(filenameNew, ID, true);
 
 		if (ret==0)
