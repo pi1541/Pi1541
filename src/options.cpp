@@ -152,6 +152,7 @@ Options::Options(void)
 	autoMountImageName[0] = 0;
 	strcpy(ROMFontName, "chargen");
 	strcpy(LcdLogoName, "1541ii");
+	strcpy(autoBaseName, "autoname");
 	starFileName[0] = 0;
 	ROMName[0] = 0;
 	ROMNameSlot2[0] = 0;
@@ -224,6 +225,10 @@ void Options::Process(char* buffer)
 		ELSE_CHECK_DECIMAL_OPTION(i2cLcdDimTime)
 		ELSE_CHECK_FLOAT_OPTION(scrollHighlightRate)
 		ELSE_CHECK_DECIMAL_OPTION(keyboardBrowseLCDScreen)
+		else if ((strcasecmp(pOption, "AutoBaseName") == 0))
+		{
+			strncpy(autoBaseName, pValue, 255);
+		}
 		else if ((strcasecmp(pOption, "StarFileName") == 0))
 		{
 			strncpy(starFileName, pValue, 255);
