@@ -151,6 +151,7 @@ public:
 		};
 
 		Entry* FindEntry(const char* name);
+		int FindNextAutoName(char* basename);
 
 		void RefreshViews();
 		void RefreshViewsHighlightScroll();
@@ -165,7 +166,7 @@ public:
 		std::vector<BrowsableListView> views;
 	};
 
-	FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, unsigned deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate);
+	FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate);
 
 	void AutoSelectImage(const char* image);
 	void DisplayRoot();
@@ -186,8 +187,6 @@ public:
 	void ShowDeviceAndROM();
 
 	void ClearScreen();
-
-	void SetDeviceID(u8 id) { deviceID = id; }
 
 	static const long int LSTBuffer_size = 1024 * 8;
 	static unsigned char LSTBuffer[];
@@ -229,7 +228,7 @@ private:
 	bool selectionsMade;
 	const char* lastSelectionName;
 	ROMs* roms;
-	unsigned deviceID;
+	u8* deviceID;
 	bool displayPNGIcons;
 
 	BrowsableList caddySelections;

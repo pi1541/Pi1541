@@ -639,8 +639,15 @@ static void PlaySoundDMA()
 
 static void SetVIAsDeviceID(u8 id)
 {
-	if (id & 1) pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, true);
-	if (id & 2) pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, true);
+	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, id & 1);
+	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, id & 2);
+}
+
+void GlobalSetDeviceID(u8 id)
+{
+	deviceID = id;
+	m_IEC_Commands.SetDeviceId(id);
+	SetVIAsDeviceID(id);
 }
 
 static void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
@@ -677,7 +684,7 @@ void emulator()
 	roms.lastManualSelectedROMIndex = 0;
 
 	diskCaddy.SetScreen(&screen, screenLCD);
-	fileBrowser = new FileBrowser(&diskCaddy, &roms, deviceID, options.DisplayPNGIcons(), &screen, screenLCD, options.ScrollHighlightRate());
+	fileBrowser = new FileBrowser(&diskCaddy, &roms, &deviceID, options.DisplayPNGIcons(), &screen, screenLCD, options.ScrollHighlightRate());
 	fileBrowser->DisplayRoot();
 	pi1541.Initialise();
 
@@ -697,8 +704,10 @@ void emulator()
 			fileBrowser->ClearSelections();
 
 			// Go back to the root folder so you can load fb* again?
-			if ((resetWhileEmulating && options.GetOnResetChangeToStartingFolder()) || selectedViaIECCommands) fileBrowser->DisplayRoot(); // Go back to the root folder and display it.
-			else fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
+//			if ((resetWhileEmulating && options.GetOnResetChangeToStartingFolder()) || selectedViaIECCommands)
+//				fileBrowser->DisplayRoot(); // Go back to the root folder and display it.
+//			else
+				fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
 
 			resetWhileEmulating = false;
 			selectedViaIECCommands = false;
@@ -788,10 +797,9 @@ void emulator()
 							fileBrowser->FolderChanged();
 							break;
 						case IEC_Commands::DEVICEID_CHANGED:
-							deviceID = m_IEC_Commands.GetDeviceId();
-							fileBrowser->SetDeviceID(deviceID);
+							GlobalSetDeviceID( m_IEC_Commands.GetDeviceId() );
 							fileBrowser->ShowDeviceAndROM();
-							SetVIAsDeviceID(deviceID);	// Let the emilated VIA know
+							SetVIAsDeviceID(deviceID);	// Let the emulated VIA know
 							break;
 						default:
 							break;
@@ -979,12 +987,14 @@ void emulator()
 
 					IEC_Bus::WaitUntilReset();
 					//DEBUG_LOG("6502 resetting\r\n");
-					if (options.GetOnResetChangeToStartingFolder() || selectedViaIECCommands)
-						fileBrowser->DisplayRoot();//m_IEC_Commands.ChangeToRoot(); // TO CHECK
 					emulating = false;
 					resetWhileEmulating = true;
 					if (reset)
+					{
 						exitReason = EXIT_RESET;
+						if (options.GetOnResetChangeToStartingFolder() || selectedViaIECCommands)
+							fileBrowser->DisplayRoot(); // TO CHECK
+					}
 					if (exitEmulation)
 						exitReason = EXIT_KEYBOARD;
 					break;
@@ -1124,6 +1134,8 @@ void DisplayOptions(int y_pos)
 	snprintf(tempBuffer, tempBufferSize, "LCDName = %s\r\n", options.GetLCDName());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "LcdLogoName = %s\r\n", options.GetLcdLogoName());
+	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "AutoBaseName = %s\r\n", options.GetAutoBaseName());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 }
 
@@ -1357,3 +1369,4 @@ extern "C"
 #endif
 	}
 }
+

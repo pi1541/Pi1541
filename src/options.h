@@ -89,6 +89,8 @@ public:
 
 	const char* GetLCDName() const { return LCDName; }
 
+	const char* GetAutoBaseName() const { return autoBaseName; }
+
 	static unsigned GetDecimal(char* pString);
 	static float GetFloat(char* pString);
 
@@ -128,6 +130,7 @@ private:
 	unsigned int keyboardBrowseLCDScreen;
 
 	char starFileName[256];
+	char autoBaseName[256];
 	char LCDName[256];
 	char LcdLogoName[256];
 

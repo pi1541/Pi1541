@@ -34,7 +34,7 @@ public:
 	void ResetCurrentROMIndex();
 
 	static const int ROM_SIZE = 16384;
-	static const int MAX_ROMS = 8;
+	static const int MAX_ROMS = 7;
 
 	unsigned char ROMImages[MAX_ROMS][ROM_SIZE];
 	char ROMNames[MAX_ROMS][256];

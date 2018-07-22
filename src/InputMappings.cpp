@@ -170,10 +170,12 @@ bool InputMappings::CheckKeyboardBrowseMode()
 	//	SetKeyboardFlag(PAGEUP_LCD_FLAG);
 	//else if (keyboard->KeyHeld(KEY_END))
 	//	SetKeyboardFlag(PAGEDOWN_LCD_FLAG);
+	else if (keyboard->KeyHeld(KEY_N) && keyboard->KeyEitherAlt() )
+		SetKeyboardFlag(NEWD64_FLAG);
 	else
 	{
 		unsigned index;
-		for (index = 0; index < 10; ++index)
+		for (index = 0; index < 11; ++index)
 		{
 			unsigned keySetIndexBase = index * 3;
 			if (keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 1]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 2]))

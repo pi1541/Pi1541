@@ -1099,71 +1099,16 @@ void IEC_Commands::New(void)
 	if (ParseFilenames((char*)channel.buffer, filenameNew, ID))
 	{
 		FILINFO filInfo;
-		FRESULT res;
-		char* ptr;
-		int i;
-		//bool g64 = false;
 
-		//if (strstr(filenameNew, ".g64") || strstr(filenameNew, ".G64"))
-		//	g64 = true;
-		//else 
 		if(!(strstr(filenameNew, ".d64") || strstr(filenameNew, ".D64")))
 			strcat(filenameNew, ".d64");
 
-		res = f_stat(filenameNew, &filInfo);
-		if (res == FR_NO_FILE)
-		{
-			FIL fpOut;
-			res = f_open(&fpOut, filenameNew, FA_CREATE_ALWAYS | FA_WRITE);
-			if (res == FR_OK)
-			{
-				char buffer[256];
-				u32 bytes;
-				u32 blocks;
+		int ret = CreateD64(filenameNew, ID, true);
 
-				memset(buffer, 0, sizeof(buffer));
-				// TODO: Should check for disk full.
-				for (blocks = 0; blocks < 357; ++blocks)
-				{
-					if (f_write(&fpOut, buffer, 256, &bytes) != FR_OK)
-						break;
-				}
-				ptr = (char*)&blankD64DIRBAM[DISKNAME_OFFSET_IN_DIR_BLOCK];
-				int len = strlen(filenameNew);
-				for (i = 0; i < len; ++i)
-				{
-					*ptr++ = ascii2petscii(filenameNew[i]);
-				}
-				for (; i < 18; ++i)
-				{
-					*ptr++ = 0xa0;
-				}
-				for (i = 0; i < 2; ++i)
-				{
-					*ptr++ = ascii2petscii(ID[i]);
-				}
-				f_write(&fpOut, blankD64DIRBAM, 256, &bytes);
-				buffer[1] = 0xff;
-				f_write(&fpOut, buffer, 256, &bytes);
-				buffer[1] = 0;
-				for (blocks = 0; blocks < 324; ++blocks)
-				{
-					if (f_write(&fpOut, buffer, 256, &bytes) != FR_OK)
-						break;
-				}
-				f_close(&fpOut);
-				// Mount the new disk? Shoud we do this or let them do it manually?
-				if (f_stat(filenameNew, &filInfo) == FR_OK)
-				{
-					DIR dir;
-					Enter(dir, filInfo);
-				}
-			}
-		}
+		if (ret==0)
+			updateAction = REFRESH;
 		else
-		{
-			Error(ERROR_63_FILE_EXISTS);
-		}
+			Error(ret);
 	}
 }
 
@@ -1233,6 +1178,7 @@ void IEC_Commands::Scratch(void)
 				f_unlink(filInfo.fname);
 			}
 			res = f_findnext(&dir, &filInfo);
+			updateAction = REFRESH;
 		}
 		text = ParseNextName(text, filename, true);
 	}
@@ -1925,4 +1871,75 @@ void IEC_Commands::CloseFile(u8 secondary)
 	Channel& channel = channels[secondary];
 
 	channel.Close();
+}
+
+int IEC_Commands::CreateD64(char* filenameNew, char* ID, bool automount)
+{
+	FILINFO filInfo;
+	FRESULT res;
+	char* ptr;
+	int i;
+	//bool g64 = false;
+
+	//if (strstr(filenameNew, ".g64") || strstr(filenameNew, ".G64"))
+	//	g64 = true;
+	//else
+	if(!(strstr(filenameNew, ".d64") || strstr(filenameNew, ".D64")))
+		strcat(filenameNew, ".d64");
+
+	res = f_stat(filenameNew, &filInfo);
+	if (res == FR_NO_FILE)
+	{
+		FIL fpOut;
+		res = f_open(&fpOut, filenameNew, FA_CREATE_ALWAYS | FA_WRITE);
+		if (res == FR_OK)
+		{
+			char buffer[256];
+			u32 bytes;
+			u32 blocks;
+
+			memset(buffer, 0, sizeof(buffer));
+			// TODO: Should check for disk full.
+			for (blocks = 0; blocks < 357; ++blocks)
+			{
+				if (f_write(&fpOut, buffer, 256, &bytes) != FR_OK)
+					break;
+			}
+			ptr = (char*)&blankD64DIRBAM[DISKNAME_OFFSET_IN_DIR_BLOCK];
+			int len = strlen(filenameNew);
+			for (i = 0; i < len; ++i)
+			{
+				*ptr++ = ascii2petscii(filenameNew[i]);
+			}
+			for (; i < 18; ++i)
+			{
+				*ptr++ = 0xa0;
+			}
+			for (i = 0; i < 2; ++i)
+			{
+				*ptr++ = ascii2petscii(ID[i]);
+			}
+			f_write(&fpOut, blankD64DIRBAM, 256, &bytes);
+			buffer[1] = 0xff;
+			f_write(&fpOut, buffer, 256, &bytes);
+			buffer[1] = 0;
+			for (blocks = 0; blocks < 324; ++blocks)
+			{
+				if (f_write(&fpOut, buffer, 256, &bytes) != FR_OK)
+					break;
+			}
+			f_close(&fpOut);
+		}
+		// Mount the new disk? Shoud we do this or let them do it manually?
+		if (automount && f_stat(filenameNew, &filInfo) == FR_OK)
+		{
+			DIR dir;
+			Enter(dir, filInfo);
+		}
+		return(ERROR_00_OK);
+	}
+	else
+	{
+		return(ERROR_63_FILE_EXISTS);
+	}
 }
