@@ -204,63 +204,21 @@ DWORD get_fattime() { return 0; }	// If you have hardware RTC return a correct v
 // 74LS42 Ouputs a low to the !CS based on the four inputs provided by address bits 10-13
 // 1800 !cs2 on pin 9
 // 1c00 !cs2 on pin 7
+
+#define N_MAPS 1
+#define N_JUMPS 256	// 256 entries - just use the high 8 bits
+u8 (* ReadJump[N_MAPS][N_JUMPS])(u16);
+void (* WriteJump[N_MAPS][N_JUMPS])(u16, u8);
 u8 read6502(u16 address)
 {
-	u8 value = 0;
-	if (address & 0x8000)
-	{
-		switch (address & 0xe000) // keep bits 15,14,13
-		{
-			case 0x8000: // 0x8000-0x9fff
-				if (options.GetRAMBOard()) {
-					value = s_u8Memory[address]; // 74LS42 outputs low on pin 1 or pin 2
-					break;
-				}
-			case 0xa000: // 0xa000-0xbfff
-			case 0xc000: // 0xc000-0xdfff
-			case 0xe000: // 0xe000-0xffff
-				value = roms.Read(address);
-				break;
-		}
-	}
-	else
-	{
-		// Address lines 15, 12, 11 and 10 are fed into a 74LS42 for decoding
-		u16 addressLines12_11_10 = (address & 0x1c00) >> 10;
-		switch (addressLines12_11_10)
-		{
-			case 0:
-			case 1:
-				value = s_u8Memory[address & 0x7ff]; // 74LS42 outputs low on pin 1 or pin 2
-				break;
-			case 6:
-				value = pi1541.VIA[0].Read(address);	// 74LS42 outputs low on pin 7
-				break;
-			case 7:
-				value = pi1541.VIA[1].Read(address);	// 74LS42 outputs low on pin 9
-				break;
-			default:
-				value = address >> 8;	// Empty address bus
-				break;
-		}
-	}
-	return value;
+	return (* ReadJump[0][address>>8])(address);
 }
 
-// Allows a mode where we have RAM at all addresses other than the ROM and the VIAs. (Maybe useful to someone?)
-u8 read6502ExtraRAM(u16 address)
+void write6502(u16 address, u8 data)
 {
-	if (address & 0x8000)
-	{
-		return roms.Read(address);
-	}
-	else
-	{
-		u16 addressLines11And12 = address & 0x1800;
-		if (addressLines11And12 == 0x1800) return pi1541.VIA[(address & 0x400) != 0].Read(address);	// address line 10 indicates what VIA to index
-		return s_u8Memory[address & 0x7fff];
-	}
+	(* WriteJump[0][address>>8])(address, data);
 }
+
 
 // Use for debugging (Reads VIA registers without the regular VIA read side effects)
 u8 peek6502(u16 address)
@@ -283,52 +241,6 @@ u8 peek6502(u16 address)
 	return value;
 }
 
-void write6502(u16 address, const u8 value)
-{
-	if (address & 0x8000)
-	{
-		switch (address & 0xe000) // keep bits 15,14,13
-		{
-			case 0x8000: // 0x8000-0x9fff
-				if (options.GetRAMBOard()) {
-					s_u8Memory[address] = value; // 74LS42 outputs low on pin 1 or pin 2
-					break;
-				}
-			case 0xa000: // 0xa000-0xbfff
-			case 0xc000: // 0xc000-0xdfff
-			case 0xe000: // 0xe000-0xffff
-				return;
-		}
-	}
-	else
-	{
-		// Address lines 15, 12, 11 and 10 are fed into a 74LS42 for decoding
-		u16 addressLines12_11_10 = (address & 0x1c00) >> 10;
-		switch (addressLines12_11_10)
-		{
-			case 0:
-			case 1:
-				s_u8Memory[address & 0x7ff] = value; // 74LS42 outputs low on pin 1 or pin 2
-				break;
-			case 6:
-				pi1541.VIA[0].Write(address, value);	// 74LS42 outputs low on pin 7
-				break;
-			case 7:
-				pi1541.VIA[1].Write(address, value);	// 74LS42 outputs low on pin 9
-				break;
-			default:
-				break;
-		}
-	}
-}
-
-void write6502ExtraRAM(u16 address, const u8 value)
-{
-	if (address & 0x8000) return; // address line 15 selects the ROM
-	u16 addressLines11And12 = address & 0x1800;
-	if (addressLines11And12 == 0) s_u8Memory[address & 0x7fff] = value;
-	else if (addressLines11And12 == 0x1800) pi1541.VIA[(address & 0x400) != 0].Write(address, value);	// address line 10 indicates what VIA to index
-}
 
 void InitialiseHardware()
 {
@@ -843,10 +755,7 @@ void emulator()
 			// Force an update on all the buttons now before we start emulation mode. 
 			IEC_Bus::ReadBrowseMode();
 
-			bool extraRAM = options.GetExtraRAM();
-			DataBusReadFn dataBusRead = extraRAM ? read6502ExtraRAM : read6502;
-			DataBusWriteFn dataBusWrite = extraRAM ? write6502ExtraRAM : write6502;
-			pi1541.m6502.SetBusFunctions(dataBusRead, dataBusWrite);
+			pi1541.m6502.SetBusFunctions(read6502, write6502);
 
 			IEC_Bus::VIA = &pi1541.VIA[0];
 			pi1541.Reset();	// will call IEC_Bus::Reset();
@@ -1259,6 +1168,54 @@ static void CheckOptions()
 	}
 }
 
+
+u8 readRam(u16 address) { return s_u8Memory[address]; }
+u8 readVIA0(u16 address) { return pi1541.VIA[0].Read(address); }
+u8 readVIA1(u16 address) { return pi1541.VIA[1].Read(address); }
+u8 readROM(u16 address) { return roms.Read(address); }
+u8 readNULL(u16 address) { return 0; }
+
+void writeRam(u16 address, u8 data) { s_u8Memory[address] = data; }
+void writeVIA0(u16 address, u8 data) { pi1541.VIA[0].Write(address, data); }
+void writeVIA1(u16 address, u8 data) { pi1541.VIA[1].Write(address, data); }
+void writeNULL(u16 address, u8 data) { }
+
+void Initialise6502JumpTables()
+{
+	for (int i=0; i< N_JUMPS; i++)
+	{
+		if (i < 0x08)
+		{
+			ReadJump[0][i] = readRam;
+			WriteJump[0][i] = writeRam;
+		}
+		else if ((i >= 0x18) && (i < 0x1c))
+		{
+			ReadJump[0][i] = readVIA0;
+			WriteJump[0][i] = writeVIA0;
+		}
+		else if ((i >= 0x1c) && (i < 0x20))
+		{
+			ReadJump[0][i] = readVIA1;
+			WriteJump[0][i] = writeVIA1;
+		}
+		else if ( (i >= 0x80) && (i < 0xA0) && options.GetRAMBOard() )
+		{
+			ReadJump[0][i] = readRam;
+			WriteJump[0][i] = writeRam;
+		}
+		else if (i >= 0xc0)
+		{
+			ReadJump[0][i] = readROM;
+		}
+		else
+		{
+			ReadJump[0][i] = readNULL;
+			WriteJump[0][i] = writeNULL;
+		}
+	}
+}
+
 extern "C"
 {
 	void kernel_main(unsigned int r0, unsigned int r1, unsigned int atags)
@@ -1282,6 +1239,8 @@ extern "C"
 		DisplayLogo();
 
 		InitialiseLCD();
+
+		Initialise6502JumpTables();
 
 		int y_pos = 184;
 		snprintf(tempBuffer, tempBufferSize, "Copyright(C) 2018 Stephen White");
