@@ -344,5 +344,9 @@ public:
 	{
 		return (keyStatus[0] | keyStatus[1]);
 	}
+	inline bool KeyEitherAlt()
+	{
+		return (modifier & (KEY_MOD_LALT | KEY_MOD_RALT) );
+	}
 };
 #endif

@@ -46,7 +46,7 @@ extern "C"
 #include "ssd_logo.h"
 
 unsigned versionMajor = 1;
-unsigned versionMinor = 7;
+unsigned versionMinor = 9;
 
 // When the emulated CPU starts we execute the first million odd cycles in non-real-time (ie as fast as possible so the emulated 1541 becomes responsive to CBM-Browser asap)
 // During these cycles the CPU is executing the ROM self test routines (these do not need to be cycle accurate)
@@ -101,6 +101,14 @@ unsigned int screenHeight = 768;
 
 const char* termainalTextRed = "\E[31m";
 const char* termainalTextNormal = "\E[0m";
+
+typedef enum {
+	EXIT_UNKNOWN,
+	EXIT_RESET,
+	EXIT_CD,
+	EXIT_KEYBOARD
+} EXIT_TYPE;
+EXIT_TYPE exitReason = EXIT_UNKNOWN;
 
 // Hooks required for USPi library
 extern "C"
@@ -328,7 +336,6 @@ void InitialiseHardware()
 	RPI_GpioVirtInit();
 	RPI_TouchInit();
 #endif
-	RPI_AuxMiniUartInit(115200, 8);
 
 	screen.Open(screenWidth, screenHeight, 16);
 
@@ -358,25 +365,30 @@ void InitialiseLCD()
 	int i2cLcdOnContrast = options.I2CLcdOnContrast();
 	int i2cLcdDimContrast = options.I2CLcdDimContrast();
 	int i2cLcdDimTime = options.I2CLcdDimTime();
-	int i2cLcdModel = options.I2CLcdModel();
+	LCD_MODEL i2cLcdModel = options.I2CLcdModel();
 
 	if (i2cLcdModel)
 	{
+		int width = 128;
+		int height = 64;
+		if (i2cLcdModel == LCD_1306_128x32)
+			height = 32;
 		screenLCD = new ScreenLCD();
-		screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
+		screenLCD->Open(width, height, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
 		screenLCD->SetContrast(i2cLcdOnContrast);
+		screenLCD->ClearInit(0); // sh1106 needs this
 
 		bool logo_done = false;
-		if (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0)
+		if ( (height == 64) && (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0) )
 		{
-			screenLCD->PlotRawImage(logo_ssd_1541ii, 0, 0, 128, 64);
+			screenLCD->PlotRawImage(logo_ssd_1541ii, 0, 0, width, height);
 			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
 			screenLCD->PrintText(0, 16, 0, tempBuffer, 0xffffffff);
 			logo_done = true;
 		}
-		else if (strcasecmp(options.GetLcdLogoName(), "1541classic") == 0)
+		else if (( height == 64) && (strcasecmp(options.GetLcdLogoName(), "1541classic") == 0) )
 		{
-			screenLCD->PlotRawImage(logo_ssd_1541classic, 0, 0, 128, 64);
+			screenLCD->PlotRawImage(logo_ssd_1541classic, 0, 0, width, height);
 			logo_done = true;
 		}
 		else if (f_stat(options.GetLcdLogoName(), &filLcdIcon) == FR_OK && filLcdIcon.fsize <= LCD_LOGO_MAX_SIZE)
@@ -390,19 +402,23 @@ void InitialiseLCD()
 				u32 bytesRead;
 				f_read(&fp, LcdLogoFile, LCD_LOGO_MAX_SIZE, &bytesRead);
 				f_close(&fp);
-				screenLCD->PlotRawImage(LcdLogoFile, 0, 0, 128, 64);
+				screenLCD->PlotRawImage(LcdLogoFile, 0, 0, width, height);
 				logo_done = true;
 			}
 		}
 
 		if (!logo_done)
 		{
-			snprintf(tempBuffer, tempBufferSize, "Pixxxx V%d.%02d", versionMajor, versionMinor);
-			int x = (128 - 8*strlen(tempBuffer) ) /2;
-			int y = (64-16)/2;
+			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
+			int x = (width - 8*strlen(tempBuffer) ) /2;
+			int y = (height-16)/2;
 			screenLCD->PrintText(0, x, y, tempBuffer, 0x0);
 		}
 		screenLCD->RefreshScreen();
+	}
+	else
+	{
+		screenLCD = 0;
 	}
 }
 
@@ -560,7 +576,7 @@ void UpdateScreen()
 			{
 				screenLCD->PrintText(false, 0, 0, tempBuffer, RGBA(0xff, 0xff, 0xff, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
 //				screenLCD->SetContrast(255.0/79.0*track);
-				screenLCD->RefreshRows(0, 2);
+				screenLCD->RefreshRows(0, 1);
 			}
 
 		}
@@ -627,17 +643,34 @@ static void PlaySoundDMA()
 
 static void SetVIAsDeviceID(u8 id)
 {
-	if (id & 1) pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, true);
-	if (id & 2) pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, true);
+	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, id & 1);
+	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, id & 2);
 }
 
-static void CheckAutoMountImage(bool CD_, FileBrowser* fileBrowser)
+void GlobalSetDeviceID(u8 id)
 {
-	if (CD_ == false)
+	deviceID = id;
+	m_IEC_Commands.SetDeviceId(id);
+	SetVIAsDeviceID(id);
+}
+
+static void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
+{
+	const char* autoMountImageName = options.GetAutoMountImageName();
+	if (autoMountImageName[0] != 0)
 	{
-		const char* autoMountImageName = options.GetAutoMountImageName();
-		if (autoMountImageName[0] != 0)
-			fileBrowser->AutoSelectImage(autoMountImageName);
+		switch (reset_reason)
+		{
+			case EXIT_UNKNOWN:
+			case EXIT_RESET:
+				fileBrowser->AutoSelectImage(autoMountImageName);
+			break;
+			case EXIT_CD:
+			case EXIT_KEYBOARD:
+			break;
+			default:
+			break;
+		}
 	}
 }
 
@@ -651,12 +684,11 @@ void emulator()
 	bool selectedViaIECCommands = false;
 	InputMappings* inputMappings = InputMappings::Instance();
 	FileBrowser* fileBrowser;
-	bool CD_ = false;
 
 	roms.lastManualSelectedROMIndex = 0;
 
 	diskCaddy.SetScreen(&screen, screenLCD);
-	fileBrowser = new FileBrowser(&diskCaddy, &roms, deviceID, options.DisplayPNGIcons(), &screen, screenLCD);
+	fileBrowser = new FileBrowser(&diskCaddy, &roms, &deviceID, options.DisplayPNGIcons(), &screen, screenLCD, options.ScrollHighlightRate());
 	fileBrowser->DisplayRoot();
 	pi1541.Initialise();
 
@@ -676,8 +708,10 @@ void emulator()
 			fileBrowser->ClearSelections();
 
 			// Go back to the root folder so you can load fb* again?
-			if ((resetWhileEmulating && options.GetOnResetChangeToStartingFolder()) || selectedViaIECCommands) fileBrowser->DisplayRoot(); // Go back to the root folder and display it.
-			else fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
+//			if ((resetWhileEmulating && options.GetOnResetChangeToStartingFolder()) || selectedViaIECCommands)
+//				fileBrowser->DisplayRoot(); // Go back to the root folder and display it.
+//			else
+				fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
 
 			resetWhileEmulating = false;
 			selectedViaIECCommands = false;
@@ -691,7 +725,7 @@ void emulator()
 			{
 				m_IEC_Commands.SimulateIECBegin();
 
-				CheckAutoMountImage(CD_, fileBrowser);
+				CheckAutoMountImage(exitReason, fileBrowser);
 
 				while (!emulating)
 				{
@@ -704,11 +738,11 @@ void emulator()
 								fileBrowser->DisplayRoot();
 							IEC_Bus::Reset();
 							m_IEC_Commands.SimulateIECBegin();
-							CheckAutoMountImage(false, fileBrowser);
+							CheckAutoMountImage(EXIT_UNKNOWN, fileBrowser);
 							break;
 						case IEC_Commands::NONE:
 							{
-								fileBrowser->UpdateInput();
+								fileBrowser->Update();
 
 								// Check selections made via FileBrowser
 								if (fileBrowser->SelectionsMade())
@@ -767,14 +801,14 @@ void emulator()
 							fileBrowser->FolderChanged();
 							break;
 						case IEC_Commands::DEVICEID_CHANGED:
-							deviceID = m_IEC_Commands.GetDeviceId();
-							fileBrowser->SetDeviceID(deviceID);
+							GlobalSetDeviceID( m_IEC_Commands.GetDeviceId() );
 							fileBrowser->ShowDeviceAndROM();
-							SetVIAsDeviceID(deviceID);	// Let the emilated VIA know
+							SetVIAsDeviceID(deviceID);	// Let the emulated VIA know
 							break;
 						default:
 							break;
 					}
+					usDelay(1);
 				}
 			}
 			else
@@ -783,10 +817,11 @@ void emulator()
 				{
 					if (keyboard->CheckChanged())
 					{
-						fileBrowser->UpdateInput();
+						fileBrowser->Update();
 						if (fileBrowser->SelectionsMade())
 							emulating = BeginEmulating(fileBrowser, fileBrowser->LastSelectionName());
 					}
+					usDelay(1);
 				}
 			}
 		}
@@ -843,7 +878,7 @@ void emulator()
 								// Exit full emulation back to IEC commands level simulation.
 								snoopIndex = 0;
 								emulating = false;
-								CD_ = true;
+								exitReason = EXIT_CD;
 							}
 						}
 						else
@@ -956,12 +991,16 @@ void emulator()
 
 					IEC_Bus::WaitUntilReset();
 					//DEBUG_LOG("6502 resetting\r\n");
-					if (options.GetOnResetChangeToStartingFolder() || selectedViaIECCommands)
-						fileBrowser->DisplayRoot();//m_IEC_Commands.ChangeToRoot(); // TO CHECK
 					emulating = false;
 					resetWhileEmulating = true;
-					if (reset || exitEmulation)
-						CD_ = false;
+					if (reset)
+					{
+						exitReason = EXIT_RESET;
+						if (options.GetOnResetChangeToStartingFolder() || selectedViaIECCommands)
+							fileBrowser->DisplayRoot(); // TO CHECK
+					}
+					if (exitEmulation)
+						exitReason = EXIT_KEYBOARD;
 					break;
 
 				}
@@ -1100,6 +1139,34 @@ void DisplayOptions(int y_pos)
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "LcdLogoName = %s\r\n", options.GetLcdLogoName());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "AutoBaseName = %s\r\n", options.GetAutoBaseName());
+	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+}
+
+void DisplayI2CScan(int y_pos)
+{
+	int BSCMaster = options.I2CBusMaster();
+
+	snprintf(tempBuffer, tempBufferSize, "Scanning i2c bus %d ...\r\n", BSCMaster);
+	screen.PrintText(false, 0, y_pos , tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+
+	RPI_I2CInit(BSCMaster, 1);
+
+	int count=0;
+	int ptr = 0;
+	ptr = snprintf (tempBuffer+ptr, tempBufferSize-ptr, "Found ");
+	for (int address = 0; address<128; address++)
+	{
+		if (RPI_I2CScan(BSCMaster, address))
+		{
+			ptr += snprintf (tempBuffer+ptr, tempBufferSize-ptr, "%3d ", address);
+			count++;
+		}
+	}
+	if (count == 0)
+		ptr += snprintf (tempBuffer+ptr, tempBufferSize-ptr, "Nothing");
+
+	screen.PrintText(false, 0, y_pos+16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 }
 
 static void CheckOptions()
@@ -1206,6 +1273,8 @@ extern "C"
 		m_EMMC.Initialize();
 		f_mount(&fileSystem, "", 1);
 
+		RPI_AuxMiniUartInit(115200, 8);
+
 		LoadOptions();
 
 		InitialiseHardware();
@@ -1226,8 +1295,11 @@ extern "C"
 		snprintf(tempBuffer, tempBufferSize, "This is free software, and you are welcome to redistribute it.");
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 
+		if (options.I2CScan())
+			DisplayI2CScan(y_pos+=32);
+
 		if (options.ShowOptions())
-			DisplayOptions(y_pos+32);
+			DisplayOptions(y_pos+=32);
 
 		if (!options.QuickBoot())
 			IEC_Bus::WaitMicroSeconds(3 * 1000000);
@@ -1282,7 +1354,8 @@ extern "C"
 
 		IEC_Bus::Initialise();
 
-		screenLCD->ClearInit(0);
+		if (screenLCD)
+			screenLCD->ClearInit(0);
 
 #ifdef HAS_MULTICORE
 		start_core(3, _spin_core);
@@ -1300,3 +1373,4 @@ extern "C"
 #endif
 	}
 }
+

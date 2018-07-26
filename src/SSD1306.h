@@ -76,10 +76,10 @@ class SSD1306
 public:
 	// 128x32 0x3C
 	// 128x64 0x3D or 0x3C (if SA0 is grounded)
-	SSD1306(int BSCMaster = 1, u8 address = 0x3C, int flip = 0, int type=1306);
+	SSD1306(int BSCMaster = 1, u8 address = 0x3C, unsigned width = 128, unsigned height = 64, int flip = 0, LCD_MODEL type=LCD_UNKNOWN);
 
 	void PlotCharacter(int x, int y, char ascii, bool inverse);
-	void Plottext(int x, int y, char* str, bool inverse);
+	void PlotText(int x, int y, char* str, bool inverse);
 
 	void InitHardware();
 	void DisplayOn();
@@ -90,7 +90,8 @@ public:
 
 	void ClearScreen();
 	void RefreshScreen();
-	void RefreshRows(u8 start, u8 amountOfRows);
+	void RefreshPage(u32 page);
+	void RefreshRows(u32 start, u32 amountOfRows);
 	void SetDisplayWindow(u8 x1, u8 y1, u8 x2, u8 y2);
 	void PlotPixel(int x, int y, int c);
 	void PlotImage(const unsigned char * source);
@@ -101,7 +102,6 @@ protected:
 
 	void Home();
 	void MoveCursorByte(u8 row, u8 col);
-	void MoveCursorCharacter(u8 row, u8 col);
 
 	unsigned char frame[SSD1306_128x64_BYTES];
 
@@ -110,10 +110,15 @@ protected:
 	int type;
 	int flip;
 	int contrast;
+	unsigned width;
+	unsigned height;
 };
 #endif
 
 
+#define SSD1306_CMD_SET_COLUMN_LOW 0x00
+#define SSD1306_CMD_SET_COLUMN_HIGH 0x10
+#define SSD1306_CMD_SET_PAGE 0xB0
 #define SSD1306_CMD_SET_MEMORY_ADDRESSING_MODE 0x20
 #define SSD1306_CMD_SET_COLUMN_ADDRESS 0x21
 #define SSD1306_CMD_SET_PAGE_ADDRESS 0x22
@@ -121,8 +126,8 @@ protected:
 #define SSD1306_CMD_ACTIVATE_SCROLL 0x2F
 #define SSD1306_CMD_SET_CONTRAST_CONTROL 0x81	//  Set Contrast Control for BANK0 
 #define SSD1306_ENABLE_CHARGE_PUMP 0x8D
-#define SSD1306_CMD_ENTIRE_DISPLAY_ON 0xA4
-#define SSD1306_CMD_ENTIRE_DISPLAY_OFF 0xA5
+#define SSD1306_CMD_TEST_DISPLAY_OFF 0xA4
+#define SSD1306_CMD_TEST_DISPLAY_ON 0xA5
 #define SSD1306_CMD_NORMAL_DISPLAY 0xA6	// 1 = on pixel
 #define SSD1306_CMD_INVERT_DISPLAY 0xA7	// 0 = on pixel
 #define SSD1306_CMD_DISPLAY_OFF 0xAE

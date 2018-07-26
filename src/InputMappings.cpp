@@ -33,6 +33,8 @@ unsigned InputMappings::directDiskSwapRequest = 0;
 
 InputMappings::InputMappings()
 	: keyboardBrowseLCDScreen(false)
+	, insertButtonPressedPrev(false)
+	, insertButtonPressed(false)
 {
 }
 
@@ -47,8 +49,13 @@ bool InputMappings::CheckButtonsBrowseMode()
 		SetButtonFlag(DOWN_FLAG);
 	else if (IEC_Bus::GetInputButtonPressed(3))
 		SetButtonFlag(BACK_FLAG);
-	else if (IEC_Bus::GetInputButtonPressed(4))
+	//else if (IEC_Bus::GetInputButtonPressed(4))
+	//	SetButtonFlag(INSERT_FLAG);
+
+	insertButtonPressed = !IEC_Bus::GetInputButtonReleased(4);
+	if (insertButtonPressedPrev && !insertButtonPressed)
 		SetButtonFlag(INSERT_FLAG);
+	insertButtonPressedPrev = insertButtonPressed;
 
 	return buttonFlags != 0;
 }
@@ -170,10 +177,12 @@ bool InputMappings::CheckKeyboardBrowseMode()
 	//	SetKeyboardFlag(PAGEUP_LCD_FLAG);
 	//else if (keyboard->KeyHeld(KEY_END))
 	//	SetKeyboardFlag(PAGEDOWN_LCD_FLAG);
+	else if (keyboard->KeyHeld(KEY_N) && keyboard->KeyEitherAlt() )
+		SetKeyboardFlag(NEWD64_FLAG);
 	else
 	{
 		unsigned index;
-		for (index = 0; index < 10; ++index)
+		for (index = 0; index < 11; ++index)
 		{
 			unsigned keySetIndexBase = index * 3;
 			if (keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 1]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 2]))

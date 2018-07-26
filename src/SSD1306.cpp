@@ -27,12 +27,14 @@ extern "C"
 
 unsigned char frame[SSD1306_128x64_BYTES];
 
-SSD1306::SSD1306(int BSCMaster, u8 address, int flip, int type)
+SSD1306::SSD1306(int BSCMaster, u8 address, unsigned width, unsigned height, int flip, LCD_MODEL type)
 	: BSCMaster(BSCMaster)
 	, address(address)
 	, type(type)
 	, flip(flip)
 	, contrast(127)
+	, width(width)
+	, height(height)
 {
 	RPI_I2CInit(BSCMaster, 1);
 
@@ -45,7 +47,7 @@ void SSD1306::InitHardware()
 	SendCommand(SSD1306_CMD_DISPLAY_OFF);	// 0xAE
 
 	SendCommand(SSD1306_CMD_MULTIPLEX_RATIO);  // 0xA8
-	SendCommand(0x3F);	// SSD1306_LCDHEIGHT - 1
+	SendCommand(height-1);	// SSD1306_LCDHEIGHT - 1
 
 	SendCommand(SSD1306_CMD_SET_DISPLAY_OFFSET);  // 0xD3 Vertical scroll position
 	SendCommand(0x00);  // no Offset
@@ -61,32 +63,36 @@ void SSD1306::InitHardware()
 	}
 
 	SendCommand(SSD1306_CMD_SET_COM_PINS);	// 0xDA Layout and direction
-	SendCommand(0x12);
+	if (type == LCD_1306_128x32)
+		SendCommand(0x02);
+	else
+		SendCommand(0x12);
 
 	SetContrast(GetContrast());
 
-	SendCommand(SSD1306_CMD_ENTIRE_DISPLAY_ON);
+	SendCommand(SSD1306_CMD_TEST_DISPLAY_OFF);	// 0xA4 - DONT force entire display on
 
 	SendCommand(SSD1306_CMD_NORMAL_DISPLAY);  // 0xA6 = non inverted
 
 	SendCommand(SSD1306_CMD_SET_PRE_CHARGE_PERIOD);  // 0xD9
 	SendCommand(0xF1);
 
-	SendCommand(SSD1306_CMD_SET_VCOMH_DESELECT_LEVEL);
+	SendCommand(SSD1306_CMD_SET_VCOMH_DESELECT_LEVEL);	// 0xDB
 	SendCommand(0x40);
 
-	SendCommand(SSD1306_CMD_SET_DISPLAY_CLOCK_DIVIDE_RATIO);
+	SendCommand(SSD1306_CMD_SET_DISPLAY_CLOCK_DIVIDE_RATIO);	// 0xD5
 	SendCommand(0x80);	// upper nibble is rate, lower nibble is divisor
 
-	SendCommand(SSD1306_ENABLE_CHARGE_PUMP);	// Enable charge pump regulator
+	SendCommand(SSD1306_ENABLE_CHARGE_PUMP);	// 0x8D Enable charge pump regulator
 	SendCommand(0x14);  // external = 0x10 internal = 0x14
 
-	SendCommand(SSD1306_CMD_SET_MEMORY_ADDRESSING_MODE);  // Set Memory Addressing Mode
-	SendCommand(0x00);	// 00 - Horizontal Addressing Mode
+	SendCommand(SSD1306_CMD_SET_MEMORY_ADDRESSING_MODE);  // 0x20	Set Memory Addressing Mode
+	SendCommand(0x10);	// 10 - Page Addressing Mode for SH1106 compatibility
 
 	Home();
 
-	SendCommand(SSD1306_CMD_DEACTIVATE_SCROLL);
+	if (type != LCD_1106_128x64)
+		SendCommand(SSD1306_CMD_DEACTIVATE_SCROLL);	// 0x2E
 }
 
 void SSD1306::SendCommand(u8 command)
@@ -114,44 +120,58 @@ void SSD1306::Home()
 	MoveCursorByte(0, 0);
 }
 
-void SSD1306::MoveCursorByte(u8 row, u8 col)
+void SSD1306::MoveCursorByte(u8 page, u8 col)
 {
-	if (col > 127) { col = 127; }
-	if (row > 7) { row = 7; }
+	if (col > width-1) { col = width-1; }
+	if (page > height/8-1) { page = height/8-1; }
 
-	if (type == 1106)
-		SetDisplayWindow(col+2, 129, row, 7);	// sh1106 has 132x64 ram, display is centreed
-	else
-		SetDisplayWindow(col+0, 127, row, 7);
-}
+	if (type == LCD_1106_128x64)
+		col += 2;	// sh1106 uses columns 2..129
 
-void SSD1306::MoveCursorCharacter(u8 row, u8 col)
-{
-	if (col > 15) { col = 15; }
-	if (row > 7) { row = 7; }
-
-	MoveCursorByte(row, col << 3);
+	SendCommand(SSD1306_CMD_SET_PAGE | page);		// 0xB0 page address
+	SendCommand(SSD1306_CMD_SET_COLUMN_LOW | (col & 0xf));	// 0x00 column address lower bits
+	SendCommand(SSD1306_CMD_SET_COLUMN_HIGH | (col >> 4));	// 0x10 column address upper bits
 }
 
 void SSD1306::RefreshScreen()
 {
-	int i;
-	Home();
-	for (i = 0; i < SSD1306_128x64_BYTES; i++)
+	unsigned i;
+	for (i = 0; i < height/8; i++)
 	{
-		SendData(frame[i]);
+		RefreshPage(i);
 	}
 }
 
-void SSD1306::RefreshRows(u8 start, u8 amountOfRows)
+void SSD1306::RefreshRows(u32 start, u32 amountOfRows)
 {
-	MoveCursorCharacter(start, 0);
-	start *= 128;
+	unsigned int i;
+
+	start <<= 1;
+	amountOfRows <<= 1;
+	for (i = start; i < start+amountOfRows; i++)
+	{
+		RefreshPage(i);
+	}
+}
+
+void SSD1306::RefreshPage(u32 page)
+{
+	if (page >= height/8)
+		return;
+
+	// x32 displays use lower half (pages 2 and 3)
+	if (type == LCD_1306_128x32)
+	{
+		page = page+4;	// 0,1,2,3 -> 4,5,6,7
+		page = page%4;	// and wrap it so 4,5 -> 0,1
+	}
 
 	int i;
-	int end = start + amountOfRows * 128;
+	int start = page*width;
+	int end = start + width;
 
-	for (i = start * 128; i < end; i++)
+	MoveCursorByte(page, 0);
+	for (i = start; i < end; i++)
 	{
 		SendData(frame[i]);
 	}
@@ -165,14 +185,12 @@ void SSD1306::ClearScreen()
 
 void SSD1306::DisplayOn()
 {
-	SendCommand(SSD1306_CMD_DISPLAY_ON);
-	ClearScreen();
+	SendCommand(SSD1306_CMD_DISPLAY_ON);	// 0xAF
 }
 
 void SSD1306::DisplayOff()
 {
-	ClearScreen();
-	SendCommand(SSD1306_CMD_DISPLAY_OFF);
+	SendCommand(SSD1306_CMD_DISPLAY_OFF);	// 0xAE
 }
 
 void SSD1306::SetContrast(u8 value)
@@ -180,7 +198,8 @@ void SSD1306::SetContrast(u8 value)
 	contrast = value;
 	SendCommand(SSD1306_CMD_SET_CONTRAST_CONTROL);
 	SendCommand(value);
-	SetVCOMDeselect( value >> 5);
+	if (type != LCD_1106_128x64)	// dont fiddle vcomdeselect on 1106 displays
+		SetVCOMDeselect( value >> 8);
 }
 
 void SSD1306::SetVCOMDeselect(u8 value)
@@ -189,18 +208,7 @@ void SSD1306::SetVCOMDeselect(u8 value)
 	SendCommand( (value & 7) << 4 );
 }
 
-void SSD1306::SetDisplayWindow(u8 x1, u8 x2, u8 y1, u8 y2)
-{
-	SendCommand(SSD1306_CMD_SET_COLUMN_ADDRESS);  // 0x21 Set Column Address (only for horizontal or vertical mode)
-	SendCommand(x1);	// start 0
-	SendCommand(x2);	// end 127
-
-	SendCommand(SSD1306_CMD_SET_PAGE_ADDRESS);  // 0x22
-	SendCommand(y1);	// start 0
-	SendCommand(y2);	// end 7 (so 8 vertical bytes == 64 row display)
-}
-
-void SSD1306::Plottext(int x, int y, char* str, bool inverse)
+void SSD1306::PlotText(int x, int y, char* str, bool inverse)
 {
 	int i;
 	i = 0;

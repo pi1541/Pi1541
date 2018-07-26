@@ -32,12 +32,19 @@ extern "C"
 #include "rpi-gpio.h"
 }
 
+#include "iec_commands.h"
+extern IEC_Commands m_IEC_Commands;
+extern Options options;
+
+
 #define PNG_WIDTH 320
 #define PNG_HEIGHT 200
 
+extern void GlobalSetDeviceID(u8 id);
+
 unsigned char FileBrowser::LSTBuffer[FileBrowser::LSTBuffer_size];
 
-const unsigned FileBrowser::SwapKeys[30] =
+const unsigned FileBrowser::SwapKeys[33] =
 {
 	KEY_F1, KEY_KP1, KEY_1,
 	KEY_F2, KEY_KP2, KEY_2,
@@ -48,7 +55,8 @@ const unsigned FileBrowser::SwapKeys[30] =
 	KEY_F7, KEY_KP7, KEY_7,
 	KEY_F8, KEY_KP8, KEY_8,
 	KEY_F9, KEY_KP9, KEY_9,
-	KEY_F10, KEY_KP0, KEY_0
+	KEY_F10, KEY_KP0, KEY_0,
+	KEY_F11, KEY_KPMINUS, KEY_MINUS
 };
 
 static const u32 palette[] = 
@@ -71,16 +79,89 @@ static const u32 palette[] =
 	RGBA(0x9F, 0x9F, 0x9F, 0xFF)
 };
 
-void FileBrowser::BrowsableListView::Refresh()
+void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, bool selected)
 {
 	char buffer1[128] = { 0 };
-	char buffer2[128] = { 0 };
+	char buffer2[256] = { 0 };
+	u32 colour;
+	RGBA BkColour = RGBA(0, 0, 0, 0xFF); //palette[VIC2_COLOUR_INDEX_BLUE];
+	u32 columnsMax = columns;
+
+	if (columnsMax > sizeof(buffer1))
+		columnsMax = sizeof(buffer1);
+
+	if (entryIndex < list->entries.size())
+	{
+		FileBrowser::BrowsableList::Entry* entry = &list->entries[entryIndex];
+		if (screen->IsMonocrome())
+		{
+			if (entry->filImage.fattrib & AM_DIR)
+			{
+				snprintf(buffer2, 256, "[%s]", entry->filImage.fname);
+			}
+			else
+			{
+				if (entry->caddyIndex != -1)
+					snprintf(buffer2, 256, "%d>%s", entry->caddyIndex, entry->filImage.fname);
+				else
+					snprintf(buffer2, 256, "%s", entry->filImage.fname);
+			}
+		}
+		else
+		{
+			snprintf(buffer2, 256, "%s", entry->filImage.fname);
+		}
+		int len = strlen(buffer2 + highlightScrollOffset);
+		strncpy(buffer1, buffer2 + highlightScrollOffset, sizeof(buffer1));
+		while (len < (int)columnsMax)
+			buffer1[len++] = ' ';
+		buffer1[columnsMax] = 0;
+
+		if (selected)
+		{
+			if (entry->filImage.fattrib & AM_DIR)
+			{
+				screen->PrintText(false, x, y, buffer1, palette[VIC2_COLOUR_INDEX_LBLUE], RGBA(0xff, 0xff, 0xff, 0xff));
+			}
+			else
+			{
+				colour = RGBA(0xff, 0, 0, 0xff);
+				if (entry->filImage.fattrib & AM_RDO)
+					colour = palette[VIC2_COLOUR_INDEX_RED];
+
+				screen->PrintText(false, x, y, buffer1, colour, RGBA(0xff, 0xff, 0xff, 0xff));
+			}
+		}
+		else
+		{
+			if (entry->filImage.fattrib & AM_DIR)
+			{
+				screen->PrintText(false, x, y, buffer1, palette[VIC2_COLOUR_INDEX_LBLUE], BkColour);
+			}
+			else
+			{
+				colour = palette[VIC2_COLOUR_INDEX_LGREY];
+				if (entry->filImage.fattrib & AM_RDO)
+					colour = palette[VIC2_COLOUR_INDEX_PINK];
+				screen->PrintText(false, x, y, buffer1, colour, BkColour);
+			}
+		}
+	}
+	else
+	{
+		memset(buffer1, ' ', 80);
+		screen->PrintText(false, x, y, buffer1, BkColour, BkColour);
+	}
+}
+
+void FileBrowser::BrowsableListView::Refresh()
+{
 	u32 index;
 	u32 entryIndex;
 	u32 x = positionX;
 	u32 y = positionY;
-	u32 colour;
-	RGBA BkColour = RGBA(0, 0, 0, 0xFF); //palette[VIC2_COLOUR_INDEX_BLUE];
+
+	highlightScrollOffset = 0;
 
 	// Ensure the current selection is visible
 	if (list->currentIndex - offset >= rows)
@@ -94,69 +175,73 @@ void FileBrowser::BrowsableListView::Refresh()
 	{
 		entryIndex = offset + index;
 
-		if (entryIndex < list->entries.size())
-		{
-			FileBrowser::BrowsableList::Entry* entry = &list->entries[entryIndex];
-			if (screen->IsMonocrome())
-			{
-				if (entry->filImage.fattrib & AM_DIR)
-				{
-					snprintf(buffer2, columns + 1, "[%s]", entry->filImage.fname);
-				}
-				else
-				{
-					if (entry->caddyIndex != -1)
-						snprintf(buffer2, columns + 1, "%d>%s", entry->caddyIndex, entry->filImage.fname);
-					else
-						snprintf(buffer2, columns + 1, "%s", entry->filImage.fname);
-				}
-			}
-			else
-			{
-				snprintf(buffer2, columns + 1, "%s", entry->filImage.fname);
-			}
-			memset(buffer1, ' ', columns);
-			buffer1[127] = 0;
-			strncpy(buffer1, buffer2, strlen(buffer2));
-			if (/*showSelected && */list->currentIndex == entryIndex)
-			{
-				if (entry->filImage.fattrib & AM_DIR)
-				{
-					screen->PrintText(false, x, y, buffer1, palette[VIC2_COLOUR_INDEX_LBLUE], RGBA(0xff, 0xff, 0xff, 0xff));
-				}
-				else
-				{
-					colour = RGBA(0xff, 0, 0, 0xff);
-					if (entry->filImage.fattrib & AM_RDO)
-						colour = palette[VIC2_COLOUR_INDEX_RED];
-
-					screen->PrintText(false, x, y, buffer1, colour, RGBA(0xff, 0xff, 0xff, 0xff));
-				}
-			}
-			else
-			{
-				if (entry->filImage.fattrib & AM_DIR)
-				{
-					screen->PrintText(false, x, y, buffer1, palette[VIC2_COLOUR_INDEX_LBLUE], BkColour);
-				}
-				else
-				{
-					colour = palette[VIC2_COLOUR_INDEX_LGREY];
-					if (entry->filImage.fattrib & AM_RDO)
-						colour = palette[VIC2_COLOUR_INDEX_PINK];
-					screen->PrintText(false, x, y, buffer1, colour, BkColour);
-				}
-			}
-		}
-		else
-		{
-			memset(buffer1, ' ', 80);
-			screen->PrintText(false, x, y, buffer1, BkColour, BkColour);
-		}
+		RefreshLine(entryIndex, x, y, /*showSelected && */list->currentIndex == entryIndex);
 		y += 16;
 	}
 
 	screen->SwapBuffers();
+}
+
+void FileBrowser::BrowsableListView::RefreshHighlightScroll()
+{
+	char buffer2[256] = { 0 };
+
+	FileBrowser::BrowsableList::Entry* entry = list->current;
+	if (screen->IsMonocrome())
+	{
+		if (entry->filImage.fattrib & AM_DIR)
+		{
+			snprintf(buffer2, 256, "[%s]", entry->filImage.fname);
+		}
+		else
+		{
+			if (entry->caddyIndex != -1)
+				snprintf(buffer2, 256, "%d>%s", entry->caddyIndex, entry->filImage.fname);
+			else
+				snprintf(buffer2, 256, "%s", entry->filImage.fname);
+		}
+	}
+	else
+	{
+		snprintf(buffer2, 256, "%s", entry->filImage.fname);
+	}
+
+
+	int len = strlen(buffer2);
+	if (len > (int)columns)
+	{
+		if (highlightScrollOffset == 0)
+		{
+			highlightScrollStartCount++;
+			if (highlightScrollStartCount > 10)
+			{
+				highlightScrollStartCount = 0;
+				highlightScrollOffset = 1;
+			}
+		}
+		else if (len - (int)(highlightScrollOffset + 1) <= (int)(columns - 1))
+		{
+			highlightScrollEndCount++;
+			if (highlightScrollEndCount > 10)
+			{
+				highlightScrollOffset = 0;
+				highlightScrollEndCount = 0;
+			}
+		}
+		else
+		{
+			highlightScrollOffset++;
+		}
+
+		int rowIndex = list->currentIndex - offset;
+		
+		u32 y = positionY;
+		y += rowIndex * 16;
+
+		RefreshLine(list->currentIndex, 0, y, true);
+
+		screen->RefreshRows(rowIndex, 1);
+	}
 }
 
 bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
@@ -172,7 +257,7 @@ bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
 			if (!pageOnly)
 			{
 				list->currentIndex++;
-				list->current = &list->entries[list->currentIndex];
+				list->SetCurrent();
 			}
 			if (list->currentIndex >= (offset + rows) && (list->currentIndex < list->entries.size()))
 				offset++;
@@ -186,7 +271,7 @@ bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
 			if (!pageOnly)
 			{
 				list->currentIndex--;
-				list->current = &list->entries[list->currentIndex];
+				list->SetCurrent();
 			}
 			if ((offset > 0) && (list->currentIndex < offset))
 				offset--;
@@ -216,7 +301,7 @@ bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
 			else
 				list->currentIndex = offset + rowsMinus1; // Move the bottom of the screen
 		}
-		list->current = &list->entries[list->currentIndex];
+		list->SetCurrent();
 		dirty = true;
 	}
 	if ((lcdPgUpDown && inputMappings->BrowsePageUpLCD()) || (!lcdPgUpDown && inputMappings->BrowsePageUp()))
@@ -233,7 +318,7 @@ bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
 		{
 			list->currentIndex = offset; // Move the cursor to the top of the window
 		}
-		list->current = &list->entries[list->currentIndex];
+		list->SetCurrent();
 		dirty = true;
 	}
 
@@ -256,6 +341,15 @@ void FileBrowser::BrowsableList::RefreshViews()
 	for (index = 0; index < views.size(); ++index)
 	{
 		views[index].Refresh();
+	}
+}
+
+void FileBrowser::BrowsableList::RefreshViewsHighlightScroll()
+{
+	u32 index;
+	for (index = 0; index < views.size(); ++index)
+	{
+		views[index].RefreshHighlightScroll();
 	}
 }
 
@@ -284,15 +378,17 @@ FileBrowser::BrowsableList::Entry* FileBrowser::BrowsableList::FindEntry(const c
 	return 0;
 }
 
-FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, unsigned deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD)
+FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate)
 	: state(State_Folders)
 	, diskCaddy(diskCaddy)
 	, selectionsMade(false)
 	, roms(roms)
 	, deviceID(deviceID)
 	, displayPNGIcons(displayPNGIcons)
+	, buttonChangedDevice(false)
 	, screenMain(screenMain)
 	, screenLCD(screenLCD)
+	, scrollHighlightRate(scrollHighlightRate)
 {
 	u32 columns = screenMain->ScaleX(80);
 	u32 rows = (int)(38.0f * screenMain->GetScaleY());
@@ -302,20 +398,23 @@ FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, unsigned deviceID, bo
 	if (rows < 1)
 		rows = 1;
 
+	folder.scrollHighlightRate = scrollHighlightRate;
 	folder.AddView(screenMain, columns, rows, positionX, positionY, false);
 
 	positionX = screenMain->ScaleX(1024 - 320);
-	caddySelections.AddView(screenMain, columns, rows, positionX, positionY, false);
+	caddySelections.AddView(screenMain, 6, rows, positionX, positionY, false);
 
 
-
-	columns = 128 / 8;
-	rows = 4;
-	positionX = 0;
-	positionY = 0;
 
 	if (screenLCD)
+	{
+		columns = screenLCD->Width() / 8;
+		rows = screenLCD->Height() / 16;
+		positionX = 0;
+		positionY = 0;
+
 		folder.AddView(screenLCD, columns, rows, positionX, positionY, true);
+	}
 }
 
 u32 FileBrowser::Colour(int index)
@@ -393,10 +492,8 @@ void FileBrowser::RefreshFolderEntries()
 
 		std::sort(folder.entries.begin(), folder.entries.end(), greater());
 
-		if (folder.entries.size() > 0) folder.current = &folder.entries[0];
-		else folder.current = 0;
-
 		folder.currentIndex = 0;
+		folder.SetCurrent();
 	}
 	else
 	{
@@ -609,7 +706,51 @@ void FileBrowser::PopFolder()
 	RefeshDisplay();
 }
 
-void FileBrowser::UpdateInput()
+void FileBrowser::UpdateCurrentHighlight()
+{
+	if (folder.entries.size() > 0)
+	{
+		FileBrowser::BrowsableList::Entry* current = folder.current;
+		if (current && folder.currentHighlightTime > 0)
+		{
+			folder.currentHighlightTime -= 0.000001f;
+
+			if (folder.currentHighlightTime <= 0)
+			{
+				folder.RefreshViewsHighlightScroll();
+			}
+
+			if (folder.currentHighlightTime <= 0)
+			{
+				folder.currentHighlightTime = scrollHighlightRate;
+			}
+
+		}
+	}
+
+	if (folder.entries.size() > 0)
+	{
+		FileBrowser::BrowsableList::Entry* current = caddySelections.current;
+		
+		if (current && caddySelections.currentHighlightTime > 0)
+		{
+			caddySelections.currentHighlightTime -= 0.000001f;
+
+			if (caddySelections.currentHighlightTime <= 0)
+			{
+				caddySelections.RefreshViewsHighlightScroll();
+			}
+
+			if (caddySelections.currentHighlightTime <= 0)
+			{
+				caddySelections.currentHighlightTime = scrollHighlightRate;
+			}
+
+		}
+	}
+}
+
+void FileBrowser::Update()
 {
 	InputMappings* inputMappings = InputMappings::Instance();
 	Keyboard* keyboard = Keyboard::Instance();
@@ -627,6 +768,8 @@ void FileBrowser::UpdateInput()
 		//else
 		//	UpdateInputDiskCaddy();
 	}
+
+	UpdateCurrentHighlight();
 }
 
 bool FileBrowser::FillCaddyWithSelections()
@@ -678,113 +821,167 @@ void FileBrowser::UpdateInputFolders()
 	Keyboard* keyboard = Keyboard::Instance();
 	InputMappings* inputMappings = InputMappings::Instance();
 
-	if (folder.entries.size() > 0)
+	if (IEC_Bus::GetInputButtonHeld(4))
 	{
-		//u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
-		bool dirty = false;
-
 		if (inputMappings->BrowseSelect())
 		{
-			FileBrowser::BrowsableList::Entry* current = folder.current;
-			if (current)
-			{
-				if (current->filImage.fattrib & AM_DIR)
-				{
-					if (strcmp(current->filImage.fname, "..") == 0)
-					{
-						PopFolder();
-					}
-					else if (strcmp(current->filImage.fname, ".") != 0)
-					{
-						f_chdir(current->filImage.fname);
-						RefreshFolderEntries();
-					}
-					dirty = true;
-				}
-				else
-				{
-					if (strcmp(current->filImage.fname, "..") == 0)
-					{
-						PopFolder();
-					}
-					else if (DiskImage::IsDiskImageExtention(current->filImage.fname))
-					{
-						DiskImage::DiskType diskType = DiskImage::GetDiskImageTypeViaExtention(current->filImage.fname);
-
-						// Should also be able to create a LST file from all the images currently selected in the caddy
-						if (diskType == DiskImage::LST)
-						{
-							selectionsMade = SelectLST(current->filImage.fname);
-						}
-						else
-						{
-							// Add the current selected
-							AddToCaddy(current);
-							selectionsMade = FillCaddyWithSelections();
-						}
-
-						if (selectionsMade)
-							lastSelectionName = current->filImage.fname;
-
-						dirty = true;
-					}
-				}
-			}
+			DEBUG_LOG("DEv8\r\n");
+			GlobalSetDeviceID(8);
+			ShowDeviceAndROM();
+			buttonChangedDevice = true;
 		}
-		else if (inputMappings->BrowseDone())
+		else if (inputMappings->BrowseUp())
 		{
-			selectionsMade = FillCaddyWithSelections();
+			DEBUG_LOG("DEv9\r\n");
+			GlobalSetDeviceID(9);
+			ShowDeviceAndROM();
+			buttonChangedDevice = true;
 		}
-		//else if (keyboard->KeyPressed(KEY_TAB))
-		//{
-		//	state = State_DiskCaddy;
-		//	dirty = true;
-		//}
+		else if (inputMappings->BrowseDown())
+		{
+			GlobalSetDeviceID(10);
+			ShowDeviceAndROM();
+			buttonChangedDevice = true;
+		}
 		else if (inputMappings->BrowseBack())
 		{
-			PopFolder();
-			dirty = true;
+			GlobalSetDeviceID(11);
+			ShowDeviceAndROM();
+			buttonChangedDevice = true;
 		}
-		else if (inputMappings->Exit())
-		{
-			ClearSelections();
-			dirty = true;
-		}
-		else if (inputMappings->BrowseInsert())
-		{
-			FileBrowser::BrowsableList::Entry* current = folder.current;
-			if (current)
-			{
-				dirty = AddToCaddy(current);
-			}
-		}
-		else
-		{
-			unsigned keySetIndex;
-			for (keySetIndex = 0; keySetIndex < ROMs::MAX_ROMS; ++keySetIndex)
-			{
-				unsigned keySetIndexBase = keySetIndex * 3;
-				if (keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase]) || keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 1]) || keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 2]))
-				{
-					if (roms->ROMValid[keySetIndex])
-					{
-						roms->currentROMIndex = keySetIndex;
-						roms->lastManualSelectedROMIndex = keySetIndex;
-						DEBUG_LOG("Swap ROM %d %s\r\n", keySetIndex, roms->ROMNames[keySetIndex]);
-						ShowDeviceAndROM();
-					}
-				}
-			}
-
-			dirty = folder.CheckBrowseNavigation();
-		}
-
-		if (dirty) RefeshDisplay();
 	}
 	else
 	{
-		if (inputMappings->BrowseBack())
-			PopFolder();
+		if (folder.entries.size() > 0)
+		{
+			//u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
+			bool dirty = false;
+
+			if (inputMappings->BrowseSelect())
+			{
+				FileBrowser::BrowsableList::Entry* current = folder.current;
+				if (current)
+				{
+					if (current->filImage.fattrib & AM_DIR)
+					{
+						if (strcmp(current->filImage.fname, "..") == 0)
+						{
+							PopFolder();
+						}
+						else if (strcmp(current->filImage.fname, ".") != 0)
+						{
+							f_chdir(current->filImage.fname);
+							RefreshFolderEntries();
+						}
+						dirty = true;
+					}
+					else
+					{
+						if (strcmp(current->filImage.fname, "..") == 0)
+						{
+							PopFolder();
+						}
+						else if (DiskImage::IsDiskImageExtention(current->filImage.fname))
+						{
+							DiskImage::DiskType diskType = DiskImage::GetDiskImageTypeViaExtention(current->filImage.fname);
+
+							// Should also be able to create a LST file from all the images currently selected in the caddy
+							if (diskType == DiskImage::LST)
+							{
+								selectionsMade = SelectLST(current->filImage.fname);
+							}
+							else
+							{
+								// Add the current selected
+								AddToCaddy(current);
+								selectionsMade = FillCaddyWithSelections();
+							}
+
+							if (selectionsMade)
+								lastSelectionName = current->filImage.fname;
+
+							dirty = true;
+						}
+					}
+				}
+			}
+			else if (inputMappings->BrowseDone())
+			{
+				selectionsMade = FillCaddyWithSelections();
+			}
+			//else if (keyboard->KeyPressed(KEY_TAB))
+			//{
+			//	state = State_DiskCaddy;
+			//	dirty = true;
+			//}
+			else if (inputMappings->BrowseBack())
+			{
+				PopFolder();
+				dirty = true;
+			}
+			else if (inputMappings->Exit())
+			{
+				ClearSelections();
+				dirty = true;
+			}
+			else if (inputMappings->BrowseInsert())
+			{
+				if (buttonChangedDevice)
+				{
+					buttonChangedDevice = false;
+				}
+				else
+				{
+					FileBrowser::BrowsableList::Entry* current = folder.current;
+					if (current)
+					{
+						dirty = AddToCaddy(current);
+					}
+				}
+			}
+			else if (inputMappings->BrowseNewD64())
+			{
+				char newFileName[64];
+				strncpy (newFileName, options.GetAutoBaseName(), 63);
+				int num = folder.FindNextAutoName( newFileName );
+				m_IEC_Commands.CreateD64(newFileName, "42", true);
+				FolderChanged();
+			}
+			else
+			{
+				unsigned keySetIndex;
+				for (keySetIndex = 0; keySetIndex < 11; ++keySetIndex)
+				{
+					unsigned keySetIndexBase = keySetIndex * 3;
+					if (keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase]) 
+					|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 1]) 
+					|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 2]))
+					{
+						if ( (keySetIndex < ROMs::MAX_ROMS) && (roms->ROMValid[keySetIndex]) )
+						{
+							roms->currentROMIndex = keySetIndex;
+							roms->lastManualSelectedROMIndex = keySetIndex;
+							DEBUG_LOG("Swap ROM %d %s\r\n", keySetIndex, roms->ROMNames[keySetIndex]);
+							ShowDeviceAndROM();
+						}
+						else if ( (keySetIndex >= 7) && (keySetIndex <= 10 ) )
+						{
+							GlobalSetDeviceID( keySetIndex+1 );
+							ShowDeviceAndROM();
+						}
+					}
+				}
+
+				dirty = folder.CheckBrowseNavigation();
+			}
+
+			if (dirty) RefeshDisplay();
+		}
+		else
+		{
+			if (inputMappings->BrowseBack())
+				PopFolder();
+		}
 	}
 }
 
@@ -894,7 +1091,7 @@ void FileBrowser::ShowDeviceAndROM()
 	u32 x = 0; // 43 * 8
 	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y) - 20;
 
-	snprintf(buffer, 256, "Device %d %s\r\n", deviceID, roms->ROMNames[roms->currentROMIndex]);
+	snprintf(buffer, 256, "Device %2d %s\r\n", *deviceID, roms->ROMNames[roms->currentROMIndex]);
 	screenMain->PrintText(false, x, y, buffer, textColour, bgColour);
 }
 
@@ -1117,4 +1314,34 @@ void FileBrowser::AutoSelectImage(const char* image)
 		caddySelections.entries.push_back(*current);
 		selectionsMade = FillCaddyWithSelections();
 	}
+}
+
+int FileBrowser::BrowsableList::FindNextAutoName(char* filename)
+{
+	int index;
+	int len = (int)entries.size();
+
+	int inputlen = strlen(filename);
+	int lastNumber = 0;
+
+	char scanfname[64];
+	strncpy (scanfname, filename, 54);
+	strncat (scanfname, "%d",2);
+
+	int foundnumber;
+
+	for (index = 0; index < len; ++index)
+	{
+		Entry* entry = &entries[index];
+		if (	!(entry->filImage.fattrib & AM_DIR) 
+			&& strncasecmp(filename, entry->filImage.fname, inputlen) == 0
+			&& sscanf(entry->filImage.fname, scanfname, &foundnumber) == 1
+			)
+		{
+			if (foundnumber > lastNumber)
+				lastNumber = foundnumber;
+		}
+	}
+	snprintf(filename + inputlen, 54, "%03d.d64", lastNumber+1);
+	return lastNumber+1;
 }

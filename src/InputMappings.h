@@ -28,14 +28,17 @@
 #define UP_FLAG			(1 << 4)
 #define PAGEUP_FLAG		(1 << 5)
 #define DOWN_FLAG		(1 << 6)
-#define PAGEDOWN_FLAG	(1 << 7)
+#define PAGEDOWN_FLAG		(1 << 7)
 #define SPACE_FLAG		(1 << 8)
 #define BACK_FLAG		(1 << 9)
 #define INSERT_FLAG		(1 << 10)
 #define NUMBER_FLAG		(1 << 11)
 
-#define PAGEDOWN_LCD_FLAG (1 << 12)
-#define PAGEUP_LCD_FLAG (1 << 13)
+#define PAGEDOWN_LCD_FLAG	(1 << 12)
+#define PAGEUP_LCD_FLAG		(1 << 13)
+
+#define NEWD64_FLAG		(1 << 14)
+// dont exceed 32!!
 
 class InputMappings : public Singleton<InputMappings>
 {
@@ -46,6 +49,9 @@ protected:
 	unsigned buttonFlags;
 
 	bool keyboardBrowseLCDScreen;
+
+	bool insertButtonPressedPrev;
+	bool insertButtonPressed;
 
 	//inline void SetUartFlag(unsigned flag) { uartFlags |= flag;	}
 	//inline bool UartFlag(unsigned flag) { return (uartFlags & flag) != 0; }
@@ -135,6 +141,11 @@ public:
 	inline bool BrowseInsert()
 	{
 		return KeyboardFlag(INSERT_FLAG)/* | UartFlag(INSERT_FLAG)*/ | ButtonFlag(INSERT_FLAG);
+	}
+
+	inline bool BrowseNewD64()
+	{
+		return KeyboardFlag(NEWD64_FLAG);
 	}
 
 	// Used by the 2 cores so need to be volatile
