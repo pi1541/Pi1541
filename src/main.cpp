@@ -365,26 +365,30 @@ void InitialiseLCD()
 	int i2cLcdOnContrast = options.I2CLcdOnContrast();
 	int i2cLcdDimContrast = options.I2CLcdDimContrast();
 	int i2cLcdDimTime = options.I2CLcdDimTime();
-	int i2cLcdModel = options.I2CLcdModel();
+	LCD_MODEL i2cLcdModel = options.I2CLcdModel();
 
 	if (i2cLcdModel)
 	{
+		int width = 128;
+		int height = 64;
+		if (i2cLcdModel == LCD_1306_128x32)
+			height = 32;
 		screenLCD = new ScreenLCD();
-		screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
+		screenLCD->Open(width, height, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
 		screenLCD->SetContrast(i2cLcdOnContrast);
 		screenLCD->ClearInit(0); // sh1106 needs this
 
 		bool logo_done = false;
-		if (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0)
+		if ( (height == 64) && (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0) )
 		{
-			screenLCD->PlotRawImage(logo_ssd_1541ii, 0, 0, 128, 64);
+			screenLCD->PlotRawImage(logo_ssd_1541ii, 0, 0, width, height);
 			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
 			screenLCD->PrintText(0, 16, 0, tempBuffer, 0xffffffff);
 			logo_done = true;
 		}
-		else if (strcasecmp(options.GetLcdLogoName(), "1541classic") == 0)
+		else if (( height == 64) && (strcasecmp(options.GetLcdLogoName(), "1541classic") == 0) )
 		{
-			screenLCD->PlotRawImage(logo_ssd_1541classic, 0, 0, 128, 64);
+			screenLCD->PlotRawImage(logo_ssd_1541classic, 0, 0, width, height);
 			logo_done = true;
 		}
 		else if (f_stat(options.GetLcdLogoName(), &filLcdIcon) == FR_OK && filLcdIcon.fsize <= LCD_LOGO_MAX_SIZE)
@@ -398,7 +402,7 @@ void InitialiseLCD()
 				u32 bytesRead;
 				f_read(&fp, LcdLogoFile, LCD_LOGO_MAX_SIZE, &bytesRead);
 				f_close(&fp);
-				screenLCD->PlotRawImage(LcdLogoFile, 0, 0, 128, 64);
+				screenLCD->PlotRawImage(LcdLogoFile, 0, 0, width, height);
 				logo_done = true;
 			}
 		}
@@ -406,8 +410,8 @@ void InitialiseLCD()
 		if (!logo_done)
 		{
 			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
-			int x = (128 - 8*strlen(tempBuffer) ) /2;
-			int y = (64-16)/2;
+			int x = (width - 8*strlen(tempBuffer) ) /2;
+			int y = (height-16)/2;
 			screenLCD->PrintText(0, x, y, tempBuffer, 0x0);
 		}
 		screenLCD->RefreshScreen();
