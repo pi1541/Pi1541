@@ -154,6 +154,13 @@ void SSD1306::RefreshRows(u32 start, u32 amountOfRows)
 
 void SSD1306::RefreshPage(u32 page)
 {
+	// x32 displays use lower half (pages 2 and 3)
+	if (type == LCD_1306_128x32)
+	{
+		page = page+2;	// 0,1 -> 2,3
+		page = page%4;	// and wrap it so 2,3 -> 0,1
+	}
+
 	int i;
 	int start = page*128;
 	int end = page*128 + 128;
