@@ -33,6 +33,8 @@ unsigned InputMappings::directDiskSwapRequest = 0;
 
 InputMappings::InputMappings()
 	: keyboardBrowseLCDScreen(false)
+	, insertButtonPressedPrev(false)
+	, insertButtonPressed(false)
 {
 }
 
@@ -47,8 +49,13 @@ bool InputMappings::CheckButtonsBrowseMode()
 		SetButtonFlag(DOWN_FLAG);
 	else if (IEC_Bus::GetInputButtonPressed(3))
 		SetButtonFlag(BACK_FLAG);
-	else if (IEC_Bus::GetInputButtonPressed(4))
+	//else if (IEC_Bus::GetInputButtonPressed(4))
+	//	SetButtonFlag(INSERT_FLAG);
+
+	insertButtonPressed = !IEC_Bus::GetInputButtonReleased(4);
+	if (insertButtonPressedPrev && !insertButtonPressed)
 		SetButtonFlag(INSERT_FLAG);
+	insertButtonPressedPrev = insertButtonPressed;
 
 	return buttonFlags != 0;
 }

@@ -385,6 +385,7 @@ FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool di
 	, roms(roms)
 	, deviceID(deviceID)
 	, displayPNGIcons(displayPNGIcons)
+	, buttonChangedDevice(false)
 	, screenMain(screenMain)
 	, screenLCD(screenLCD)
 	, scrollHighlightRate(scrollHighlightRate)
@@ -820,128 +821,167 @@ void FileBrowser::UpdateInputFolders()
 	Keyboard* keyboard = Keyboard::Instance();
 	InputMappings* inputMappings = InputMappings::Instance();
 
-	if (folder.entries.size() > 0)
+	if (IEC_Bus::GetInputButtonHeld(4))
 	{
-		//u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
-		bool dirty = false;
-
 		if (inputMappings->BrowseSelect())
 		{
-			FileBrowser::BrowsableList::Entry* current = folder.current;
-			if (current)
-			{
-				if (current->filImage.fattrib & AM_DIR)
-				{
-					if (strcmp(current->filImage.fname, "..") == 0)
-					{
-						PopFolder();
-					}
-					else if (strcmp(current->filImage.fname, ".") != 0)
-					{
-						f_chdir(current->filImage.fname);
-						RefreshFolderEntries();
-					}
-					dirty = true;
-				}
-				else
-				{
-					if (strcmp(current->filImage.fname, "..") == 0)
-					{
-						PopFolder();
-					}
-					else if (DiskImage::IsDiskImageExtention(current->filImage.fname))
-					{
-						DiskImage::DiskType diskType = DiskImage::GetDiskImageTypeViaExtention(current->filImage.fname);
-
-						// Should also be able to create a LST file from all the images currently selected in the caddy
-						if (diskType == DiskImage::LST)
-						{
-							selectionsMade = SelectLST(current->filImage.fname);
-						}
-						else
-						{
-							// Add the current selected
-							AddToCaddy(current);
-							selectionsMade = FillCaddyWithSelections();
-						}
-
-						if (selectionsMade)
-							lastSelectionName = current->filImage.fname;
-
-						dirty = true;
-					}
-				}
-			}
+			DEBUG_LOG("DEv8\r\n");
+			GlobalSetDeviceID(8);
+			ShowDeviceAndROM();
+			buttonChangedDevice = true;
 		}
-		else if (inputMappings->BrowseDone())
+		else if (inputMappings->BrowseUp())
 		{
-			selectionsMade = FillCaddyWithSelections();
+			DEBUG_LOG("DEv9\r\n");
+			GlobalSetDeviceID(9);
+			ShowDeviceAndROM();
+			buttonChangedDevice = true;
 		}
-		//else if (keyboard->KeyPressed(KEY_TAB))
-		//{
-		//	state = State_DiskCaddy;
-		//	dirty = true;
-		//}
+		else if (inputMappings->BrowseDown())
+		{
+			GlobalSetDeviceID(10);
+			ShowDeviceAndROM();
+			buttonChangedDevice = true;
+		}
 		else if (inputMappings->BrowseBack())
 		{
-			PopFolder();
-			dirty = true;
+			GlobalSetDeviceID(11);
+			ShowDeviceAndROM();
+			buttonChangedDevice = true;
 		}
-		else if (inputMappings->Exit())
-		{
-			ClearSelections();
-			dirty = true;
-		}
-		else if (inputMappings->BrowseInsert())
-		{
-			FileBrowser::BrowsableList::Entry* current = folder.current;
-			if (current)
-			{
-				dirty = AddToCaddy(current);
-			}
-		}
-		else if (inputMappings->BrowseNewD64())
-		{
-			char newFileName[64];
-			strncpy (newFileName, options.GetAutoBaseName(), 63);
-			int num = folder.FindNextAutoName( newFileName );
-			m_IEC_Commands.CreateD64(newFileName, "42", true);
-			FolderChanged();
-		}
-		else
-		{
-			unsigned keySetIndex;
-			for (keySetIndex = 0; keySetIndex < 11; ++keySetIndex)
-			{
-				unsigned keySetIndexBase = keySetIndex * 3;
-				if (keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase]) 
-				|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 1]) 
-				|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 2]))
-				{
-					if ( (keySetIndex < ROMs::MAX_ROMS) && (roms->ROMValid[keySetIndex]) )
-					{
-						roms->currentROMIndex = keySetIndex;
-						roms->lastManualSelectedROMIndex = keySetIndex;
-						DEBUG_LOG("Swap ROM %d %s\r\n", keySetIndex, roms->ROMNames[keySetIndex]);
-						ShowDeviceAndROM();
-					}
-					else if ( (keySetIndex >= 7) && (keySetIndex <= 10 ) )
-					{
-						GlobalSetDeviceID( keySetIndex+1 );
-						ShowDeviceAndROM();
-					}
-				}
-			}
-
-			dirty = folder.CheckBrowseNavigation();
-		}
-
-		if (dirty) RefeshDisplay();
 	}
 	else
 	{
-		if (inputMappings->BrowseBack())
-			PopFolder();
+		if (folder.entries.size() > 0)
+		{
+			//u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
+			bool dirty = false;
+
+			if (inputMappings->BrowseSelect())
+			{
+				FileBrowser::BrowsableList::Entry* current = folder.current;
+				if (current)
+				{
+					if (current->filImage.fattrib & AM_DIR)
+					{
+						if (strcmp(current->filImage.fname, "..") == 0)
+						{
+							PopFolder();
+						}
+						else if (strcmp(current->filImage.fname, ".") != 0)
+						{
+							f_chdir(current->filImage.fname);
+							RefreshFolderEntries();
+						}
+						dirty = true;
+					}
+					else
+					{
+						if (strcmp(current->filImage.fname, "..") == 0)
+						{
+							PopFolder();
+						}
+						else if (DiskImage::IsDiskImageExtention(current->filImage.fname))
+						{
+							DiskImage::DiskType diskType = DiskImage::GetDiskImageTypeViaExtention(current->filImage.fname);
+
+							// Should also be able to create a LST file from all the images currently selected in the caddy
+							if (diskType == DiskImage::LST)
+							{
+								selectionsMade = SelectLST(current->filImage.fname);
+							}
+							else
+							{
+								// Add the current selected
+								AddToCaddy(current);
+								selectionsMade = FillCaddyWithSelections();
+							}
+
+							if (selectionsMade)
+								lastSelectionName = current->filImage.fname;
+
+							dirty = true;
+						}
+					}
+				}
+			}
+			else if (inputMappings->BrowseDone())
+			{
+				selectionsMade = FillCaddyWithSelections();
+			}
+			//else if (keyboard->KeyPressed(KEY_TAB))
+			//{
+			//	state = State_DiskCaddy;
+			//	dirty = true;
+			//}
+			else if (inputMappings->BrowseBack())
+			{
+				PopFolder();
+				dirty = true;
+			}
+			else if (inputMappings->Exit())
+			{
+				ClearSelections();
+				dirty = true;
+			}
+			else if (inputMappings->BrowseInsert())
+			{
+				if (buttonChangedDevice)
+				{
+					buttonChangedDevice = false;
+				}
+				else
+				{
+					FileBrowser::BrowsableList::Entry* current = folder.current;
+					if (current)
+					{
+						dirty = AddToCaddy(current);
+					}
+				}
+			}
+			else if (inputMappings->BrowseNewD64())
+			{
+				char newFileName[64];
+				strncpy (newFileName, options.GetAutoBaseName(), 63);
+				int num = folder.FindNextAutoName( newFileName );
+				m_IEC_Commands.CreateD64(newFileName, "42", true);
+				FolderChanged();
+			}
+			else
+			{
+				unsigned keySetIndex;
+				for (keySetIndex = 0; keySetIndex < 11; ++keySetIndex)
+				{
+					unsigned keySetIndexBase = keySetIndex * 3;
+					if (keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase]) 
+					|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 1]) 
+					|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 2]))
+					{
+						if ( (keySetIndex < ROMs::MAX_ROMS) && (roms->ROMValid[keySetIndex]) )
+						{
+							roms->currentROMIndex = keySetIndex;
+							roms->lastManualSelectedROMIndex = keySetIndex;
+							DEBUG_LOG("Swap ROM %d %s\r\n", keySetIndex, roms->ROMNames[keySetIndex]);
+							ShowDeviceAndROM();
+						}
+						else if ( (keySetIndex >= 7) && (keySetIndex <= 10 ) )
+						{
+							GlobalSetDeviceID( keySetIndex+1 );
+							ShowDeviceAndROM();
+						}
+					}
+				}
+
+				dirty = folder.CheckBrowseNavigation();
+			}
+
+			if (dirty) RefeshDisplay();
+		}
+		else
+		{
+			if (inputMappings->BrowseBack())
+				PopFolder();
+		}
 	}
 }
 

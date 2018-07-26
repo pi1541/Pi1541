@@ -582,9 +582,10 @@ public:
 	}
 
 	static bool GetInputButtonPressed(int buttonIndex) { return InputButton[buttonIndex] && !InputButtonPrev[buttonIndex]; }
-	static bool GetInputButtonReleased(int buttonIndex) { return !InputButton[buttonIndex] && InputButtonPrev[buttonIndex]; }
+	static bool GetInputButtonReleased(int buttonIndex) { return InputButton[buttonIndex] == false; }
 	static bool GetInputButton(int buttonIndex) { return InputButton[buttonIndex]; }
 	static bool GetInputButtonRepeating(int buttonIndex) { return inputRepeat[buttonIndex] != inputRepeatPrev[buttonIndex]; }
+	static bool GetInputButtonHeld(int buttonIndex) { return inputRepeatThreshold[buttonIndex] >= INPUT_BUTTON_DEBOUNCE_THRESHOLD + (INPUT_BUTTON_REPEAT_THRESHOLD * 2); }
 
 	static bool OutputLED;
 	static bool OutputSound;

@@ -50,6 +50,9 @@ protected:
 
 	bool keyboardBrowseLCDScreen;
 
+	bool insertButtonPressedPrev;
+	bool insertButtonPressed;
+
 	//inline void SetUartFlag(unsigned flag) { uartFlags |= flag;	}
 	//inline bool UartFlag(unsigned flag) { return (uartFlags & flag) != 0; }
 	inline void SetKeyboardFlag(unsigned flag) { keyboardFlags |= flag; }

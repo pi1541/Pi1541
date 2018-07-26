@@ -145,7 +145,7 @@ Options::Options(void)
 	, i2cScan(0)
 	, i2cLcdFlip(0)
 	, i2cLcdOnContrast(127)
-	, i2cLcdModel(0)
+	, i2cLcdModel(LCD_UNKNOWN)
 	, scrollHighlightRate(0.125f)
 	, keyboardBrowseLCDScreen(0)
 {
@@ -241,9 +241,11 @@ void Options::Process(char* buffer)
 		{
 			strncpy(LCDName, pValue, 255);
 			if (strcasecmp(pValue, "ssd1306_128x64") == 0)
-				i2cLcdModel = 1306;
+				i2cLcdModel = LCD_1306_128x64;
+			else if (strcasecmp(pValue, "ssd1306_128x32") == 0)
+				i2cLcdModel = LCD_1306_128x32;
 			else if (strcasecmp(pValue, "sh1106_128x64") == 0)
-				i2cLcdModel = 1106;
+				i2cLcdModel = LCD_1106_128x64;
 
 		}
 		else if ((strcasecmp(pOption, "ROM") == 0) || (strcasecmp(pOption, "ROM1") == 0))
