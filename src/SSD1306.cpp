@@ -27,7 +27,7 @@ extern "C"
 
 unsigned char frame[SSD1306_128x64_BYTES];
 
-SSD1306::SSD1306(int BSCMaster, u8 address, int flip, int type)
+SSD1306::SSD1306(int BSCMaster, u8 address, int flip, LCD_MODEL type)
 	: BSCMaster(BSCMaster)
 	, address(address)
 	, type(type)
@@ -61,7 +61,10 @@ void SSD1306::InitHardware()
 	}
 
 	SendCommand(SSD1306_CMD_SET_COM_PINS);	// 0xDA Layout and direction
-	SendCommand(0x12);
+	if (type == LCD_1306_128x32)
+		SendCommand(0x02);
+	else
+		SendCommand(0x12);
 
 	SetContrast(GetContrast());
 
@@ -86,7 +89,7 @@ void SSD1306::InitHardware()
 
 	Home();
 
-	if (type != 1106)
+	if (type != LCD_1106_128x64)
 		SendCommand(SSD1306_CMD_DEACTIVATE_SCROLL);	// 0x2E
 }
 
@@ -120,7 +123,7 @@ void SSD1306::MoveCursorByte(u8 row, u8 col)
 	if (col > 127) { col = 127; }
 	if (row > 7) { row = 7; }
 
-	if (type == 1106)
+	if (type == LCD_1106_128x64)
 		col += 2;	// sh1106 uses columns 2..129
 
 	SendCommand(SSD1306_CMD_SET_PAGE | row);		// 0xB0 page address
@@ -183,7 +186,7 @@ void SSD1306::SetContrast(u8 value)
 	contrast = value;
 	SendCommand(SSD1306_CMD_SET_CONTRAST_CONTROL);
 	SendCommand(value);
-	if (type == 1306)
+	if (type != LCD_1106_128x64)	// dont fiddle vcomdeselect on 1106 displays
 		SetVCOMDeselect( value >> 8);
 }
 
