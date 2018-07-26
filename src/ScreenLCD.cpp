@@ -29,8 +29,8 @@ void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int B
 
 	if (widthDesired < 128)
 		widthDesired = 128;
-	if (heightDesired < 64)
-		heightDesired = 64;
+	if (heightDesired < 32)
+		heightDesired = 32;
 	if (widthDesired > 128)
 		widthDesired = 128;
 	if (heightDesired > 64)
@@ -39,7 +39,7 @@ void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int B
 	width = widthDesired;
 	height = heightDesired;
 
-	ssd1306 = new SSD1306(BSCMaster, LCDAddress, LCDFlip, LCDType);
+	ssd1306 = new SSD1306(BSCMaster, LCDAddress, width, height, LCDFlip, LCDType);
 	ssd1306->ClearScreen();
 	ssd1306->RefreshScreen();
 	ssd1306->DisplayOn();

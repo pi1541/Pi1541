@@ -27,12 +27,14 @@ extern "C"
 
 unsigned char frame[SSD1306_128x64_BYTES];
 
-SSD1306::SSD1306(int BSCMaster, u8 address, int flip, LCD_MODEL type)
+SSD1306::SSD1306(int BSCMaster, u8 address, int width, int height, int flip, LCD_MODEL type)
 	: BSCMaster(BSCMaster)
 	, address(address)
 	, type(type)
 	, flip(flip)
 	, contrast(127)
+	, width(width)
+	, height(height)
 {
 	RPI_I2CInit(BSCMaster, 1);
 
@@ -45,7 +47,7 @@ void SSD1306::InitHardware()
 	SendCommand(SSD1306_CMD_DISPLAY_OFF);	// 0xAE
 
 	SendCommand(SSD1306_CMD_MULTIPLEX_RATIO);  // 0xA8
-	SendCommand(0x3F);	// SSD1306_LCDHEIGHT - 1
+	SendCommand(height-1);	// SSD1306_LCDHEIGHT - 1
 
 	SendCommand(SSD1306_CMD_SET_DISPLAY_OFFSET);  // 0xD3 Vertical scroll position
 	SendCommand(0x00);  // no Offset
@@ -118,15 +120,15 @@ void SSD1306::Home()
 	MoveCursorByte(0, 0);
 }
 
-void SSD1306::MoveCursorByte(u8 row, u8 col)
+void SSD1306::MoveCursorByte(u8 page, u8 col)
 {
-	if (col > 127) { col = 127; }
-	if (row > 7) { row = 7; }
+	if (col > width-1) { col = width-1; }
+	if (page > height/8-1) { page = height/8-1; }
 
 	if (type == LCD_1106_128x64)
 		col += 2;	// sh1106 uses columns 2..129
 
-	SendCommand(SSD1306_CMD_SET_PAGE | row);		// 0xB0 page address
+	SendCommand(SSD1306_CMD_SET_PAGE | page);		// 0xB0 page address
 	SendCommand(SSD1306_CMD_SET_COLUMN_LOW | (col & 0xf));	// 0x00 column address lower bits
 	SendCommand(SSD1306_CMD_SET_COLUMN_HIGH | (col >> 4));	// 0x10 column address upper bits
 }
@@ -134,7 +136,7 @@ void SSD1306::MoveCursorByte(u8 row, u8 col)
 void SSD1306::RefreshScreen()
 {
 	int i;
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < height/8; i++)
 	{
 		RefreshPage(i);
 	}
@@ -154,16 +156,19 @@ void SSD1306::RefreshRows(u32 start, u32 amountOfRows)
 
 void SSD1306::RefreshPage(u32 page)
 {
+	if (page >= height/8)
+		return;
+
 	// x32 displays use lower half (pages 2 and 3)
 	if (type == LCD_1306_128x32)
 	{
-		page = page+2;	// 0,1 -> 2,3
-		page = page%4;	// and wrap it so 2,3 -> 0,1
+		page = page+4;	// 0,1,2,3 -> 4,5,6,7
+		page = page%4;	// and wrap it so 4,5 -> 0,1
 	}
 
 	int i;
-	int start = page*128;
-	int end = page*128 + 128;
+	int start = page*width;
+	int end = start + width;
 
 	MoveCursorByte(page, 0);
 	for (i = start; i < end; i++)

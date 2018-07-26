@@ -76,7 +76,7 @@ class SSD1306
 public:
 	// 128x32 0x3C
 	// 128x64 0x3D or 0x3C (if SA0 is grounded)
-	SSD1306(int BSCMaster = 1, u8 address = 0x3C, int flip = 0, LCD_MODEL type=LCD_UNKNOWN);
+	SSD1306(int BSCMaster = 1, u8 address = 0x3C, int width = 128, int height = 64, int flip = 0, LCD_MODEL type=LCD_UNKNOWN);
 
 	void PlotCharacter(int x, int y, char ascii, bool inverse);
 	void PlotText(int x, int y, char* str, bool inverse);
@@ -110,6 +110,8 @@ protected:
 	int type;
 	int flip;
 	int contrast;
+	int width;
+	int height;
 };
 #endif
 
