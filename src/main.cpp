@@ -381,14 +381,14 @@ void InitialiseLCD()
 		bool logo_done = false;
 		if ( (height == 64) && (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0) )
 		{
-			screenLCD->PlotRawImage(logo_ssd_1541ii, 0, 0, 128, 64);
+			screenLCD->PlotRawImage(logo_ssd_1541ii, 0, 0, width, height);
 			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
 			screenLCD->PrintText(0, 16, 0, tempBuffer, 0xffffffff);
 			logo_done = true;
 		}
 		else if (( height == 64) && (strcasecmp(options.GetLcdLogoName(), "1541classic") == 0) )
 		{
-			screenLCD->PlotRawImage(logo_ssd_1541classic, 0, 0, 128, 64);
+			screenLCD->PlotRawImage(logo_ssd_1541classic, 0, 0, width, height);
 			logo_done = true;
 		}
 		else if (f_stat(options.GetLcdLogoName(), &filLcdIcon) == FR_OK && filLcdIcon.fsize <= LCD_LOGO_MAX_SIZE)
@@ -402,7 +402,7 @@ void InitialiseLCD()
 				u32 bytesRead;
 				f_read(&fp, LcdLogoFile, LCD_LOGO_MAX_SIZE, &bytesRead);
 				f_close(&fp);
-				screenLCD->PlotRawImage(LcdLogoFile, 0, 0, 128, height);
+				screenLCD->PlotRawImage(LcdLogoFile, 0, 0, width, height);
 				logo_done = true;
 			}
 		}

@@ -27,7 +27,7 @@ extern "C"
 
 unsigned char frame[SSD1306_128x64_BYTES];
 
-SSD1306::SSD1306(int BSCMaster, u8 address, int width, int height, int flip, LCD_MODEL type)
+SSD1306::SSD1306(int BSCMaster, u8 address, unsigned width, unsigned height, int flip, LCD_MODEL type)
 	: BSCMaster(BSCMaster)
 	, address(address)
 	, type(type)
@@ -135,7 +135,7 @@ void SSD1306::MoveCursorByte(u8 page, u8 col)
 
 void SSD1306::RefreshScreen()
 {
-	int i;
+	unsigned i;
 	for (i = 0; i < height/8; i++)
 	{
 		RefreshPage(i);
