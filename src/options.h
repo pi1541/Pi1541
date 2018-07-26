@@ -19,6 +19,13 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+typedef enum {
+        LCD_UNKNOWN,
+        LCD_1306_128x64,
+        LCD_1306_128x32,
+        LCD_1106_128x64,
+} LCD_MODEL;
+
 class TextParser
 {
 public:
@@ -77,7 +84,7 @@ public:
 	inline unsigned int I2CLcdOnContrast() const { return i2cLcdOnContrast; }
 	inline unsigned int I2CLcdDimContrast() const { return i2cLcdDimContrast; }
 	inline unsigned int I2CLcdDimTime() const { return i2cLcdDimTime; }
-	inline unsigned int I2CLcdModel() const { return i2cLcdModel; }
+	inline LCD_MODEL I2CLcdModel() const { return i2cLcdModel; }
 
 	inline const char* GetLcdLogoName() const { return LcdLogoName; }
 
@@ -123,7 +130,8 @@ private:
 	unsigned int i2cLcdOnContrast;
 	unsigned int i2cLcdDimContrast;
 	unsigned int i2cLcdDimTime;
-	unsigned int i2cLcdModel;
+//	unsigned int i2cLcdModel;
+	LCD_MODEL i2cLcdModel = LCD_UNKNOWN;
 
 	float scrollHighlightRate;
 

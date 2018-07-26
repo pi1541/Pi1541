@@ -23,7 +23,7 @@
 #include "debug.h"
 #include "ssd_logo.h"
 
-void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int BSCMaster, int LCDAddress, int LCDFlip, int LCDType)
+void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int BSCMaster, int LCDAddress, int LCDFlip, LCD_MODEL LCDType)
 {
 	bpp = 1;
 
