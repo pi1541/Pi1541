@@ -1173,7 +1173,7 @@ u8 readRam(u16 address) { return s_u8Memory[address]; }
 u8 readVIA0(u16 address) { return pi1541.VIA[0].Read(address); }
 u8 readVIA1(u16 address) { return pi1541.VIA[1].Read(address); }
 u8 readROM(u16 address) { return roms.Read(address); }
-u8 readNULL(u16 address) { return 0; }
+u8 readNULL(u16 address) { return address >> 8; }
 
 void writeRam(u16 address, u8 data) { s_u8Memory[address] = data; }
 void writeVIA0(u16 address, u8 data) { pi1541.VIA[0].Write(address, data); }
