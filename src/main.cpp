@@ -657,7 +657,7 @@ void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
 		{
 			case EXIT_UNKNOWN:
 			case EXIT_RESET:
-				fileBrowser->AutoSelectImage(autoMountImageName);
+				fileBrowser->SelectAutoMountImage(autoMountImageName);
 			break;
 			case EXIT_CD:
 			case EXIT_KEYBOARD:

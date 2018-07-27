@@ -1287,8 +1287,11 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 	}
 }
 
-void FileBrowser::AutoSelectImage(const char* image)
+void FileBrowser::SelectAutoMountImage(const char* image)
 {
+	f_chdir("/1541");
+	RefreshFolderEntries();
+
 	FileBrowser::BrowsableList::Entry* current = 0;
 	int index;
 	int maxEntries = folder.entries.size();
