@@ -102,12 +102,6 @@ unsigned int screenHeight = 768;
 const char* termainalTextRed = "\E[31m";
 const char* termainalTextNormal = "\E[0m";
 
-typedef enum {
-	EXIT_UNKNOWN,
-	EXIT_RESET,
-	EXIT_CD,
-	EXIT_KEYBOARD
-} EXIT_TYPE;
 EXIT_TYPE exitReason = EXIT_UNKNOWN;
 
 // Hooks required for USPi library
@@ -654,7 +648,7 @@ void GlobalSetDeviceID(u8 id)
 	SetVIAsDeviceID(id);
 }
 
-static void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
+void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
 {
 	const char* autoMountImageName = options.GetAutoMountImageName();
 	if (autoMountImageName[0] != 0)

@@ -38,6 +38,7 @@
 #define PAGEUP_LCD_FLAG		(1 << 13)
 
 #define NEWD64_FLAG		(1 << 14)
+#define AUTOLOAD_FLAG		(1 << 15)
 // dont exceed 32!!
 
 class InputMappings : public Singleton<InputMappings>
@@ -146,6 +147,11 @@ public:
 	inline bool BrowseNewD64()
 	{
 		return KeyboardFlag(NEWD64_FLAG);
+	}
+
+	inline bool BrowseAutoLoad()
+	{
+		return KeyboardFlag(AUTOLOAD_FLAG);
 	}
 
 	// Used by the 2 cores so need to be volatile
