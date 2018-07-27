@@ -685,8 +685,8 @@ void FileBrowser::DisplayPNG()
 	if (displayPNGIcons && folder.current)
 	{
 		FileBrowser::BrowsableList::Entry* current = folder.current;
-		u32 x = screenMain->ScaleX(1024 - 320);
-		u32 y = screenMain->ScaleY(666) - 240;
+		u32 x = screenMain->ScaleX(1024) - PNG_WIDTH;
+		u32 y = screenMain->ScaleY(666) - PNG_HEIGHT;
 		DisplayPNG(current->filIcon, x, y);
 	}
 }
@@ -1119,7 +1119,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 	u32 freeColour = palette[VIC2_COLOUR_INDEX_LGREEN];
 	u32 BAMOffsetX = screenMain->ScaleX(400);
 
-	u32 bmBAMOffsetX = BAMOffsetX+200;
+	u32 bmBAMOffsetX = screenMain->ScaleX(1024) - PNG_WIDTH;
 	u32 x_px = 0;
 	u32 y_px = 0;
 
@@ -1156,24 +1156,25 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 
 				if (!used)
 				{
-					snprintf(bufferOut, 128, "%c", screen2petscii(87));
-					screenMain->PrintText(true, x, y, bufferOut, usedColour, bgColour);
-					screenMain->PlotPixel(x_px, y_px, usedColour);
-					screenMain->PlotPixel(x_px+1, y_px, usedColour);
+//					snprintf(bufferOut, 128, "%c", screen2petscii(87));
+//					screenMain->PrintText(true, x, y, bufferOut, usedColour, bgColour);
+					for (int xx = 0; xx < PNG_WIDTH/30; xx++)
+						screenMain->PlotPixel(x_px+xx, y_px, usedColour);
 				}
 				else
 				{
-					snprintf(bufferOut, 128, "%c", screen2petscii(81));
-					screenMain->PrintText(true, x, y, bufferOut, freeColour, bgColour);
-					screenMain->PlotPixel(x_px, y_px, freeColour);
-					screenMain->PlotPixel(x_px+1, y_px, freeColour);
+//					snprintf(bufferOut, 128, "%c", screen2petscii(81));
+//					screenMain->PrintText(true, x, y, bufferOut, freeColour, bgColour);
+
+					for (int xx = 0; xx < PNG_WIDTH/30; xx++)
+						screenMain->PlotPixel(x_px+xx, y_px, freeColour);
 				}
 				x += 8;
-				x_px += 3;
+				x_px += PNG_WIDTH/30 + 2;
 				bits <<= 1;
 			}
 			y += fontHeight;
-			y_px += 2;
+			y_px += PNG_HEIGHT/40;
 		}
 		for (; bamTrack < lastTrackUsed; ++bamTrack)
 		{
