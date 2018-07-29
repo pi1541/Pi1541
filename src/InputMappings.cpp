@@ -35,15 +35,18 @@ InputMappings::InputMappings()
 	: keyboardBrowseLCDScreen(false)
 	, insertButtonPressedPrev(false)
 	, insertButtonPressed(false)
+	, enterButtonPressedPrev(false)
+	, enterButtonPressed(false)
 {
 }
 
 bool InputMappings::CheckButtonsBrowseMode()
 {
 	buttonFlags = 0;
-	if (IEC_Bus::GetInputButtonPressed(0))
-		SetButtonFlag(ENTER_FLAG);
-	else if (IEC_Bus::GetInputButtonRepeating(1))
+	//if (IEC_Bus::GetInputButtonPressed(0))
+	//	SetButtonFlag(ENTER_FLAG);
+	//else
+		if (IEC_Bus::GetInputButtonRepeating(1))
 		SetButtonFlag(UP_FLAG);
 	else if (IEC_Bus::GetInputButtonRepeating(2))
 		SetButtonFlag(DOWN_FLAG);
@@ -56,6 +59,11 @@ bool InputMappings::CheckButtonsBrowseMode()
 	if (insertButtonPressedPrev && !insertButtonPressed)
 		SetButtonFlag(INSERT_FLAG);
 	insertButtonPressedPrev = insertButtonPressed;
+
+	enterButtonPressed = !IEC_Bus::GetInputButtonReleased(0);
+	if (enterButtonPressedPrev && !enterButtonPressed)
+		SetButtonFlag(ENTER_FLAG);
+	enterButtonPressedPrev = enterButtonPressed;
 
 	return buttonFlags != 0;
 }
@@ -179,6 +187,12 @@ bool InputMappings::CheckKeyboardBrowseMode()
 	//	SetKeyboardFlag(PAGEDOWN_LCD_FLAG);
 	else if (keyboard->KeyHeld(KEY_N) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(NEWD64_FLAG);
+	else if (keyboard->KeyHeld(KEY_A) && keyboard->KeyEitherAlt() )
+		SetKeyboardFlag(AUTOLOAD_FLAG);
+	else if (keyboard->KeyHeld(KEY_R) && keyboard->KeyEitherAlt() )
+		SetKeyboardFlag(FAKERESET_FLAG);
+	else if (keyboard->KeyHeld(KEY_W) && keyboard->KeyEitherAlt())
+		SetKeyboardFlag(WRITEPROTECT_FLAG);
 	else
 	{
 		unsigned index;
@@ -206,6 +220,10 @@ void InputMappings::CheckKeyboardEmulationMode(unsigned numberOfImages, unsigned
 			SetKeyboardFlag(PREV_FLAG);
 		else if (keyboard->KeyHeld(KEY_PAGEDOWN))
 			SetKeyboardFlag(NEXT_FLAG);
+		else if (keyboard->KeyHeld(KEY_A) && keyboard->KeyEitherAlt() )
+			SetKeyboardFlag(AUTOLOAD_FLAG);
+		else if (keyboard->KeyHeld(KEY_R) && keyboard->KeyEitherAlt() )
+			SetKeyboardFlag(FAKERESET_FLAG);
 		else if (numberOfImages > 1)
 		{
 			unsigned index;

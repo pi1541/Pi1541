@@ -51,12 +51,12 @@ bool IEC_Bus::ignoreReset = false;
 
 u32 IEC_Bus::myOutsGPFSEL1 = 0;
 u32 IEC_Bus::myOutsGPFSEL0 = 0;
-bool IEC_Bus::InputButton[5];
-bool IEC_Bus::InputButtonPrev[5];
-u32 IEC_Bus::validInputCount[5];
+bool IEC_Bus::InputButton[5] = { 0 };
+bool IEC_Bus::InputButtonPrev[5] = { 0 };
+u32 IEC_Bus::validInputCount[5] = { 0 };
 u32 IEC_Bus::inputRepeatThreshold[5];
-u32 IEC_Bus::inputRepeat[5];
-u32 IEC_Bus::inputRepeatPrev[5];
+u32 IEC_Bus::inputRepeat[5] = { 0 };
+u32 IEC_Bus::inputRepeatPrev[5] = { 0 };
 
 m6522* IEC_Bus::VIA = 0;
 
