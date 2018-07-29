@@ -1349,24 +1349,31 @@ void FileBrowser::SelectAutoMountImage(const char* image)
 	f_chdir("/1541");
 	RefreshFolderEntries();
 
-	FileBrowser::BrowsableList::Entry* current = 0;
-	int index;
-	int maxEntries = folder.entries.size();
-
-	for (index = 0; index < maxEntries; ++index)
+	if (SelectLST(image))
 	{
-		current = &folder.entries[index];
-		if (strcasecmp(current->filImage.fname, image) == 0)
-		{
-			break;
-		}
+		selectionsMade = true;
 	}
-
-	if (index != maxEntries)
+	else
 	{
-		ClearSelections();
-		caddySelections.entries.push_back(*current);
-		selectionsMade = FillCaddyWithSelections();
+		FileBrowser::BrowsableList::Entry* current = 0;
+		int index;
+		int maxEntries = folder.entries.size();
+
+		for (index = 0; index < maxEntries; ++index)
+		{
+			current = &folder.entries[index];
+			if (strcasecmp(current->filImage.fname, image) == 0)
+			{
+				break;
+			}
+		}
+
+		if (index != maxEntries)
+		{
+			ClearSelections();
+			caddySelections.entries.push_back(*current);
+			selectionsMade = FillCaddyWithSelections();
+		}
 	}
 }
 
