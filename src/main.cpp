@@ -930,42 +930,16 @@ void emulator()
 					IEC_Bus::RefreshOuts();	// Now output all outputs.
 				}
 
-				// We have now output so HERE is where the next phi2 cycle starts.
-				pi1541.Update();
-
 				// Other core will check the uart (as it is slow) (could enable uart irqs - will they execute on this core?)
 				inputMappings->CheckKeyboardEmulationMode(numberOfImages, numberOfImagesMax);
 				inputMappings->CheckButtonsEmulationMode();
 
 				bool exitEmulation = inputMappings->Exit();
-				bool nextDisk = inputMappings->NextDisk();
-				bool prevDisk = inputMappings->PrevDisk();
 				bool exitDoAutoLoad = inputMappings->AutoLoad();
 
-				if (nextDisk)
-				{
-					pi1541.drive.Insert(diskCaddy.PrevDisk());
-				}
-				else if (prevDisk)
-				{
-					pi1541.drive.Insert(diskCaddy.NextDisk());
-				}
-				else if (numberOfImages > 1 && inputMappings->directDiskSwapRequest != 0)
-				{
-					for (caddyIndex = 0; caddyIndex < numberOfImagesMax; ++caddyIndex)
-					{
-						if (inputMappings->directDiskSwapRequest & (1 << caddyIndex))
-						{
-							DiskImage* diskImage = diskCaddy.SelectImage(caddyIndex);
-							if (diskImage && diskImage != pi1541.drive.GetDiskImage())
-							{
-								pi1541.drive.Insert(diskImage);
-								break;
-							}
-						}
-					}
-					inputMappings->directDiskSwapRequest = 0;
-				}
+				// We have now output so HERE is where the next phi2 cycle starts.
+				pi1541.Update();
+
 
 				bool reset = IEC_Bus::IsReset();
 				if (reset)
@@ -1023,6 +997,36 @@ void emulator()
 					while (ctAfter == ctBefore);
 				}
 				ctBefore = ctAfter;
+
+				if (numberOfImages > 1)
+				{
+					bool nextDisk = inputMappings->NextDisk();
+					bool prevDisk = inputMappings->PrevDisk();
+					if (nextDisk)
+					{
+						pi1541.drive.Insert(diskCaddy.PrevDisk());
+					}
+					else if (prevDisk)
+					{
+						pi1541.drive.Insert(diskCaddy.NextDisk());
+					}
+					else if (inputMappings->directDiskSwapRequest != 0)
+					{
+						for (caddyIndex = 0; caddyIndex < numberOfImagesMax; ++caddyIndex)
+						{
+							if (inputMappings->directDiskSwapRequest & (1 << caddyIndex))
+							{
+								DiskImage* diskImage = diskCaddy.SelectImage(caddyIndex);
+								if (diskImage && diskImage != pi1541.drive.GetDiskImage())
+								{
+									pi1541.drive.Insert(diskImage);
+									break;
+								}
+							}
+						}
+						inputMappings->directDiskSwapRequest = 0;
+					}
+				}
 			}
 		}
 	}
