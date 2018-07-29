@@ -191,6 +191,8 @@ bool InputMappings::CheckKeyboardBrowseMode()
 		SetKeyboardFlag(AUTOLOAD_FLAG);
 	else if (keyboard->KeyHeld(KEY_R) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(FAKERESET_FLAG);
+	else if (keyboard->KeyHeld(KEY_W) && keyboard->KeyEitherAlt())
+		SetKeyboardFlag(WRITEPROTECT_FLAG);
 	else
 	{
 		unsigned index;

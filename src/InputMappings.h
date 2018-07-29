@@ -40,6 +40,7 @@
 #define NEWD64_FLAG		(1 << 14)
 #define AUTOLOAD_FLAG		(1 << 15)
 #define FAKERESET_FLAG		(1 << 16)
+#define WRITEPROTECT_FLAG	(1 << 17)
 // dont exceed 32!!
 
 class InputMappings : public Singleton<InputMappings>
@@ -171,6 +172,11 @@ public:
 	inline bool BrowseFakeReset()
 	{
 		return KeyboardFlag(FAKERESET_FLAG);
+	}
+
+	inline bool BrowseWriteProtect()
+	{
+		return KeyboardFlag(WRITEPROTECT_FLAG);
 	}
 
 	// Used by the 2 cores so need to be volatile

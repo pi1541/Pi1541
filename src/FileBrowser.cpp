@@ -977,6 +977,24 @@ void FileBrowser::UpdateInputFolders()
 				m_IEC_Commands.CreateD64(newFileName, "42", true);
 				FolderChanged();
 			}
+			else if (inputMappings->BrowseWriteProtect())
+			{
+				FileBrowser::BrowsableList::Entry* current = folder.current;
+				if (current)
+				{
+					if (current->filImage.fattrib & AM_RDO)
+					{
+						current->filImage.fattrib &= ~AM_RDO;
+						f_chmod(current->filImage.fname, 0, AM_RDO);
+					}
+					else
+					{
+						current->filImage.fattrib |= AM_RDO;
+						f_chmod(current->filImage.fname, AM_RDO, AM_RDO);
+					}
+					dirty = true;
+				}
+			}
 			else
 			{
 				unsigned keySetIndex;
