@@ -187,6 +187,10 @@ bool InputMappings::CheckKeyboardBrowseMode()
 	//	SetKeyboardFlag(PAGEDOWN_LCD_FLAG);
 	else if (keyboard->KeyHeld(KEY_N) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(NEWD64_FLAG);
+	else if (keyboard->KeyHeld(KEY_A) && keyboard->KeyEitherAlt() )
+		SetKeyboardFlag(AUTOLOAD_FLAG);
+	else if (keyboard->KeyHeld(KEY_R) && keyboard->KeyEitherAlt() )
+		SetKeyboardFlag(FAKERESET_FLAG);
 	else
 	{
 		unsigned index;
@@ -214,6 +218,10 @@ void InputMappings::CheckKeyboardEmulationMode(unsigned numberOfImages, unsigned
 			SetKeyboardFlag(PREV_FLAG);
 		else if (keyboard->KeyHeld(KEY_PAGEDOWN))
 			SetKeyboardFlag(NEXT_FLAG);
+		else if (keyboard->KeyHeld(KEY_A) && keyboard->KeyEitherAlt() )
+			SetKeyboardFlag(AUTOLOAD_FLAG);
+		else if (keyboard->KeyHeld(KEY_R) && keyboard->KeyEitherAlt() )
+			SetKeyboardFlag(FAKERESET_FLAG);
 		else if (numberOfImages > 1)
 		{
 			unsigned index;

@@ -102,12 +102,6 @@ unsigned int screenHeight = 768;
 const char* termainalTextRed = "\E[31m";
 const char* termainalTextNormal = "\E[0m";
 
-typedef enum {
-	EXIT_UNKNOWN,
-	EXIT_RESET,
-	EXIT_CD,
-	EXIT_KEYBOARD
-} EXIT_TYPE;
 EXIT_TYPE exitReason = EXIT_UNKNOWN;
 
 // Hooks required for USPi library
@@ -654,7 +648,7 @@ void GlobalSetDeviceID(u8 id)
 	SetVIAsDeviceID(id);
 }
 
-static void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
+void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
 {
 	const char* autoMountImageName = options.GetAutoMountImageName();
 	if (autoMountImageName[0] != 0)
@@ -662,8 +656,9 @@ static void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowse
 		switch (reset_reason)
 		{
 			case EXIT_UNKNOWN:
+			case EXIT_AUTOLOAD:
 			case EXIT_RESET:
-				fileBrowser->AutoSelectImage(autoMountImageName);
+				fileBrowser->SelectAutoMountImage(autoMountImageName);
 			break;
 			case EXIT_CD:
 			case EXIT_KEYBOARD:
@@ -945,6 +940,7 @@ void emulator()
 				bool exitEmulation = inputMappings->Exit();
 				bool nextDisk = inputMappings->NextDisk();
 				bool prevDisk = inputMappings->PrevDisk();
+				bool exitDoAutoLoad = inputMappings->AutoLoad();
 
 				if (nextDisk)
 				{
@@ -977,7 +973,7 @@ void emulator()
 				else
 					resetCount = 0;
 
-				if (!emulating || (resetCount > 10) || exitEmulation)
+				if (!emulating || (resetCount > 10) || exitEmulation || exitDoAutoLoad)
 				{
 					// Clearing the caddy now
 					//	- will write back all changed/dirty/written to disk images now
@@ -1001,8 +997,9 @@ void emulator()
 					}
 					if (exitEmulation)
 						exitReason = EXIT_KEYBOARD;
+					if (exitDoAutoLoad)
+						exitReason = EXIT_AUTOLOAD;
 					break;
-
 				}
 
 				if (cycleCount < FAST_BOOT_CYCLES)	// cycleCount is used so we can quickly get through 1541's self test code. This will make the emulated 1541 responsive to commands asap.

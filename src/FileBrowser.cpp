@@ -41,6 +41,7 @@ extern Options options;
 #define PNG_HEIGHT 200
 
 extern void GlobalSetDeviceID(u8 id);
+extern void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser);
 
 unsigned char FileBrowser::LSTBuffer[FileBrowser::LSTBuffer_size];
 
@@ -1007,6 +1008,10 @@ void FileBrowser::UpdateInputFolders()
 			if (inputMappings->BrowseBack())
 				PopFolder();
 		}
+		if (inputMappings->BrowseAutoLoad())
+		{
+			CheckAutoMountImage(EXIT_RESET, this);
+		}
 	}
 }
 
@@ -1321,8 +1326,11 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 	}
 }
 
-void FileBrowser::AutoSelectImage(const char* image)
+void FileBrowser::SelectAutoMountImage(const char* image)
 {
+	f_chdir("/1541");
+	RefreshFolderEntries();
+
 	FileBrowser::BrowsableList::Entry* current = 0;
 	int index;
 	int maxEntries = folder.entries.size();

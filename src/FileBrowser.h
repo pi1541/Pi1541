@@ -168,7 +168,7 @@ public:
 
 	FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate);
 
-	void AutoSelectImage(const char* image);
+	void SelectAutoMountImage(const char* image);
 	void DisplayRoot();
 	void Update();
 
