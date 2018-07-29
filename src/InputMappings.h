@@ -53,6 +53,9 @@ protected:
 	bool insertButtonPressedPrev;
 	bool insertButtonPressed;
 
+	bool enterButtonPressedPrev;
+	bool enterButtonPressed;
+
 	//inline void SetUartFlag(unsigned flag) { uartFlags |= flag;	}
 	//inline bool UartFlag(unsigned flag) { return (uartFlags & flag) != 0; }
 	inline void SetKeyboardFlag(unsigned flag) { keyboardFlags |= flag; }

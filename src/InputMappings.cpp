@@ -35,15 +35,18 @@ InputMappings::InputMappings()
 	: keyboardBrowseLCDScreen(false)
 	, insertButtonPressedPrev(false)
 	, insertButtonPressed(false)
+	, enterButtonPressedPrev(false)
+	, enterButtonPressed(false)
 {
 }
 
 bool InputMappings::CheckButtonsBrowseMode()
 {
 	buttonFlags = 0;
-	if (IEC_Bus::GetInputButtonPressed(0))
-		SetButtonFlag(ENTER_FLAG);
-	else if (IEC_Bus::GetInputButtonRepeating(1))
+	//if (IEC_Bus::GetInputButtonPressed(0))
+	//	SetButtonFlag(ENTER_FLAG);
+	//else
+		if (IEC_Bus::GetInputButtonRepeating(1))
 		SetButtonFlag(UP_FLAG);
 	else if (IEC_Bus::GetInputButtonRepeating(2))
 		SetButtonFlag(DOWN_FLAG);
@@ -56,6 +59,11 @@ bool InputMappings::CheckButtonsBrowseMode()
 	if (insertButtonPressedPrev && !insertButtonPressed)
 		SetButtonFlag(INSERT_FLAG);
 	insertButtonPressedPrev = insertButtonPressed;
+
+	enterButtonPressed = !IEC_Bus::GetInputButtonReleased(0);
+	if (enterButtonPressedPrev && !enterButtonPressed)
+		SetButtonFlag(ENTER_FLAG);
+	enterButtonPressedPrev = enterButtonPressed;
 
 	return buttonFlags != 0;
 }
