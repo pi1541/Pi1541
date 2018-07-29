@@ -16,4 +16,12 @@ typedef enum {
         LCD_1106_128x64,
 } LCD_MODEL;
 
+typedef enum {
+	EXIT_UNKNOWN,
+	EXIT_RESET,
+	EXIT_CD,
+	EXIT_KEYBOARD,
+	EXIT_AUTOLOAD
+} EXIT_TYPE;
+
 #endif

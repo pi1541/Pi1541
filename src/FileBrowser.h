@@ -168,7 +168,7 @@ public:
 
 	FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate);
 
-	void AutoSelectImage(const char* image);
+	void SelectAutoMountImage(const char* image);
 	void DisplayRoot();
 	void Update();
 
@@ -217,6 +217,8 @@ private:
 	bool CheckForPNG(const char* filename, FILINFO& filIcon);
 	void DisplayPNG();
 
+	bool SelectROM(u32 index);
+
 	enum State
 	{
 		State_Folders,
@@ -231,6 +233,7 @@ private:
 	u8* deviceID;
 	bool displayPNGIcons;
 	bool buttonChangedDevice;
+	bool buttonSelectROM;
 
 	BrowsableList caddySelections;
 
