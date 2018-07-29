@@ -60,6 +60,8 @@ GraphIEC = 1
 
 // If you are using a LCD screen then specify it here
 //LCDName = ssd1306_128x64
+//LCDName = ssd1306_128x32
+//LCDName = sh1106_128x64
 // If you are using a LCD screen and you would like PageUp and PageDown keys to work with it then specify this option
 //KeyboardBrowseLCDScreen = 1
 
