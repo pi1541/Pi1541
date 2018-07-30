@@ -528,7 +528,7 @@ void FileBrowser::FolderChanged()
 
 void FileBrowser::DisplayRoot()
 {
-	f_chdir("\\1541");
+	f_chdir("/1541");
 	FolderChanged();
 }
 
