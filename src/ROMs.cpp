@@ -43,3 +43,10 @@ void ROMs::SelectROM(const char* ROMName)
 	}
 }
 
+unsigned ROMs::UpdateLongestRomNameLen( unsigned maybeLongest )
+{
+	if (maybeLongest > longestRomNameLen)
+		longestRomNameLen = maybeLongest;
+
+	return longestRomNameLen;
+}
