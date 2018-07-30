@@ -1238,6 +1238,7 @@ static void CheckOptions()
 				{
 					strncpy(roms.ROMNames[ROMIndex], ROMName, 255);
 					roms.ROMValid[ROMIndex] = true;
+					roms.UpdateLongestRomNameLen( strlen(roms.ROMNames[ROMIndex]) );
 				}
 				f_close(&fp);
 				//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
