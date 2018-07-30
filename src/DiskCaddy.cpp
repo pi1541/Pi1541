@@ -292,7 +292,11 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 		x = 0;
 		y = 0;
 
-		snprintf(buffer, 256, "        D %d/%d           ", index + 1, numberOfImages);
+		snprintf(buffer, 256, "        D %d/%d %c        "
+			, index + 1
+			, numberOfImages
+			, GetImage(index)->GetReadOnly() ? 'R' : ' '
+			);
 		screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
 		y += LCDFONTHEIGHT;
 

@@ -1153,7 +1153,11 @@ void FileBrowser::ShowDeviceAndROM()
 	u32 x = 0; // 43 * 8
 	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y) - 20;
 
-	snprintf(buffer, 256, "Device %2d %s\r\n", *deviceID, roms->ROMNames[roms->currentROMIndex]);
+	snprintf(buffer, 256, "Device %2d %*s\r\n"
+		, *deviceID
+		, roms->GetLongestRomNameLen()
+		, roms->ROMNames[roms->currentROMIndex]
+		);
 	screenMain->PrintText(false, x, y, buffer, textColour, bgColour);
 }
 

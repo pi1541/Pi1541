@@ -42,5 +42,12 @@ public:
 
 	unsigned currentROMIndex;
 	unsigned lastManualSelectedROMIndex;
+
+	unsigned GetLongestRomNameLen() { return longestRomNameLen; }
+	unsigned UpdateLongestRomNameLen( unsigned maybeLongest );
+
+protected:
+	unsigned longestRomNameLen;
 };
+
 #endif
