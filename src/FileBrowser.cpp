@@ -102,10 +102,17 @@ void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, b
 			}
 			else
 			{
+				char ROstring[8] = { 0 };
+				if (entry->filImage.fattrib & AM_RDO)
+					strncpy (ROstring, " R", 8);
 				if (entry->caddyIndex != -1)
-					snprintf(buffer2, 256, "%d>%s", entry->caddyIndex, entry->filImage.fname);
+					snprintf(buffer2, 256, "%d>%s%s"
+						, entry->caddyIndex
+						, entry->filImage.fname
+						, ROstring
+						);
 				else
-					snprintf(buffer2, 256, "%s", entry->filImage.fname);
+					snprintf(buffer2, 256, "%s%s", entry->filImage.fname, ROstring);
 			}
 		}
 		else
