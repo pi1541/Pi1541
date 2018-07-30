@@ -217,7 +217,7 @@ private:
 	bool CheckForPNG(const char* filename, FILINFO& filIcon);
 	void DisplayPNG();
 
-	bool SelectROM(u32 index);
+	bool SelectROMOrDevice(u32 index);
 
 	enum State
 	{
@@ -232,8 +232,7 @@ private:
 	ROMs* roms;
 	u8* deviceID;
 	bool displayPNGIcons;
-	bool buttonChangedDevice;
-	bool buttonSelectROM;
+	bool buttonChangedROMDevice;
 
 	BrowsableList caddySelections;
 

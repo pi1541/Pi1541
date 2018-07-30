@@ -386,8 +386,7 @@ FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool di
 	, roms(roms)
 	, deviceID(deviceID)
 	, displayPNGIcons(displayPNGIcons)
-	, buttonChangedDevice(false)
-	, buttonSelectROM(false)
+	, buttonChangedROMDevice(false)
 	, screenMain(screenMain)
 	, screenLCD(screenLCD)
 	, scrollHighlightRate(scrollHighlightRate)
@@ -823,54 +822,51 @@ void FileBrowser::UpdateInputFolders()
 	Keyboard* keyboard = Keyboard::Instance();
 	InputMappings* inputMappings = InputMappings::Instance();
 
+	buttonChangedROMDevice = false;
 	if (IEC_Bus::GetInputButtonHeld(4))
 	{
 		if (inputMappings->BrowseSelect())
 		{
-			GlobalSetDeviceID(8);
-			ShowDeviceAndROM();
-			buttonChangedDevice = true;
+			SelectROMOrDevice(7);	// == device 8
+			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseUp())
 		{
-			GlobalSetDeviceID(9);
-			ShowDeviceAndROM();
-			buttonChangedDevice = true;
+			SelectROMOrDevice(8);	// == device 9
+			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseDown())
 		{
-			GlobalSetDeviceID(10);
-			ShowDeviceAndROM();
-			buttonChangedDevice = true;
+			SelectROMOrDevice(9);	// == device 10
+			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseBack())
 		{
-			GlobalSetDeviceID(11);
-			ShowDeviceAndROM();
-			buttonChangedDevice = true;
+			SelectROMOrDevice(10);	// == device 11
+			buttonChangedROMDevice = true;
 		}
 	}
 	else if (IEC_Bus::GetInputButtonHeld(0))
 	{
 		if (inputMappings->BrowseUp())
 		{
-			SelectROM(0);
-			buttonSelectROM = true;
+			SelectROMOrDevice(0);
+			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseDown())
 		{
-			SelectROM(1);
-			buttonSelectROM = true;
+			SelectROMOrDevice(1);
+			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseBack())
 		{
-			SelectROM(2);
-			buttonSelectROM = true;
+			SelectROMOrDevice(2);
+			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseInsert())
 		{
-			SelectROM(3);
-			buttonSelectROM = true;
+			SelectROMOrDevice(3);
+			buttonChangedROMDevice = true;
 		}
 	}
 	else
@@ -880,57 +876,50 @@ void FileBrowser::UpdateInputFolders()
 			//u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
 			bool dirty = false;
 
-			if (inputMappings->BrowseSelect())
+			if (inputMappings->BrowseSelect() && !buttonChangedROMDevice )
 			{
-				if (buttonSelectROM)
+				FileBrowser::BrowsableList::Entry* current = folder.current;
+				if (current)
 				{
-					buttonSelectROM = false;
-				}
-				else
-				{
-					FileBrowser::BrowsableList::Entry* current = folder.current;
-					if (current)
+					if (current->filImage.fattrib & AM_DIR)
 					{
-						if (current->filImage.fattrib & AM_DIR)
+						if (strcmp(current->filImage.fname, "..") == 0)
 						{
-							if (strcmp(current->filImage.fname, "..") == 0)
-							{
-								PopFolder();
-							}
-							else if (strcmp(current->filImage.fname, ".") != 0)
-							{
-								f_chdir(current->filImage.fname);
-								RefreshFolderEntries();
-							}
-							dirty = true;
+							PopFolder();
 						}
-						else
+						else if (strcmp(current->filImage.fname, ".") != 0)
 						{
-							if (strcmp(current->filImage.fname, "..") == 0)
+							f_chdir(current->filImage.fname);
+							RefreshFolderEntries();
+						}
+						dirty = true;
+					}
+					else
+					{
+						if (strcmp(current->filImage.fname, "..") == 0)
+						{
+							PopFolder();
+						}
+						else if (DiskImage::IsDiskImageExtention(current->filImage.fname))
+						{
+							DiskImage::DiskType diskType = DiskImage::GetDiskImageTypeViaExtention(current->filImage.fname);
+
+							// Should also be able to create a LST file from all the images currently selected in the caddy
+							if (diskType == DiskImage::LST)
 							{
-								PopFolder();
+								selectionsMade = SelectLST(current->filImage.fname);
 							}
-							else if (DiskImage::IsDiskImageExtention(current->filImage.fname))
+							else
 							{
-								DiskImage::DiskType diskType = DiskImage::GetDiskImageTypeViaExtention(current->filImage.fname);
-
-								// Should also be able to create a LST file from all the images currently selected in the caddy
-								if (diskType == DiskImage::LST)
-								{
-									selectionsMade = SelectLST(current->filImage.fname);
-								}
-								else
-								{
-									// Add the current selected
-									AddToCaddy(current);
-									selectionsMade = FillCaddyWithSelections();
-								}
-
-								if (selectionsMade)
-									lastSelectionName = current->filImage.fname;
-
-								dirty = true;
+								// Add the current selected
+								AddToCaddy(current);
+								selectionsMade = FillCaddyWithSelections();
 							}
+
+							if (selectionsMade)
+								lastSelectionName = current->filImage.fname;
+
+							dirty = true;
 						}
 					}
 				}
@@ -954,19 +943,12 @@ void FileBrowser::UpdateInputFolders()
 				ClearSelections();
 				dirty = true;
 			}
-			else if (inputMappings->BrowseInsert())
+			else if (inputMappings->BrowseInsert() && !buttonChangedROMDevice )
 			{
-				if (buttonChangedDevice)
+				FileBrowser::BrowsableList::Entry* current = folder.current;
+				if (current)
 				{
-					buttonChangedDevice = false;
-				}
-				else
-				{
-					FileBrowser::BrowsableList::Entry* current = folder.current;
-					if (current)
-					{
-						dirty = AddToCaddy(current);
-					}
+					dirty = AddToCaddy(current);
 				}
 			}
 			else if (inputMappings->BrowseNewD64())
@@ -997,6 +979,7 @@ void FileBrowser::UpdateInputFolders()
 			}
 			else
 			{
+				// check for number keys for ROM and Drive Number changes
 				unsigned keySetIndex;
 				for (keySetIndex = 0; keySetIndex < 11; ++keySetIndex)
 				{
@@ -1004,15 +987,16 @@ void FileBrowser::UpdateInputFolders()
 					if (keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase]) 
 					|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 1]) 
 					|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 2]))
+						SelectROMOrDevice(keySetIndex);
+				}
+
+				// check for keys a-z
+				if ( keyboard->KeyAnyHeld() && !keyboard->KeyEitherAlt() )
+				for (unsigned i=KEY_A; i<=KEY_Z; i++)
+				{
+					if (keyboard->KeyPressed( i ))
 					{
-						if (SelectROM(keySetIndex))
-						{
-						}
-						else if ( (keySetIndex >= 7) && (keySetIndex <= 10 ) )
-						{
-							GlobalSetDeviceID( keySetIndex+1 );
-							ShowDeviceAndROM();
-						}
+						char ascKey = i-KEY_A+'A';
 					}
 				}
 
@@ -1033,13 +1017,21 @@ void FileBrowser::UpdateInputFolders()
 	}
 }
 
-bool FileBrowser::SelectROM(u32 index)
+bool FileBrowser::SelectROMOrDevice(u32 index)
+// 0-6 select ROM image
+// 7-10 change deviceID to  8-11
 {
 	if ((index < ROMs::MAX_ROMS) && (roms->ROMValid[index]))
 	{
 		roms->currentROMIndex = index;
 		roms->lastManualSelectedROMIndex = index;
 		DEBUG_LOG("Swap ROM %d %s\r\n", index, roms->ROMNames[index]);
+		ShowDeviceAndROM();
+		return true;
+	}
+	else if ( (index >= 7) && (index <= 10 ) )
+	{	
+		GlobalSetDeviceID( index+1 );
 		ShowDeviceAndROM();
 		return true;
 	}
