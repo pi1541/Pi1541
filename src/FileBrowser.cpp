@@ -45,21 +45,6 @@ extern void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowse
 
 unsigned char FileBrowser::LSTBuffer[FileBrowser::LSTBuffer_size];
 
-const unsigned FileBrowser::SwapKeys[33] =
-{
-	KEY_F1, KEY_KP1, KEY_1,
-	KEY_F2, KEY_KP2, KEY_2,
-	KEY_F3, KEY_KP3, KEY_3,
-	KEY_F4, KEY_KP4, KEY_4,
-	KEY_F5, KEY_KP5, KEY_5,
-	KEY_F6, KEY_KP6, KEY_6,
-	KEY_F7, KEY_KP7, KEY_7,
-	KEY_F8, KEY_KP8, KEY_8,
-	KEY_F9, KEY_KP9, KEY_9,
-	KEY_F10, KEY_KP0, KEY_0,
-	KEY_F11, KEY_KPMINUS, KEY_MINUS
-};
-
 static const u32 palette[] = 
 {
 	RGBA(0x00, 0x00, 0x00, 0xFF),
@@ -375,6 +360,28 @@ FileBrowser::BrowsableList::Entry* FileBrowser::BrowsableList::FindEntry(const c
 		Entry* entry = &entries[index];
 		if (!(entry->filImage.fattrib & AM_DIR) && strcasecmp(name, entry->filImage.fname) == 0)
 			return entry;
+	}
+	return 0;
+}
+
+FileBrowser::BrowsableList::Entry* FileBrowser::BrowsableList::FindNextPartialEntry(const char* name, int match_len)
+{
+	int index;
+	int len = (int)entries.size();
+
+	for (index = 0; index < len; ++index)
+	{
+		Entry* entry = &entries[index];
+		if (match_len) // partial match
+		{
+			if (strncasecmp(name, entry->filImage.fname, match_len) == 0)
+				return entry;
+		}
+		else // full match
+		{
+			if (strcasecmp(name, entry->filImage.fname) == 0)
+				return entry;
+		}
 	}
 	return 0;
 }
@@ -980,14 +987,11 @@ void FileBrowser::UpdateInputFolders()
 			else
 			{
 				// check for number keys for ROM and Drive Number changes
-				unsigned keySetIndex;
-				for (keySetIndex = 0; keySetIndex < 11; ++keySetIndex)
+				if (inputMappings->BrowseNumber()
+					&& inputMappings->getKeyboardNumber() >= 0
+					&& inputMappings->getKeyboardNumber() < 11 )
 				{
-					unsigned keySetIndexBase = keySetIndex * 3;
-					if (keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase]) 
-					|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 1]) 
-					|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 2]))
-						SelectROMOrDevice(keySetIndex);
+					SelectROMOrDevice(inputMappings->getKeyboardNumber());
 				}
 
 				// check for keys a-z

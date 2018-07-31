@@ -191,16 +191,28 @@ bool InputMappings::CheckKeyboardBrowseMode()
 		SetKeyboardFlag(AUTOLOAD_FLAG);
 	else if (keyboard->KeyHeld(KEY_R) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(FAKERESET_FLAG);
-	else if (keyboard->KeyHeld(KEY_W) && keyboard->KeyEitherAlt())
+	else if (keyboard->KeyHeld(KEY_W) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(WRITEPROTECT_FLAG);
 	else
 	{
 		unsigned index;
-		for (index = 0; index < 11; ++index)
+		for (index = 0; index < sizeof(NumberKeys)/sizeof(NumberKeys[0]); index+=3)
 		{
-			unsigned keySetIndexBase = index * 3;
-			if (keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 1]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 2]))
-				keyboardFlags |= NUMBER_FLAG;
+			if (keyboard->KeyHeld(NumberKeys[index])
+				|| keyboard->KeyHeld(NumberKeys[index + 1])
+				|| keyboard->KeyHeld(NumberKeys[index + 2]) )
+			{
+				SetKeyboardFlag(NUMBER_FLAG);
+				keyboardNumber = index/3;
+			}
+		}
+		for (index = KEY_A; index <= KEY_Z; ++index)
+		{
+			if (keyboard->KeyHeld(index))
+			{
+				SetKeyboardFlag(AtoZ_FLAG);
+				keyboardNumber = index-KEY_A+1;
+			}
 		}
 	}
 
@@ -227,12 +239,14 @@ void InputMappings::CheckKeyboardEmulationMode(unsigned numberOfImages, unsigned
 		else if (numberOfImages > 1)
 		{
 			unsigned index;
-			for (index = 0; index < numberOfImagesMax; ++index)
+			for (index = 0; index < sizeof(NumberKeys)/sizeof(NumberKeys[0]); index+=3)
 			{
-				unsigned keySetIndexBase = index * 3;
-				if (keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 1]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 2]))
-					directDiskSwapRequest |= (1 << index);
+				if (keyboard->KeyHeld(NumberKeys[index])
+					|| keyboard->KeyHeld(NumberKeys[index + 1])
+					|| keyboard->KeyHeld(NumberKeys[index + 2]) )
+					directDiskSwapRequest |= (1 << index/3);
 			}
 		}
 	}
 }
+

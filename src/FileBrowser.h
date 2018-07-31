@@ -151,6 +151,7 @@ public:
 		};
 
 		Entry* FindEntry(const char* name);
+		Entry* FindNextPartialEntry(const char* name, int match_len);
 		int FindNextAutoName(char* basename);
 
 		void RefreshViews();
@@ -190,8 +191,6 @@ public:
 
 	static const long int LSTBuffer_size = 1024 * 8;
 	static unsigned char LSTBuffer[];
-
-	static const unsigned SwapKeys[];
 
 	static u32 Colour(int index);
 

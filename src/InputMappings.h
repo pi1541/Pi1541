@@ -41,7 +41,23 @@
 #define AUTOLOAD_FLAG		(1 << 15)
 #define FAKERESET_FLAG		(1 << 16)
 #define WRITEPROTECT_FLAG	(1 << 17)
+#define AtoZ_FLAG		(1 << 18)
 // dont exceed 32!!
+
+const unsigned NumberKeys[33] =
+{
+	KEY_F1, KEY_KP1, KEY_1,
+	KEY_F2, KEY_KP2, KEY_2,
+	KEY_F3, KEY_KP3, KEY_3,
+	KEY_F4, KEY_KP4, KEY_4,
+	KEY_F5, KEY_KP5, KEY_5,
+	KEY_F6, KEY_KP6, KEY_6,
+	KEY_F7, KEY_KP7, KEY_7,
+	KEY_F8, KEY_KP8, KEY_8,
+	KEY_F9, KEY_KP9, KEY_9,
+	KEY_F10, KEY_KP0, KEY_0,
+	KEY_F11, KEY_KPMINUS, KEY_MINUS
+};
 
 class InputMappings : public Singleton<InputMappings>
 {
@@ -58,6 +74,9 @@ protected:
 
 	bool enterButtonPressedPrev;
 	bool enterButtonPressed;
+
+	unsigned keyboardNumber;
+	unsigned keyboardLetter;
 
 	//inline void SetUartFlag(unsigned flag) { uartFlags |= flag;	}
 	//inline bool UartFlag(unsigned flag) { return (uartFlags & flag) != 0; }
@@ -179,6 +198,14 @@ public:
 		return KeyboardFlag(WRITEPROTECT_FLAG);
 	}
 
+	inline bool BrowseNumber()
+	{
+		return KeyboardFlag(NUMBER_FLAG);
+	}
+
+	inline unsigned getKeyboardNumber() { return keyboardNumber; }
+	inline unsigned getKeyboardLetter() { return keyboardLetter; }
+
 	// Used by the 2 cores so need to be volatile
 	//volatile static unsigned directDiskSwapRequest;
 	static unsigned directDiskSwapRequest;
@@ -187,3 +214,4 @@ public:
 //	static unsigned escapeSequenceIndex;
 };
 #endif
+
