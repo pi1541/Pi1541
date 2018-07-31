@@ -41,7 +41,7 @@
 #define AUTOLOAD_FLAG		(1 << 15)
 #define FAKERESET_FLAG		(1 << 16)
 #define WRITEPROTECT_FLAG	(1 << 17)
-#define AtoZ_FLAG		(1 << 18)
+#define LETTER_FLAG		(1 << 18)
 // dont exceed 32!!
 
 const unsigned NumberKeys[33] =
@@ -203,8 +203,13 @@ public:
 		return KeyboardFlag(NUMBER_FLAG);
 	}
 
+	inline bool BrowseLetter()
+	{
+		return KeyboardFlag(LETTER_FLAG);
+	}
+
 	inline unsigned getKeyboardNumber() { return keyboardNumber; }
-	inline unsigned getKeyboardLetter() { return keyboardLetter; }
+	inline char getKeyboardLetter() { return (char) keyboardLetter; }
 
 	// Used by the 2 cores so need to be volatile
 	//volatile static unsigned directDiskSwapRequest;

@@ -308,6 +308,46 @@ bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
 		dirty = true;
 	}
 
+	// check for keys a-z
+	if (inputMappings->BrowseLetter())
+	{
+		char temp[8];
+		unsigned found=0;
+		u32 i=0;
+		snprintf (temp, sizeof(temp), "%c", inputMappings->getKeyboardLetter());
+
+		// first look from next to last
+		for (i=1+list->currentIndex; i <= numberOfEntriesMinus1 ; i++)
+		{
+			FileBrowser::BrowsableList::Entry* entry = &list->entries[i];
+			if (strncasecmp(temp, entry->filImage.fname, 1) == 0)
+			{
+				found=i;
+				break;
+			}
+		}
+		if (!found)
+		{
+			// look from first to previous
+			for (i=0; i< 1+list->currentIndex ; i++)
+			{
+				FileBrowser::BrowsableList::Entry* entry = &list->entries[i];
+				if (strncasecmp(temp, entry->filImage.fname, 1) == 0)
+				{
+					found=i;
+					break;
+				}
+			}
+		}
+
+		if (found)
+		{
+			list->currentIndex=found;
+			list->SetCurrent();
+			dirty = true;
+		}
+	}
+
 	return dirty;
 }
 
@@ -360,28 +400,6 @@ FileBrowser::BrowsableList::Entry* FileBrowser::BrowsableList::FindEntry(const c
 		Entry* entry = &entries[index];
 		if (!(entry->filImage.fattrib & AM_DIR) && strcasecmp(name, entry->filImage.fname) == 0)
 			return entry;
-	}
-	return 0;
-}
-
-FileBrowser::BrowsableList::Entry* FileBrowser::BrowsableList::FindNextPartialEntry(const char* name, int match_len)
-{
-	int index;
-	int len = (int)entries.size();
-
-	for (index = 0; index < len; ++index)
-	{
-		Entry* entry = &entries[index];
-		if (match_len) // partial match
-		{
-			if (strncasecmp(name, entry->filImage.fname, match_len) == 0)
-				return entry;
-		}
-		else // full match
-		{
-			if (strcasecmp(name, entry->filImage.fname) == 0)
-				return entry;
-		}
 	}
 	return 0;
 }
@@ -994,15 +1012,6 @@ void FileBrowser::UpdateInputFolders()
 					SelectROMOrDevice(inputMappings->getKeyboardNumber());
 				}
 
-				// check for keys a-z
-				if ( keyboard->KeyAnyHeld() && !keyboard->KeyEitherAlt() )
-				for (unsigned i=KEY_A; i<=KEY_Z; i++)
-				{
-					if (keyboard->KeyPressed( i ))
-					{
-						char ascKey = i-KEY_A+'A';
-					}
-				}
 
 				dirty = folder.CheckBrowseNavigation();
 			}

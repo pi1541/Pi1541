@@ -195,23 +195,26 @@ bool InputMappings::CheckKeyboardBrowseMode()
 		SetKeyboardFlag(WRITEPROTECT_FLAG);
 	else
 	{
-		unsigned index;
-		for (index = 0; index < sizeof(NumberKeys)/sizeof(NumberKeys[0]); index+=3)
+		if (keyboard->KeyNoModifiers())
 		{
-			if (keyboard->KeyHeld(NumberKeys[index])
-				|| keyboard->KeyHeld(NumberKeys[index + 1])
-				|| keyboard->KeyHeld(NumberKeys[index + 2]) )
+			unsigned index;
+			for (index = 0; index < sizeof(NumberKeys)/sizeof(NumberKeys[0]); index+=3)
 			{
-				SetKeyboardFlag(NUMBER_FLAG);
-				keyboardNumber = index/3;
+				if (keyboard->KeyHeld(NumberKeys[index])
+					|| keyboard->KeyHeld(NumberKeys[index + 1])
+					|| keyboard->KeyHeld(NumberKeys[index + 2]) )
+				{
+					SetKeyboardFlag(NUMBER_FLAG);
+					keyboardNumber = index/3;		// key 1 is 0
+				}
 			}
-		}
-		for (index = KEY_A; index <= KEY_Z; ++index)
-		{
-			if (keyboard->KeyHeld(index))
+			for (index = KEY_A; index <= KEY_Z; ++index)
 			{
-				SetKeyboardFlag(AtoZ_FLAG);
-				keyboardNumber = index-KEY_A+1;
+				if (keyboard->KeyHeld(index))
+				{
+					SetKeyboardFlag(LETTER_FLAG);
+					keyboardLetter = index-KEY_A+'A';	// key A is ascii 'A'
+				}
 			}
 		}
 	}

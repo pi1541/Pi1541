@@ -151,7 +151,6 @@ public:
 		};
 
 		Entry* FindEntry(const char* name);
-		Entry* FindNextPartialEntry(const char* name, int match_len);
 		int FindNextAutoName(char* basename);
 
 		void RefreshViews();
