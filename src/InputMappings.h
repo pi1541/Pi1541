@@ -42,6 +42,8 @@
 #define FAKERESET_FLAG		(1 << 16)
 #define WRITEPROTECT_FLAG	(1 << 17)
 #define LETTER_FLAG		(1 << 18)
+#define HOME_FLAG		(1 << 19)
+#define END_FLAG		(1 << 20)
 // dont exceed 32!!
 
 const unsigned NumberKeys[33] =
@@ -206,6 +208,16 @@ public:
 	inline bool BrowseLetter()
 	{
 		return KeyboardFlag(LETTER_FLAG);
+	}
+
+	inline bool BrowseHome()
+	{
+		return KeyboardFlag(HOME_FLAG);
+	}
+
+	inline bool BrowseEnd()
+	{
+		return KeyboardFlag(END_FLAG);
 	}
 
 	inline unsigned getKeyboardNumber() { return keyboardNumber; }

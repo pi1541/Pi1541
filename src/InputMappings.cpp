@@ -152,7 +152,6 @@ bool InputMappings::CheckKeyboardBrowseMode()
 
 	keyboardFlags = 0;
 
-	// TODO: add KEY_HOME and KEY_END
 	if (keyboard->KeyHeld(KEY_ESC))
 		SetKeyboardFlag(ESC_FLAG);
 	else if (keyboard->KeyHeld(KEY_ENTER))
@@ -181,10 +180,10 @@ bool InputMappings::CheckKeyboardBrowseMode()
 		else
 			SetKeyboardFlag(PAGEDOWN_FLAG);
 	}
-	//else if (keyboard->KeyHeld(KEY_HOME))
-	//	SetKeyboardFlag(PAGEUP_LCD_FLAG);
-	//else if (keyboard->KeyHeld(KEY_END))
-	//	SetKeyboardFlag(PAGEDOWN_LCD_FLAG);
+	else if (keyboard->KeyHeld(KEY_HOME))
+		SetKeyboardFlag(HOME_FLAG);
+	else if (keyboard->KeyHeld(KEY_END))
+		SetKeyboardFlag(END_FLAG);
 	else if (keyboard->KeyHeld(KEY_N) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(NEWD64_FLAG);
 	else if (keyboard->KeyHeld(KEY_A) && keyboard->KeyEitherAlt() )

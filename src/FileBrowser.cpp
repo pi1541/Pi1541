@@ -350,6 +350,7 @@ bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 	{
 		dirty |= views[index].CheckBrowseNavigation(index != 0);
 	}
+
 	// check for keys a-z
 	if (inputMappings->BrowseLetter())
 	{
@@ -389,7 +390,18 @@ bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 			dirty |= 1;
 		}
 	}
-
+	else if (inputMappings->BrowseHome())
+	{
+		currentIndex = 0;
+		SetCurrent();
+		dirty |= 1;
+	}
+	else if (inputMappings->BrowseEnd())
+	{
+		currentIndex = numberOfEntriesMinus1;
+		SetCurrent();
+		dirty |= 1;
+	}
 	return dirty;
 }
 
