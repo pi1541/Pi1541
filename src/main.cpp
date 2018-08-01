@@ -635,17 +635,12 @@ static void PlaySoundDMA()
 	write32(DMA0_BASE + DMA_CS, DMA_ACTIVE);
 }
 
-static void SetVIAsDeviceID(u8 id)
-{
-	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, id & 1);
-	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, id & 2);
-}
-
 void GlobalSetDeviceID(u8 id)
 {
 	deviceID = id;
 	m_IEC_Commands.SetDeviceId(id);
-	SetVIAsDeviceID(id);
+	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, id & 1);
+	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, id & 2);
 }
 
 void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
@@ -796,7 +791,6 @@ void emulator()
 						case IEC_Commands::DEVICEID_CHANGED:
 							GlobalSetDeviceID( m_IEC_Commands.GetDeviceId() );
 							fileBrowser->ShowDeviceAndROM();
-							SetVIAsDeviceID(deviceID);	// Let the emulated VIA know
 							break;
 						default:
 							break;
@@ -1344,10 +1338,9 @@ extern "C"
 
 		f_chdir("/1541");
 
-		m_IEC_Commands.SetDeviceId(deviceID);
 		m_IEC_Commands.SetStarFileName(options.GetStarFileName());
 
-		SetVIAsDeviceID(deviceID);
+		GlobalSetDeviceID(deviceID);
 
 		pi1541.drive.SetVIA(&pi1541.VIA[1]);
 		pi1541.VIA[0].GetPortB()->SetPortOut(0, IEC_Bus::PortB_OnPortOut);
