@@ -186,9 +186,9 @@ public:
 
 	inline bool BrowseEnd() { return KeyboardFlag(END_FLAG); }
 
-	inline unsigned getKeyboardNumber() { return keyboardNumber; }
+	inline char getKeyboardNumber() { return keyboardNumber; }
 	inline char getKeyboardLetter() { return (char) keyboardLetter; }
-	inline char getKeyboardFunction() { return (char) keyboardFunction; }
+	inline unsigned getKeyboardFunction() { return (char) keyboardFunction; }
 
 	// Used by the 2 cores so need to be volatile
 	//volatile static unsigned directDiskSwapRequest;

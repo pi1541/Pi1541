@@ -351,13 +351,18 @@ bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 		dirty |= views[index].CheckBrowseNavigation(index != 0);
 	}
 
-	// check for keys a-z
+	// check for keys a-z and 0-9
+	char searchChar = 0;
 	if (inputMappings->BrowseLetter())
+		searchChar = inputMappings->getKeyboardLetter();
+	if (inputMappings->BrowseNumber())
+		searchChar = inputMappings->getKeyboardNumber();
+	if (searchChar)
 	{
 		char temp[8];
 		unsigned found=0;
 		u32 i=0;
-		snprintf (temp, sizeof(temp), "%c", inputMappings->getKeyboardLetter());
+		snprintf (temp, sizeof(temp), "%c", searchChar);
 
 		// first look from next to last
 		for (i=1+currentIndex; i <= numberOfEntriesMinus1 ; i++)
