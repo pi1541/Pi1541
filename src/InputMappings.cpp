@@ -197,14 +197,23 @@ bool InputMappings::CheckKeyboardBrowseMode()
 		if (keyboard->KeyNoModifiers())
 		{
 			unsigned index;
-			for (index = 0; index < sizeof(NumberKeys)/sizeof(NumberKeys[0]); index+=3)
+
+			for (index = KEY_1; index <= KEY_0; ++index)
 			{
-				if (keyboard->KeyHeld(NumberKeys[index])
-					|| keyboard->KeyHeld(NumberKeys[index + 1])
-					|| keyboard->KeyHeld(NumberKeys[index + 2]) )
+				if (keyboard->KeyHeld(index))
 				{
 					SetKeyboardFlag(NUMBER_FLAG);
-					keyboardNumber = index/3;		// key 1 is 0
+					keyboardNumber = index-KEY_1+'1';	// key 1 is ascii '1'
+					if (keyboardNumber > '9') keyboardNumber = '0';
+				}
+			}
+			for (index = KEY_KP1; index <= KEY_KP0; ++index)
+			{
+				if (keyboard->KeyHeld(index))
+				{
+					SetKeyboardFlag(NUMBER_FLAG);
+					keyboardNumber = index-KEY_KP1+'1';	// key 1 is ascii '1'
+					if (keyboardNumber > '9') keyboardNumber = '0';
 				}
 			}
 			for (index = KEY_A; index <= KEY_Z; ++index)
@@ -213,6 +222,14 @@ bool InputMappings::CheckKeyboardBrowseMode()
 				{
 					SetKeyboardFlag(LETTER_FLAG);
 					keyboardLetter = index-KEY_A+'A';	// key A is ascii 'A'
+				}
+			}
+			for (index = KEY_F1; index <= KEY_F12; ++index)	// F13 isnt contiguous
+			{
+				if (keyboard->KeyHeld(index))
+				{
+					SetKeyboardFlag(FUNCTION_FLAG);
+					keyboardFunction = index-KEY_F1+1;	// key F1 is 1
 				}
 			}
 		}

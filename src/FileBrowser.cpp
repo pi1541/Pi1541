@@ -1021,11 +1021,11 @@ void FileBrowser::UpdateInputFolders()
 			else
 			{
 				// check for number keys for ROM and Drive Number changes
-				if (inputMappings->BrowseNumber()
-					&& inputMappings->getKeyboardNumber() >= 0
-					&& inputMappings->getKeyboardNumber() < 11 )
+				if (inputMappings->BrowseFunction()
+					&& inputMappings->getKeyboardFunction() >= 1
+					&& inputMappings->getKeyboardFunction() <= 11 )
 				{
-					SelectROMOrDevice(inputMappings->getKeyboardNumber());
+					SelectROMOrDevice(inputMappings->getKeyboardFunction());
 				}
 
 
@@ -1047,20 +1047,21 @@ void FileBrowser::UpdateInputFolders()
 }
 
 bool FileBrowser::SelectROMOrDevice(u32 index)
-// 0-6 select ROM image
-// 7-10 change deviceID to  8-11
+// 1-7 select ROM image
+// 8-11 change deviceID to  8-11
 {
+	if ( (index >= 8) && (index <= 11 ) )
+	{
+		GlobalSetDeviceID( index );
+		ShowDeviceAndROM();
+		return true;
+	}
+	index--;
 	if ((index < ROMs::MAX_ROMS) && (roms->ROMValid[index]))
 	{
 		roms->currentROMIndex = index;
 		roms->lastManualSelectedROMIndex = index;
 		DEBUG_LOG("Swap ROM %d %s\r\n", index, roms->ROMNames[index]);
-		ShowDeviceAndROM();
-		return true;
-	}
-	else if ( (index >= 7) && (index <= 10 ) )
-	{	
-		GlobalSetDeviceID( index+1 );
 		ShowDeviceAndROM();
 		return true;
 	}
