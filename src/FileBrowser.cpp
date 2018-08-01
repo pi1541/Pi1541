@@ -443,7 +443,8 @@ FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool di
 	folder.AddView(screenMain, columns, rows, positionX, positionY, false);
 
 	positionX = screenMain->ScaleX(1024 - 320);
-	caddySelections.AddView(screenMain, 6, rows, positionX, positionY, false);
+	columns = screenMain->ScaleX(40);
+	caddySelections.AddView(screenMain, columns, rows, positionX, positionY, false);
 
 
 
