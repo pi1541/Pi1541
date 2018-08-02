@@ -152,7 +152,6 @@ bool InputMappings::CheckKeyboardBrowseMode()
 
 	keyboardFlags = 0;
 
-	// TODO: add KEY_HOME and KEY_END
 	if (keyboard->KeyHeld(KEY_ESC))
 		SetKeyboardFlag(ESC_FLAG);
 	else if (keyboard->KeyHeld(KEY_ENTER))
@@ -181,26 +180,58 @@ bool InputMappings::CheckKeyboardBrowseMode()
 		else
 			SetKeyboardFlag(PAGEDOWN_FLAG);
 	}
-	//else if (keyboard->KeyHeld(KEY_HOME))
-	//	SetKeyboardFlag(PAGEUP_LCD_FLAG);
-	//else if (keyboard->KeyHeld(KEY_END))
-	//	SetKeyboardFlag(PAGEDOWN_LCD_FLAG);
+	else if (keyboard->KeyHeld(KEY_HOME))
+		SetKeyboardFlag(HOME_FLAG);
+	else if (keyboard->KeyHeld(KEY_END))
+		SetKeyboardFlag(END_FLAG);
 	else if (keyboard->KeyHeld(KEY_N) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(NEWD64_FLAG);
 	else if (keyboard->KeyHeld(KEY_A) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(AUTOLOAD_FLAG);
 	else if (keyboard->KeyHeld(KEY_R) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(FAKERESET_FLAG);
-	else if (keyboard->KeyHeld(KEY_W) && keyboard->KeyEitherAlt())
+	else if (keyboard->KeyHeld(KEY_W) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(WRITEPROTECT_FLAG);
 	else
 	{
-		unsigned index;
-		for (index = 0; index < 11; ++index)
+		if (keyboard->KeyNoModifiers())
 		{
-			unsigned keySetIndexBase = index * 3;
-			if (keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 1]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 2]))
-				keyboardFlags |= NUMBER_FLAG;
+			unsigned index;
+
+			for (index = KEY_1; index <= KEY_0; ++index)
+			{
+				if (keyboard->KeyHeld(index))
+				{
+					SetKeyboardFlag(NUMBER_FLAG);
+					keyboardNumber = index-KEY_1+'1';	// key 1 is ascii '1'
+					if (keyboardNumber > '9') keyboardNumber = '0';
+				}
+			}
+			for (index = KEY_KP1; index <= KEY_KP0; ++index)
+			{
+				if (keyboard->KeyHeld(index))
+				{
+					SetKeyboardFlag(NUMBER_FLAG);
+					keyboardNumber = index-KEY_KP1+'1';	// key 1 is ascii '1'
+					if (keyboardNumber > '9') keyboardNumber = '0';
+				}
+			}
+			for (index = KEY_A; index <= KEY_Z; ++index)
+			{
+				if (keyboard->KeyHeld(index))
+				{
+					SetKeyboardFlag(LETTER_FLAG);
+					keyboardLetter = index-KEY_A+'A';	// key A is ascii 'A'
+				}
+			}
+			for (index = KEY_F1; index <= KEY_F12; ++index)	// F13 isnt contiguous
+			{
+				if (keyboard->KeyHeld(index))
+				{
+					SetKeyboardFlag(FUNCTION_FLAG);
+					keyboardFunction = index-KEY_F1+1;	// key F1 is 1
+				}
+			}
 		}
 	}
 
@@ -227,12 +258,14 @@ void InputMappings::CheckKeyboardEmulationMode(unsigned numberOfImages, unsigned
 		else if (numberOfImages > 1)
 		{
 			unsigned index;
-			for (index = 0; index < numberOfImagesMax; ++index)
+			for (index = 0; index < sizeof(NumberKeys)/sizeof(NumberKeys[0]); index+=3)
 			{
-				unsigned keySetIndexBase = index * 3;
-				if (keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 1]) || keyboard->KeyHeld(FileBrowser::SwapKeys[keySetIndexBase + 2]))
-					directDiskSwapRequest |= (1 << index);
+				if (keyboard->KeyHeld(NumberKeys[index])
+					|| keyboard->KeyHeld(NumberKeys[index + 1])
+					|| keyboard->KeyHeld(NumberKeys[index + 2]) )
+					directDiskSwapRequest |= (1 << index/3);
 			}
 		}
 	}
 }
+
