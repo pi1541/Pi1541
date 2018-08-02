@@ -88,8 +88,8 @@ void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, b
 	RGBA BkColour = RGBA(0, 0, 0, 0xFF); //palette[VIC2_COLOUR_INDEX_BLUE];
 	u32 columnsMax = columns;
 
-	if (columnsMax > sizeof(buffer1))
-		columnsMax = sizeof(buffer1);
+	if (columnsMax > sizeof(buffer1)-1)
+		columnsMax = sizeof(buffer1)-1;
 
 	if (entryIndex < list->entries.size())
 	{
@@ -102,10 +102,17 @@ void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, b
 			}
 			else
 			{
+				char ROstring[8] = { 0 };
+				if (entry->filImage.fattrib & AM_RDO)
+					strncpy (ROstring, "<", 8);
 				if (entry->caddyIndex != -1)
-					snprintf(buffer2, 256, "%d>%s", entry->caddyIndex, entry->filImage.fname);
+					snprintf(buffer2, 256, "%d>%s%s"
+						, entry->caddyIndex
+						, entry->filImage.fname
+						, ROstring
+						);
 				else
-					snprintf(buffer2, 256, "%s", entry->filImage.fname);
+					snprintf(buffer2, 256, "%s%s", entry->filImage.fname, ROstring);
 			}
 		}
 		else
@@ -150,7 +157,7 @@ void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, b
 	}
 	else
 	{
-		memset(buffer1, ' ', 80);
+		memset(buffer1, ' ', columnsMax);
 		screen->PrintText(false, x, y, buffer1, BkColour, BkColour);
 	}
 }
@@ -196,10 +203,17 @@ void FileBrowser::BrowsableListView::RefreshHighlightScroll()
 		}
 		else
 		{
+			char ROstring[8] = { 0 };
+			if (entry->filImage.fattrib & AM_RDO)
+				strncpy (ROstring, "<", 8);
 			if (entry->caddyIndex != -1)
-				snprintf(buffer2, 256, "%d>%s", entry->caddyIndex, entry->filImage.fname);
+				snprintf(buffer2, 256, "%d>%s%s"
+					, entry->caddyIndex
+					, entry->filImage.fname
+					, ROstring
+					);
 			else
-				snprintf(buffer2, 256, "%s", entry->filImage.fname);
+				snprintf(buffer2, 256, "%s%s", entry->filImage.fname, ROstring);
 		}
 	}
 	else
@@ -514,7 +528,7 @@ void FileBrowser::FolderChanged()
 
 void FileBrowser::DisplayRoot()
 {
-	f_chdir("\\1541");
+	f_chdir("/1541");
 	FolderChanged();
 }
 

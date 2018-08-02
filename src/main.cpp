@@ -635,17 +635,12 @@ static void PlaySoundDMA()
 	write32(DMA0_BASE + DMA_CS, DMA_ACTIVE);
 }
 
-static void SetVIAsDeviceID(u8 id)
-{
-	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, id & 1);
-	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, id & 2);
-}
-
 void GlobalSetDeviceID(u8 id)
 {
 	deviceID = id;
 	m_IEC_Commands.SetDeviceId(id);
-	SetVIAsDeviceID(id);
+	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, id & 1);
+	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, id & 2);
 }
 
 void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
@@ -736,17 +731,14 @@ void emulator()
 							CheckAutoMountImage(EXIT_UNKNOWN, fileBrowser);
 							break;
 						case IEC_Commands::NONE:
-							{
-								fileBrowser->Update();
+							fileBrowser->Update();
 
-								// Check selections made via FileBrowser
-								if (fileBrowser->SelectionsMade())
-									emulating = BeginEmulating(fileBrowser, fileBrowser->LastSelectionName());
-							}
+							// Check selections made via FileBrowser
+							if (fileBrowser->SelectionsMade())
+								emulating = BeginEmulating(fileBrowser, fileBrowser->LastSelectionName());
 							break;
 						case IEC_Commands::IMAGE_SELECTED:
-						{
-							// Check selections made via FileBrowser
+							// Check selections made via IEC commands (like fb64)
 
 							fileBrowserSelectedName = m_IEC_Commands.GetNameOfImageSelected();
 
@@ -768,8 +760,10 @@ void emulator()
 								DEBUG_LOG("IEC mounting %s\r\n", filInfoSelected->fname);
 								bool readOnly = (filInfoSelected->fattrib & AM_RDO) != 0;
 
-								if (diskCaddy.Insert(filInfoSelected, readOnly)) emulating = BeginEmulating(fileBrowser, filInfoSelected->fname);
-								else fileBrowserSelectedName = 0;
+								if (diskCaddy.Insert(filInfoSelected, readOnly))
+									emulating = BeginEmulating(fileBrowser, filInfoSelected->fname);
+								else
+									fileBrowserSelectedName = 0;
 							}
 							else
 							{
@@ -780,8 +774,7 @@ void emulator()
 								m_IEC_Commands.Reset();
 
 							selectedViaIECCommands = true;
-						}
-						break;
+							break;
 						case IEC_Commands::DIR_PUSHED:
 							fileBrowser->FolderChanged();
 							break;
@@ -798,7 +791,6 @@ void emulator()
 						case IEC_Commands::DEVICEID_CHANGED:
 							GlobalSetDeviceID( m_IEC_Commands.GetDeviceId() );
 							fileBrowser->ShowDeviceAndROM();
-							SetVIAsDeviceID(deviceID);	// Let the emulated VIA know
 							break;
 						default:
 							break;
@@ -1346,10 +1338,9 @@ extern "C"
 
 		f_chdir("/1541");
 
-		m_IEC_Commands.SetDeviceId(deviceID);
 		m_IEC_Commands.SetStarFileName(options.GetStarFileName());
 
-		SetVIAsDeviceID(deviceID);
+		GlobalSetDeviceID(deviceID);
 
 		pi1541.drive.SetVIA(&pi1541.VIA[1]);
 		pi1541.VIA[0].GetPortB()->SetPortOut(0, IEC_Bus::PortB_OnPortOut);
