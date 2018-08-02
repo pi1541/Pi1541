@@ -191,8 +191,6 @@ public:
 	static const long int LSTBuffer_size = 1024 * 8;
 	static unsigned char LSTBuffer[];
 
-	static const unsigned SwapKeys[];
-
 	static u32 Colour(int index);
 
 	bool SelectLST(const char* filenameLST);
@@ -217,7 +215,7 @@ private:
 	bool CheckForPNG(const char* filename, FILINFO& filIcon);
 	void DisplayPNG();
 
-	bool SelectROM(u32 index);
+	bool SelectROMOrDevice(u32 index);
 
 	enum State
 	{
@@ -232,8 +230,7 @@ private:
 	ROMs* roms;
 	u8* deviceID;
 	bool displayPNGIcons;
-	bool buttonChangedDevice;
-	bool buttonSelectROM;
+	bool buttonChangedROMDevice;
 
 	BrowsableList caddySelections;
 

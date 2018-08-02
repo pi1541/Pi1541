@@ -45,21 +45,6 @@ extern void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowse
 
 unsigned char FileBrowser::LSTBuffer[FileBrowser::LSTBuffer_size];
 
-const unsigned FileBrowser::SwapKeys[33] =
-{
-	KEY_F1, KEY_KP1, KEY_1,
-	KEY_F2, KEY_KP2, KEY_2,
-	KEY_F3, KEY_KP3, KEY_3,
-	KEY_F4, KEY_KP4, KEY_4,
-	KEY_F5, KEY_KP5, KEY_5,
-	KEY_F6, KEY_KP6, KEY_6,
-	KEY_F7, KEY_KP7, KEY_7,
-	KEY_F8, KEY_KP8, KEY_8,
-	KEY_F9, KEY_KP9, KEY_9,
-	KEY_F10, KEY_KP0, KEY_0,
-	KEY_F11, KEY_KPMINUS, KEY_MINUS
-};
-
 static const u32 palette[] = 
 {
 	RGBA(0x00, 0x00, 0x00, 0xFF),
@@ -370,11 +355,71 @@ void FileBrowser::BrowsableList::RefreshViewsHighlightScroll()
 
 bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 {
+	InputMappings* inputMappings = InputMappings::Instance();
+	u32 numberOfEntriesMinus1 = entries.size() - 1;
+
 	bool dirty = false;
 	u32 index;
 	for (index = 0; index < views.size(); ++index)
 	{
 		dirty |= views[index].CheckBrowseNavigation(index != 0);
+	}
+
+	// check for keys a-z and 0-9
+	char searchChar = 0;
+	if (inputMappings->BrowseLetter())
+		searchChar = inputMappings->getKeyboardLetter();
+	if (inputMappings->BrowseNumber())
+		searchChar = inputMappings->getKeyboardNumber();
+	if (searchChar)
+	{
+		char temp[8];
+		unsigned found=0;
+		u32 i=0;
+		snprintf (temp, sizeof(temp), "%c", searchChar);
+
+		// first look from next to last
+		for (i=1+currentIndex; i <= numberOfEntriesMinus1 ; i++)
+		{
+			FileBrowser::BrowsableList::Entry* entry = &entries[i];
+			if (strncasecmp(temp, entry->filImage.fname, 1) == 0)
+			{
+				found=i;
+				break;
+			}
+		}
+		if (!found)
+		{
+			// look from first to previous
+			for (i=0; i< 1+currentIndex ; i++)
+			{
+				FileBrowser::BrowsableList::Entry* entry = &entries[i];
+				if (strncasecmp(temp, entry->filImage.fname, 1) == 0)
+				{
+					found=i;
+					break;
+				}
+			}
+		}
+
+		if (found)
+		{
+			currentIndex=found;
+			SetCurrent();
+			dirty |= 1;
+		}
+	}
+	else if (inputMappings->BrowseHome())
+	{
+		currentIndex = 0;
+		SetCurrent();
+		dirty |= 1;
+	}
+	else if (inputMappings->BrowseEnd())
+	{
+		currentIndex = numberOfEntriesMinus1;
+		SetCurrent();
+		dirty |= 1;
 	}
 	return dirty;
 }
@@ -400,8 +445,7 @@ FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool di
 	, roms(roms)
 	, deviceID(deviceID)
 	, displayPNGIcons(displayPNGIcons)
-	, buttonChangedDevice(false)
-	, buttonSelectROM(false)
+	, buttonChangedROMDevice(false)
 	, screenMain(screenMain)
 	, screenLCD(screenLCD)
 	, scrollHighlightRate(scrollHighlightRate)
@@ -418,7 +462,8 @@ FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool di
 	folder.AddView(screenMain, columns, rows, positionX, positionY, false);
 
 	positionX = screenMain->ScaleX(1024 - 320);
-	caddySelections.AddView(screenMain, 6, rows, positionX, positionY, false);
+	columns = screenMain->ScaleX(40);
+	caddySelections.AddView(screenMain, columns, rows, positionX, positionY, false);
 
 
 
@@ -837,54 +882,51 @@ void FileBrowser::UpdateInputFolders()
 	Keyboard* keyboard = Keyboard::Instance();
 	InputMappings* inputMappings = InputMappings::Instance();
 
+	buttonChangedROMDevice = false;
 	if (IEC_Bus::GetInputButtonHeld(4))
 	{
 		if (inputMappings->BrowseSelect())
 		{
-			GlobalSetDeviceID(8);
-			ShowDeviceAndROM();
-			buttonChangedDevice = true;
+			SelectROMOrDevice(7);	// == device 8
+			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseUp())
 		{
-			GlobalSetDeviceID(9);
-			ShowDeviceAndROM();
-			buttonChangedDevice = true;
+			SelectROMOrDevice(8);	// == device 9
+			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseDown())
 		{
-			GlobalSetDeviceID(10);
-			ShowDeviceAndROM();
-			buttonChangedDevice = true;
+			SelectROMOrDevice(9);	// == device 10
+			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseBack())
 		{
-			GlobalSetDeviceID(11);
-			ShowDeviceAndROM();
-			buttonChangedDevice = true;
+			SelectROMOrDevice(10);	// == device 11
+			buttonChangedROMDevice = true;
 		}
 	}
 	else if (IEC_Bus::GetInputButtonHeld(0))
 	{
 		if (inputMappings->BrowseUp())
 		{
-			SelectROM(0);
-			buttonSelectROM = true;
+			SelectROMOrDevice(0);
+			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseDown())
 		{
-			SelectROM(1);
-			buttonSelectROM = true;
+			SelectROMOrDevice(1);
+			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseBack())
 		{
-			SelectROM(2);
-			buttonSelectROM = true;
+			SelectROMOrDevice(2);
+			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseInsert())
 		{
-			SelectROM(3);
-			buttonSelectROM = true;
+			SelectROMOrDevice(3);
+			buttonChangedROMDevice = true;
 		}
 	}
 	else
@@ -894,57 +936,50 @@ void FileBrowser::UpdateInputFolders()
 			//u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
 			bool dirty = false;
 
-			if (inputMappings->BrowseSelect())
+			if (inputMappings->BrowseSelect() && !buttonChangedROMDevice )
 			{
-				if (buttonSelectROM)
+				FileBrowser::BrowsableList::Entry* current = folder.current;
+				if (current)
 				{
-					buttonSelectROM = false;
-				}
-				else
-				{
-					FileBrowser::BrowsableList::Entry* current = folder.current;
-					if (current)
+					if (current->filImage.fattrib & AM_DIR)
 					{
-						if (current->filImage.fattrib & AM_DIR)
+						if (strcmp(current->filImage.fname, "..") == 0)
 						{
-							if (strcmp(current->filImage.fname, "..") == 0)
-							{
-								PopFolder();
-							}
-							else if (strcmp(current->filImage.fname, ".") != 0)
-							{
-								f_chdir(current->filImage.fname);
-								RefreshFolderEntries();
-							}
-							dirty = true;
+							PopFolder();
 						}
-						else
+						else if (strcmp(current->filImage.fname, ".") != 0)
 						{
-							if (strcmp(current->filImage.fname, "..") == 0)
+							f_chdir(current->filImage.fname);
+							RefreshFolderEntries();
+						}
+						dirty = true;
+					}
+					else
+					{
+						if (strcmp(current->filImage.fname, "..") == 0)
+						{
+							PopFolder();
+						}
+						else if (DiskImage::IsDiskImageExtention(current->filImage.fname))
+						{
+							DiskImage::DiskType diskType = DiskImage::GetDiskImageTypeViaExtention(current->filImage.fname);
+
+							// Should also be able to create a LST file from all the images currently selected in the caddy
+							if (diskType == DiskImage::LST)
 							{
-								PopFolder();
+								selectionsMade = SelectLST(current->filImage.fname);
 							}
-							else if (DiskImage::IsDiskImageExtention(current->filImage.fname))
+							else
 							{
-								DiskImage::DiskType diskType = DiskImage::GetDiskImageTypeViaExtention(current->filImage.fname);
-
-								// Should also be able to create a LST file from all the images currently selected in the caddy
-								if (diskType == DiskImage::LST)
-								{
-									selectionsMade = SelectLST(current->filImage.fname);
-								}
-								else
-								{
-									// Add the current selected
-									AddToCaddy(current);
-									selectionsMade = FillCaddyWithSelections();
-								}
-
-								if (selectionsMade)
-									lastSelectionName = current->filImage.fname;
-
-								dirty = true;
+								// Add the current selected
+								AddToCaddy(current);
+								selectionsMade = FillCaddyWithSelections();
 							}
+
+							if (selectionsMade)
+								lastSelectionName = current->filImage.fname;
+
+							dirty = true;
 						}
 					}
 				}
@@ -968,19 +1003,12 @@ void FileBrowser::UpdateInputFolders()
 				ClearSelections();
 				dirty = true;
 			}
-			else if (inputMappings->BrowseInsert())
+			else if (inputMappings->BrowseInsert() && !buttonChangedROMDevice )
 			{
-				if (buttonChangedDevice)
+				FileBrowser::BrowsableList::Entry* current = folder.current;
+				if (current)
 				{
-					buttonChangedDevice = false;
-				}
-				else
-				{
-					FileBrowser::BrowsableList::Entry* current = folder.current;
-					if (current)
-					{
-						dirty = AddToCaddy(current);
-					}
+					dirty = AddToCaddy(current);
 				}
 			}
 			else if (inputMappings->BrowseNewD64())
@@ -1011,24 +1039,14 @@ void FileBrowser::UpdateInputFolders()
 			}
 			else
 			{
-				unsigned keySetIndex;
-				for (keySetIndex = 0; keySetIndex < 11; ++keySetIndex)
+				// check for number keys for ROM and Drive Number changes
+				if (inputMappings->BrowseFunction()
+					&& inputMappings->getKeyboardFunction() >= 1
+					&& inputMappings->getKeyboardFunction() <= 11 )
 				{
-					unsigned keySetIndexBase = keySetIndex * 3;
-					if (keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase]) 
-					|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 1]) 
-					|| keyboard->KeyPressed(FileBrowser::SwapKeys[keySetIndexBase + 2]))
-					{
-						if (SelectROM(keySetIndex))
-						{
-						}
-						else if ( (keySetIndex >= 7) && (keySetIndex <= 10 ) )
-						{
-							GlobalSetDeviceID( keySetIndex+1 );
-							ShowDeviceAndROM();
-						}
-					}
+					SelectROMOrDevice(inputMappings->getKeyboardFunction());
 				}
+
 
 				dirty = folder.CheckBrowseNavigation();
 			}
@@ -1047,8 +1065,17 @@ void FileBrowser::UpdateInputFolders()
 	}
 }
 
-bool FileBrowser::SelectROM(u32 index)
+bool FileBrowser::SelectROMOrDevice(u32 index)
+// 1-7 select ROM image
+// 8-11 change deviceID to  8-11
 {
+	if ( (index >= 8) && (index <= 11 ) )
+	{
+		GlobalSetDeviceID( index );
+		ShowDeviceAndROM();
+		return true;
+	}
+	index--;
 	if ((index < ROMs::MAX_ROMS) && (roms->ROMValid[index]))
 	{
 		roms->currentROMIndex = index;

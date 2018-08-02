@@ -348,5 +348,9 @@ public:
 	{
 		return (modifier & (KEY_MOD_LALT | KEY_MOD_RALT) );
 	}
+	inline bool KeyNoModifiers()
+	{
+		return (!modifier );
+	}
 };
 #endif
