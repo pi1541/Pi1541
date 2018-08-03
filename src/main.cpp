@@ -690,9 +690,13 @@ void emulator()
 		{
 			IEC_Bus::VIA = 0;
 
+			IEC_Bus::Reset();
+// workaround for occasional oled curruption
+			if (screenLCD)
+				screenLCD->ClearInit(0);
+
 			roms.ResetCurrentROMIndex();
 			fileBrowser->ClearScreen();
-			IEC_Bus::Reset();
 
 			fileBrowserSelectedName = 0;
 			fileBrowser->ClearSelections();
@@ -947,6 +951,10 @@ void emulator()
 					//	- pass in a call back function?
 					if (diskCaddy.Empty())
 						IEC_Bus::WaitMicroSeconds(2 * 1000000);
+
+// workaround for occasional oled curruption
+//					if (screenLCD)
+//						screenLCD->ClearInit(0);
 
 					fileBrowser->ClearSelections();
 					fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
