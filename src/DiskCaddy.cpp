@@ -318,7 +318,10 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 			const char* name = image->GetName();
 			if (name)
 			{
-				snprintf(buffer, 256, "%d %s                 ", caddyIndex + 1, name);
+//				snprintf(buffer, 256, "                    ");
+				memset(buffer, 'Z',  screenLCD->Width()/screenLCD->GetFontWidth());
+				screenLCD->PrintText(false, x, y, buffer, BkColour, BkColour);
+				snprintf(buffer, 256, "%d %s", caddyIndex + 1, name);
 				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), caddyIndex == index ? RGBA(0xff, 0xff, 0xff, 0xff) : BkColour);
 				y += LCDFONTHEIGHT;
 			}
