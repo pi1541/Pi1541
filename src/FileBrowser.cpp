@@ -557,6 +557,7 @@ void FileBrowser::RefreshFolderEntries()
 		f_closedir(&dir);
 
 		strcpy(entry.filImage.fname, "..");
+		entry.filImage.fattrib |= AM_DIR;
 		entry.filIcon.fname[0] = 0;
 		folder.entries.push_back(entry);
 
