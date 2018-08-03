@@ -81,6 +81,10 @@ void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, b
 		FileBrowser::BrowsableList::Entry* entry = &list->entries[entryIndex];
 		if (screen->IsMonocrome())
 		{
+			// pre-clear line on OLED
+			memset(buffer1, ' ', columnsMax);
+			screen->PrintText(false, x, y, buffer1, BkColour, BkColour);
+
 			if (entry->filImage.fattrib & AM_DIR)
 			{
 				snprintf(buffer2, 256, "[%s]", entry->filImage.fname);
@@ -106,9 +110,14 @@ void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, b
 		}
 		int len = strlen(buffer2 + highlightScrollOffset);
 		strncpy(buffer1, buffer2 + highlightScrollOffset, sizeof(buffer1));
-		while (len < (int)columnsMax)
-			buffer1[len++] = ' ';
-		buffer1[columnsMax] = 0;
+
+		if (!screen->IsMonocrome())
+		{
+			// space pad the remainder of the line (but not on OLED==monochrome)
+			while (len < (int)columnsMax)
+				buffer1[len++] = ' ';
+			buffer1[columnsMax] = 0;
+		}
 
 		if (selected)
 		{
@@ -140,7 +149,7 @@ void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, b
 			}
 		}
 	}
-	else
+	else // line is blank, write spaces
 	{
 		memset(buffer1, ' ', columnsMax);
 		screen->PrintText(false, x, y, buffer1, BkColour, BkColour);
