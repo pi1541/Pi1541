@@ -445,7 +445,8 @@ bool Drive::Update()
 	}
 	else if (diskImage && motor)
 	{
-		bool writing = (m_pVIA->GetFCR() & m6522::FCR_CB2_OUTPUT_MODE0) == 0;
+		unsigned char FCR = m_pVIA->GetFCR();
+		bool writing = ((FCR & m6522::FCR_CB2_OUTPUT_MODE0) == 0) && ((FCR & m6522::FCR_CB2_IO) != 0);
 
 		if (SO)
 		{
