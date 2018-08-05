@@ -171,6 +171,11 @@ public:
 		return KeyboardFlag(INSERT_FLAG)/* | UartFlag(INSERT_FLAG)*/ | ButtonFlag(INSERT_FLAG);
 	}
 
+	inline bool BrowseFunction()
+	{
+		return KeyboardFlag(FUNCTION_FLAG) | ButtonFlag(FUNCTION_FLAG);
+	}
+
 	inline bool BrowseNewD64() { return KeyboardFlag(NEWD64_FLAG); }
 
 	inline bool BrowseAutoLoad() { return KeyboardFlag(AUTOLOAD_FLAG); }
@@ -178,8 +183,6 @@ public:
 	inline bool BrowseFakeReset() { return KeyboardFlag(FAKERESET_FLAG); }
 
 	inline bool BrowseWriteProtect() { return KeyboardFlag(WRITEPROTECT_FLAG); }
-
-	inline bool BrowseFunction() { return KeyboardFlag(FUNCTION_FLAG); }
 
 	inline bool BrowseHome() { return KeyboardFlag(HOME_FLAG); }
 

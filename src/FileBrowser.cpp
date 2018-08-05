@@ -378,16 +378,14 @@ bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 	char searchChar = inputMappings->getKeyboardNumLetter();
 	if (searchChar)
 	{
-		char temp[8];
 		unsigned found=0;
 		u32 i=0;
-		snprintf (temp, sizeof(temp), "%c", searchChar);
 
 		// first look from next to last
 		for (i=1+currentIndex; i <= numberOfEntriesMinus1 ; i++)
 		{
 			FileBrowser::BrowsableList::Entry* entry = &entries[i];
-			if (strncasecmp(temp, entry->filImage.fname, 1) == 0)
+			if (strncasecmp(&searchChar, entry->filImage.fname, 1) == 0)
 			{
 				found=i;
 				break;
@@ -399,7 +397,7 @@ bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 			for (i=0; i< 1+currentIndex ; i++)
 			{
 				FileBrowser::BrowsableList::Entry* entry = &entries[i];
-				if (strncasecmp(temp, entry->filImage.fname, 1) == 0)
+				if (strncasecmp(&searchChar, entry->filImage.fname, 1) == 0)
 				{
 					found=i;
 					break;
@@ -450,7 +448,6 @@ FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool di
 	, roms(roms)
 	, deviceID(deviceID)
 	, displayPNGIcons(displayPNGIcons)
-	, buttonChangedROMDevice(false)
 	, screenMain(screenMain)
 	, screenLCD(screenLCD)
 	, scrollHighlightRate(scrollHighlightRate)
@@ -883,52 +880,12 @@ void FileBrowser::UpdateInputFolders()
 	Keyboard* keyboard = Keyboard::Instance();
 	InputMappings* inputMappings = InputMappings::Instance();
 
-	buttonChangedROMDevice = false;
-	if (IEC_Bus::GetInputButtonHeld(4))
+	if (inputMappings->BrowseFunction())
 	{
-		if (inputMappings->BrowseSelect())
-		{
-			SelectROMOrDevice(8);	// == device 8
-			buttonChangedROMDevice = true;
-		}
-		else if (inputMappings->BrowseUp())
-		{
-			SelectROMOrDevice(9);	// == device 9
-			buttonChangedROMDevice = true;
-		}
-		else if (inputMappings->BrowseDown())
-		{
-			SelectROMOrDevice(10);	// == device 10
-			buttonChangedROMDevice = true;
-		}
-		else if (inputMappings->BrowseBack())
-		{
-			SelectROMOrDevice(11);	// == device 11
-			buttonChangedROMDevice = true;
-		}
-	}
-	else if (IEC_Bus::GetInputButtonHeld(0))
-	{
-		if (inputMappings->BrowseUp())
-		{
-			SelectROMOrDevice(1);
-			buttonChangedROMDevice = true;
-		}
-		else if (inputMappings->BrowseDown())
-		{
-			SelectROMOrDevice(2);
-			buttonChangedROMDevice = true;
-		}
-		else if (inputMappings->BrowseBack())
-		{
-			SelectROMOrDevice(3);
-			buttonChangedROMDevice = true;
-		}
-		else if (inputMappings->BrowseInsert())
-		{
-			SelectROMOrDevice(4);
-			buttonChangedROMDevice = true;
-		}
+		// check for ROM and Drive Number changes
+		unsigned ROMOrDevice = inputMappings->getROMOrDevice();
+		if ( ROMOrDevice >= 1 && ROMOrDevice <= 11 )
+			SelectROMOrDevice(ROMOrDevice);
 	}
 	else
 	{
@@ -937,7 +894,7 @@ void FileBrowser::UpdateInputFolders()
 			//u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
 			bool dirty = false;
 
-			if (inputMappings->BrowseSelect() && !buttonChangedROMDevice )
+			if (inputMappings->BrowseSelect())
 			{
 				FileBrowser::BrowsableList::Entry* current = folder.current;
 				if (current)
@@ -1004,7 +961,7 @@ void FileBrowser::UpdateInputFolders()
 				ClearSelections();
 				dirty = true;
 			}
-			else if (inputMappings->BrowseInsert() && !buttonChangedROMDevice )
+			else if (inputMappings->BrowseInsert())
 			{
 				FileBrowser::BrowsableList::Entry* current = folder.current;
 				if (current)
@@ -1040,21 +997,12 @@ void FileBrowser::UpdateInputFolders()
 			}
 			else
 			{
-				// check Fkeys for ROM and Drive Number changes
-				unsigned ROMOrDevice = inputMappings->getROMOrDevice();
-				if ( inputMappings->BrowseFunction()
-					&& ROMOrDevice >= 1
-					&& ROMOrDevice <= 11 )
-				{
-					SelectROMOrDevice(ROMOrDevice);
-				}
-
 				dirty = folder.CheckBrowseNavigation();
 			}
 
 			if (dirty) RefeshDisplay();
 		}
-		else
+		else // no folder entries, could this ever happen?? ".." is everpresent? 
 		{
 			if (inputMappings->BrowseBack())
 				PopFolder();

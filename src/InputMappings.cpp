@@ -44,11 +44,58 @@ InputMappings::InputMappings()
 bool InputMappings::CheckButtonsBrowseMode()
 {
 	buttonFlags = 0;
-	if (IEC_Bus::GetInputButtonRepeating(1))
+
+	if (IEC_Bus::GetInputButtonHeld(INPUT_BUTTON_INSERT))	// Change DeviceID
+	{
+		if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_ENTER))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 8;
+		}
+		else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_UP))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 9;
+		}
+		else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_DOWN))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 10;
+		}
+		else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_BACK))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 11;
+		}
+	}
+	else if (IEC_Bus::GetInputButtonHeld(INPUT_BUTTON_ENTER))	// Change ROMs
+	{
+		if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_UP))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 1;
+		}
+		else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_DOWN))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 2;
+		}
+		else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_BACK))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 3;
+		}
+		else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_INSERT))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 4;
+		}
+	}
+	else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_UP))
 		SetButtonFlag(UP_FLAG);
-	else if (IEC_Bus::GetInputButtonRepeating(2))
+	else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_DOWN))
 		SetButtonFlag(DOWN_FLAG);
-	else if (IEC_Bus::GetInputButtonPressed(3))
+	else if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_BACK))
 		SetButtonFlag(BACK_FLAG);
 
 // edge detection
@@ -69,14 +116,16 @@ void InputMappings::CheckButtonsEmulationMode()
 {
 	buttonFlags = 0;
 
-	if (IEC_Bus::GetInputButtonPressed(0))
+	if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_ENTER))
 		SetButtonFlag(ESC_FLAG);
-	else if (IEC_Bus::GetInputButtonPressed(1))
+	else if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_UP))
 		SetButtonFlag(NEXT_FLAG);
-	else if (IEC_Bus::GetInputButtonPressed(2))
+	else if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_DOWN))
 		SetButtonFlag(PREV_FLAG);
-	//else if (IEC_Bus::GetInputButtonPressed(3))
+	//else if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_BACK))
 	//	SetButtonFlag(BACK_FLAG);
+	//else if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_INSERT))
+	//	SetButtonFlag(INSERT_FLAG);
 }
 
 
@@ -148,7 +197,6 @@ bool InputMappings::CheckKeyboardBrowseMode()
 	Keyboard* keyboard = Keyboard::Instance();
 
 	keyboardFlags = 0;
-	inputROMOrDevice = 0;
 	keyboardNumLetter = 0;
 
 	if (keyboard->KeyHeld(KEY_DELETE) && keyboard->KeyLCtrlAlt() )
