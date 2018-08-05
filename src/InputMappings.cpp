@@ -44,18 +44,14 @@ InputMappings::InputMappings()
 bool InputMappings::CheckButtonsBrowseMode()
 {
 	buttonFlags = 0;
-	//if (IEC_Bus::GetInputButtonPressed(0))
-	//	SetButtonFlag(ENTER_FLAG);
-	//else
-		if (IEC_Bus::GetInputButtonRepeating(1))
+	if (IEC_Bus::GetInputButtonRepeating(1))
 		SetButtonFlag(UP_FLAG);
 	else if (IEC_Bus::GetInputButtonRepeating(2))
 		SetButtonFlag(DOWN_FLAG);
 	else if (IEC_Bus::GetInputButtonPressed(3))
 		SetButtonFlag(BACK_FLAG);
-	//else if (IEC_Bus::GetInputButtonPressed(4))
-	//	SetButtonFlag(INSERT_FLAG);
 
+// edge detection
 	insertButtonPressed = !IEC_Bus::GetInputButtonReleased(4);
 	if (insertButtonPressedPrev && !insertButtonPressed)
 		SetButtonFlag(INSERT_FLAG);
@@ -152,6 +148,8 @@ bool InputMappings::CheckKeyboardBrowseMode()
 	Keyboard* keyboard = Keyboard::Instance();
 
 	keyboardFlags = 0;
+	inputROMOrDevice = 0;
+	keyboardNumLetter = 0;
 
 	if (keyboard->KeyHeld(KEY_DELETE) && keyboard->KeyLCtrlAlt() )
 		reboot_now();
@@ -206,26 +204,26 @@ bool InputMappings::CheckKeyboardBrowseMode()
 			{
 				if (keyboard->KeyHeld(index))
 				{
-					SetKeyboardFlag(NUMBER_FLAG);
-					keyboardNumber = index-KEY_1+'1';	// key 1 is ascii '1'
-					if (keyboardNumber > '9') keyboardNumber = '0';
+					SetKeyboardFlag(NUMLET_FLAG);
+					keyboardNumLetter = index-KEY_1+'1';	// key 1 is ascii '1'
+					if (keyboardNumLetter > '9') keyboardNumLetter = '0';
 				}
 			}
 			for (index = KEY_KP1; index <= KEY_KP0; ++index)
 			{
 				if (keyboard->KeyHeld(index))
 				{
-					SetKeyboardFlag(NUMBER_FLAG);
-					keyboardNumber = index-KEY_KP1+'1';	// key 1 is ascii '1'
-					if (keyboardNumber > '9') keyboardNumber = '0';
+					SetKeyboardFlag(NUMLET_FLAG);
+					keyboardNumLetter = index-KEY_KP1+'1';	// key 1 is ascii '1'
+					if (keyboardNumLetter > '9') keyboardNumLetter = '0';
 				}
 			}
 			for (index = KEY_A; index <= KEY_Z; ++index)
 			{
 				if (keyboard->KeyHeld(index))
 				{
-					SetKeyboardFlag(LETTER_FLAG);
-					keyboardLetter = index-KEY_A+'A';	// key A is ascii 'A'
+					SetKeyboardFlag(NUMLET_FLAG);
+					keyboardNumLetter = index-KEY_A+'A';	// key A is ascii 'A'
 				}
 			}
 			for (index = KEY_F1; index <= KEY_F12; ++index)	// F13 isnt contiguous
@@ -233,7 +231,7 @@ bool InputMappings::CheckKeyboardBrowseMode()
 				if (keyboard->KeyHeld(index))
 				{
 					SetKeyboardFlag(FUNCTION_FLAG);
-					keyboardFunction = index-KEY_F1+1;	// key F1 is 1
+					inputROMOrDevice = index-KEY_F1+1;	// key F1 is 1
 				}
 			}
 		}

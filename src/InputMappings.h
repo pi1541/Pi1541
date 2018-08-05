@@ -32,7 +32,8 @@
 #define SPACE_FLAG		(1 << 8)
 #define BACK_FLAG		(1 << 9)
 #define INSERT_FLAG		(1 << 10)
-#define NUMBER_FLAG		(1 << 11)
+
+#define NUMLET_FLAG		(1 << 11)
 
 #define PAGEDOWN_LCD_FLAG	(1 << 12)
 #define PAGEUP_LCD_FLAG		(1 << 13)
@@ -41,9 +42,10 @@
 #define AUTOLOAD_FLAG		(1 << 15)
 #define FAKERESET_FLAG		(1 << 16)
 #define WRITEPROTECT_FLAG	(1 << 17)
-#define LETTER_FLAG		(1 << 18)
+//#define SPARE_FLAG		(1 << 18)
 #define HOME_FLAG		(1 << 19)
 #define END_FLAG		(1 << 20)
+
 #define FUNCTION_FLAG		(1 << 21)
 // dont exceed 32!!
 
@@ -78,9 +80,8 @@ protected:
 	bool enterButtonPressedPrev;
 	bool enterButtonPressed;
 
-	unsigned keyboardNumber;
-	unsigned keyboardLetter;
-	unsigned keyboardFunction;
+	unsigned keyboardNumLetter;
+	unsigned inputROMOrDevice;
 
 	//inline void SetUartFlag(unsigned flag) { uartFlags |= flag;	}
 	//inline bool UartFlag(unsigned flag) { return (uartFlags & flag) != 0; }
@@ -178,17 +179,14 @@ public:
 
 	inline bool BrowseWriteProtect() { return KeyboardFlag(WRITEPROTECT_FLAG); }
 
-	inline bool BrowseNumber() { return KeyboardFlag(NUMBER_FLAG); }
-	inline bool BrowseLetter() { return KeyboardFlag(LETTER_FLAG); }
 	inline bool BrowseFunction() { return KeyboardFlag(FUNCTION_FLAG); }
 
 	inline bool BrowseHome() { return KeyboardFlag(HOME_FLAG); }
 
 	inline bool BrowseEnd() { return KeyboardFlag(END_FLAG); }
 
-	inline char getKeyboardNumber() { return keyboardNumber; }
-	inline char getKeyboardLetter() { return (char) keyboardLetter; }
-	inline unsigned getKeyboardFunction() { return (char) keyboardFunction; }
+	inline char getKeyboardNumLetter() { return keyboardNumLetter; }
+	inline unsigned getROMOrDevice() { return inputROMOrDevice; }
 
 	// Used by the 2 cores so need to be volatile
 	//volatile static unsigned directDiskSwapRequest;

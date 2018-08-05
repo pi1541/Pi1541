@@ -375,11 +375,7 @@ bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 	}
 
 	// check for keys a-z and 0-9
-	char searchChar = 0;
-	if (inputMappings->BrowseLetter())
-		searchChar = inputMappings->getKeyboardLetter();
-	if (inputMappings->BrowseNumber())
-		searchChar = inputMappings->getKeyboardNumber();
+	char searchChar = inputMappings->getKeyboardNumLetter();
 	if (searchChar)
 	{
 		char temp[8];
@@ -833,12 +829,7 @@ void FileBrowser::Update()
 		dirty = inputMappings->CheckButtonsBrowseMode();
 
 	if (dirty)
-	{
-		//if (state == State_Folders)
-			UpdateInputFolders();
-		//else
-		//	UpdateInputDiskCaddy();
-	}
+		UpdateInputFolders();
 
 	UpdateCurrentHighlight();
 }
@@ -1049,14 +1040,14 @@ void FileBrowser::UpdateInputFolders()
 			}
 			else
 			{
-				// check for number keys for ROM and Drive Number changes
-				if (inputMappings->BrowseFunction()
-					&& inputMappings->getKeyboardFunction() >= 1
-					&& inputMappings->getKeyboardFunction() <= 11 )
+				// check Fkeys for ROM and Drive Number changes
+				unsigned ROMOrDevice = inputMappings->getROMOrDevice();
+				if ( inputMappings->BrowseFunction()
+					&& ROMOrDevice >= 1
+					&& ROMOrDevice <= 11 )
 				{
-					SelectROMOrDevice(inputMappings->getKeyboardFunction());
+					SelectROMOrDevice(ROMOrDevice);
 				}
-
 
 				dirty = folder.CheckBrowseNavigation();
 			}
