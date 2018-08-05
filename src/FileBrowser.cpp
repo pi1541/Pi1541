@@ -22,7 +22,6 @@
 #include <strings.h>
 #include <algorithm>
 #include "debug.h"
-#include "Keyboard.h"
 #include "options.h"
 #include "InputMappings.h"
 #include "stb_image.h"
@@ -817,15 +816,8 @@ void FileBrowser::UpdateCurrentHighlight()
 void FileBrowser::Update()
 {
 	InputMappings* inputMappings = InputMappings::Instance();
-	Keyboard* keyboard = Keyboard::Instance();
-	bool dirty = false;
 
-	if (keyboard->CheckChanged())
-		dirty = inputMappings->CheckKeyboardBrowseMode();
-	else
-		dirty = inputMappings->CheckButtonsBrowseMode();
-
-	if (dirty)
+	if ( inputMappings->CheckKeyboardBrowseMode() || inputMappings->CheckButtonsBrowseMode() )
 		UpdateInputFolders();
 
 	UpdateCurrentHighlight();
@@ -877,8 +869,8 @@ bool FileBrowser::AddToCaddy(FileBrowser::BrowsableList::Entry* current)
 
 void FileBrowser::UpdateInputFolders()
 {
-	Keyboard* keyboard = Keyboard::Instance();
 	InputMappings* inputMappings = InputMappings::Instance();
+	bool dirty = false;
 
 	if (inputMappings->BrowseFunction())
 	{
@@ -887,131 +879,108 @@ void FileBrowser::UpdateInputFolders()
 		if ( ROMOrDevice >= 1 && ROMOrDevice <= 11 )
 			SelectROMOrDevice(ROMOrDevice);
 	}
-	else
+	else if (inputMappings->BrowseSelect())
 	{
-		if (folder.entries.size() > 0)
+		FileBrowser::BrowsableList::Entry* current = folder.current;
+		if (current)
 		{
-			//u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
-			bool dirty = false;
-
-			if (inputMappings->BrowseSelect())
+			if (current->filImage.fattrib & AM_DIR)
 			{
-				FileBrowser::BrowsableList::Entry* current = folder.current;
-				if (current)
+				if (strcmp(current->filImage.fname, "..") == 0)
 				{
-					if (current->filImage.fattrib & AM_DIR)
+					PopFolder();
+				}
+				else if (strcmp(current->filImage.fname, ".") != 0)
+				{
+					f_chdir(current->filImage.fname);
+					RefreshFolderEntries();
+				}
+				dirty = true;
+			}
+			else // not a directory
+			{
+				if (DiskImage::IsDiskImageExtention(current->filImage.fname))
+				{
+					DiskImage::DiskType diskType = DiskImage::GetDiskImageTypeViaExtention(current->filImage.fname);
+
+					// Should also be able to create a LST file from all the images currently selected in the caddy
+					if (diskType == DiskImage::LST)
 					{
-						if (strcmp(current->filImage.fname, "..") == 0)
-						{
-							PopFolder();
-						}
-						else if (strcmp(current->filImage.fname, ".") != 0)
-						{
-							f_chdir(current->filImage.fname);
-							RefreshFolderEntries();
-						}
-						dirty = true;
+						selectionsMade = SelectLST(current->filImage.fname);
 					}
 					else
 					{
-						if (strcmp(current->filImage.fname, "..") == 0)
-						{
-							PopFolder();
-						}
-						else if (DiskImage::IsDiskImageExtention(current->filImage.fname))
-						{
-							DiskImage::DiskType diskType = DiskImage::GetDiskImageTypeViaExtention(current->filImage.fname);
-
-							// Should also be able to create a LST file from all the images currently selected in the caddy
-							if (diskType == DiskImage::LST)
-							{
-								selectionsMade = SelectLST(current->filImage.fname);
-							}
-							else
-							{
-								// Add the current selected
-								AddToCaddy(current);
-								selectionsMade = FillCaddyWithSelections();
-							}
-
-							if (selectionsMade)
-								lastSelectionName = current->filImage.fname;
-
-							dirty = true;
-						}
+						// Add the current selected
+						AddToCaddy(current);
+						selectionsMade = FillCaddyWithSelections();
 					}
-				}
-			}
-			else if (inputMappings->BrowseDone())
-			{
-				selectionsMade = FillCaddyWithSelections();
-			}
-			//else if (keyboard->KeyPressed(KEY_TAB))
-			//{
-			//	state = State_DiskCaddy;
-			//	dirty = true;
-			//}
-			else if (inputMappings->BrowseBack())
-			{
-				PopFolder();
-				dirty = true;
-			}
-			else if (inputMappings->Exit())
-			{
-				ClearSelections();
-				dirty = true;
-			}
-			else if (inputMappings->BrowseInsert())
-			{
-				FileBrowser::BrowsableList::Entry* current = folder.current;
-				if (current)
-				{
-					dirty = AddToCaddy(current);
-				}
-			}
-			else if (inputMappings->BrowseNewD64())
-			{
-				char newFileName[64];
-				strncpy (newFileName, options.GetAutoBaseName(), 63);
-				int num = folder.FindNextAutoName( newFileName );
-				m_IEC_Commands.CreateD64(newFileName, "42", true);
-				FolderChanged();
-			}
-			else if (inputMappings->BrowseWriteProtect())
-			{
-				FileBrowser::BrowsableList::Entry* current = folder.current;
-				if (current)
-				{
-					if (current->filImage.fattrib & AM_RDO)
-					{
-						current->filImage.fattrib &= ~AM_RDO;
-						f_chmod(current->filImage.fname, 0, AM_RDO);
-					}
-					else
-					{
-						current->filImage.fattrib |= AM_RDO;
-						f_chmod(current->filImage.fname, AM_RDO, AM_RDO);
-					}
+
+					if (selectionsMade)
+						lastSelectionName = current->filImage.fname;
+
 					dirty = true;
 				}
 			}
-			else
-			{
-				dirty = folder.CheckBrowseNavigation();
-			}
-
-			if (dirty) RefeshDisplay();
-		}
-		else // no folder entries, could this ever happen?? ".." is everpresent? 
-		{
-			if (inputMappings->BrowseBack())
-				PopFolder();
-		}
-		if (inputMappings->BrowseAutoLoad())
-		{
-			CheckAutoMountImage(EXIT_RESET, this);
 		}
 	}
+	else if (inputMappings->BrowseDone())
+	{
+		selectionsMade = FillCaddyWithSelections();
+	}
+	else if (inputMappings->BrowseBack())
+	{
+		PopFolder();
+		dirty = true;
+	}
+	else if (inputMappings->Exit())
+	{
+		ClearSelections();
+		dirty = true;
+	}
+	else if (inputMappings->BrowseInsert())
+	{
+		FileBrowser::BrowsableList::Entry* current = folder.current;
+		if (current)
+		{
+			dirty = AddToCaddy(current);
+		}
+	}
+	else if (inputMappings->BrowseNewD64())
+	{
+		char newFileName[64];
+		strncpy (newFileName, options.GetAutoBaseName(), 63);
+		int num = folder.FindNextAutoName( newFileName );
+		m_IEC_Commands.CreateD64(newFileName, "42", true);
+		FolderChanged();
+	}
+	else if (inputMappings->BrowseWriteProtect())
+	{
+		FileBrowser::BrowsableList::Entry* current = folder.current;
+		if (current)
+		{
+			if (current->filImage.fattrib & AM_RDO)
+			{
+				current->filImage.fattrib &= ~AM_RDO;
+				f_chmod(current->filImage.fname, 0, AM_RDO);
+			}
+			else
+			{
+				current->filImage.fattrib |= AM_RDO;
+				f_chmod(current->filImage.fname, AM_RDO, AM_RDO);
+			}
+			dirty = true;
+		}
+	}
+	else if (inputMappings->BrowseAutoLoad())
+	{
+		CheckAutoMountImage(EXIT_RESET, this);
+	}
+	else
+	{
+		dirty = folder.CheckBrowseNavigation();
+	}
+
+	if (dirty) RefeshDisplay();
 }
 
 bool FileBrowser::SelectROMOrDevice(u32 index)
@@ -1084,11 +1053,11 @@ bool FileBrowser::SelectLST(const char* filenameLST)
 	return validImage;
 }
 
+/*
 // Not used
 void FileBrowser::UpdateInputDiskCaddy()
 {
 	bool dirty = false;
-	Keyboard* keyboard = Keyboard::Instance();
 
 	if (keyboard->KeyPressed(KEY_DELETE))
 	{
@@ -1110,6 +1079,7 @@ void FileBrowser::UpdateInputDiskCaddy()
 
 	if (dirty) RefeshDisplay();
 }
+*/
 
 void FileBrowser::DisplayStatusBar()
 {

@@ -198,6 +198,10 @@ bool InputMappings::CheckKeyboardBrowseMode()
 
 	keyboardFlags = 0;
 	keyboardNumLetter = 0;
+	if (!keyboard->CheckChanged())
+	{
+		return false;
+	}
 
 	if (keyboard->KeyHeld(KEY_DELETE) && keyboard->KeyLCtrlAlt() )
 		reboot_now();
@@ -293,32 +297,31 @@ void InputMappings::CheckKeyboardEmulationMode(unsigned numberOfImages, unsigned
 	Keyboard* keyboard = Keyboard::Instance();
 
 	keyboardFlags = 0;
-	if (keyboard->CheckChanged())
+	if (!keyboard->CheckChanged())
+		return;
+
+	if (keyboard->KeyHeld(KEY_DELETE) && keyboard->KeyLCtrlAlt() )
+		reboot_now();
+
+	if (keyboard->KeyHeld(KEY_ESC))
+		SetKeyboardFlag(ESC_FLAG);
+	else if (keyboard->KeyHeld(KEY_PAGEUP))
+		SetKeyboardFlag(PREV_FLAG);
+	else if (keyboard->KeyHeld(KEY_PAGEDOWN))
+		SetKeyboardFlag(NEXT_FLAG);
+	else if (keyboard->KeyHeld(KEY_A) && keyboard->KeyEitherAlt() )
+		SetKeyboardFlag(AUTOLOAD_FLAG);
+	else if (keyboard->KeyHeld(KEY_R) && keyboard->KeyEitherAlt() )
+		SetKeyboardFlag(FAKERESET_FLAG);
+	else if (numberOfImages > 1)
 	{
-
-		if (keyboard->KeyHeld(KEY_DELETE) && keyboard->KeyLCtrlAlt() )
-			reboot_now();
-
-		if (keyboard->KeyHeld(KEY_ESC))
-			SetKeyboardFlag(ESC_FLAG);
-		else if (keyboard->KeyHeld(KEY_PAGEUP))
-			SetKeyboardFlag(PREV_FLAG);
-		else if (keyboard->KeyHeld(KEY_PAGEDOWN))
-			SetKeyboardFlag(NEXT_FLAG);
-		else if (keyboard->KeyHeld(KEY_A) && keyboard->KeyEitherAlt() )
-			SetKeyboardFlag(AUTOLOAD_FLAG);
-		else if (keyboard->KeyHeld(KEY_R) && keyboard->KeyEitherAlt() )
-			SetKeyboardFlag(FAKERESET_FLAG);
-		else if (numberOfImages > 1)
+		unsigned index;
+		for (index = 0; index < 10; index++)
 		{
-			unsigned index;
-			for (index = 0; index < sizeof(NumberKeys)/sizeof(NumberKeys[0]); index+=3)
-			{
-				if (keyboard->KeyHeld(NumberKeys[index])
-					|| keyboard->KeyHeld(NumberKeys[index + 1])
-					|| keyboard->KeyHeld(NumberKeys[index + 2]) )
-					directDiskSwapRequest |= (1 << index/3);
-			}
+			if ( keyboard->KeyHeld(KEY_F1+index)
+				|| keyboard->KeyHeld(KEY_1+index)
+				|| keyboard->KeyHeld(KEY_KP1+index) )
+				directDiskSwapRequest |= (1 << index);
 		}
 	}
 }
