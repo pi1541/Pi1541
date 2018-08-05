@@ -756,17 +756,43 @@ void FileBrowser::DisplayPNG()
 
 void FileBrowser::PopFolder()
 {
-	f_chdir("..");
-	//{
-	//	char buffer[1024];
-	//	if (f_getcwd(buffer, 1024) == FR_OK)
-	//	{
-	//		DEBUG_LOG("CWD = %s\r\n", buffer);
-	//	}
-	//}
-	RefreshFolderEntries();
-	caddySelections.Clear();
-	RefeshDisplay();
+	char buffer[1024];
+	if (f_getcwd(buffer, 1024) == FR_OK)
+	{
+		// find the last '/' of the current dir
+		char *last_ptr = 0;
+		char *ptr = strtok(buffer, "/");
+		while (ptr != NULL)
+		{
+			last_ptr = ptr;
+			ptr = strtok(NULL, "/");
+		}
+
+		f_chdir("..");
+		RefreshFolderEntries();
+		caddySelections.Clear();
+
+		unsigned found=0;
+		if (last_ptr)
+		{
+			u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
+			for (unsigned i=0; i <= numberOfEntriesMinus1 ; i++)
+			{
+				FileBrowser::BrowsableList::Entry* entry = &folder.entries[i];
+				if (strcmp(last_ptr, entry->filImage.fname) == 0)
+				{
+					found=i;
+					break;
+				}
+			}
+		}
+		if (found)
+		{
+			folder.currentIndex=found;
+			folder.SetCurrent();
+		}
+		RefeshDisplay();
+	}
 }
 
 void FileBrowser::UpdateCurrentHighlight()
