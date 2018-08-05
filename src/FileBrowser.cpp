@@ -897,22 +897,22 @@ void FileBrowser::UpdateInputFolders()
 	{
 		if (inputMappings->BrowseSelect())
 		{
-			SelectROMOrDevice(7);	// == device 8
+			SelectROMOrDevice(8);	// == device 8
 			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseUp())
 		{
-			SelectROMOrDevice(8);	// == device 9
+			SelectROMOrDevice(9);	// == device 9
 			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseDown())
 		{
-			SelectROMOrDevice(9);	// == device 10
+			SelectROMOrDevice(10);	// == device 10
 			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseBack())
 		{
-			SelectROMOrDevice(10);	// == device 11
+			SelectROMOrDevice(11);	// == device 11
 			buttonChangedROMDevice = true;
 		}
 	}
@@ -920,22 +920,22 @@ void FileBrowser::UpdateInputFolders()
 	{
 		if (inputMappings->BrowseUp())
 		{
-			SelectROMOrDevice(0);
+			SelectROMOrDevice(1);
 			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseDown())
 		{
-			SelectROMOrDevice(1);
+			SelectROMOrDevice(2);
 			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseBack())
 		{
-			SelectROMOrDevice(2);
+			SelectROMOrDevice(3);
 			buttonChangedROMDevice = true;
 		}
 		else if (inputMappings->BrowseInsert())
 		{
-			SelectROMOrDevice(3);
+			SelectROMOrDevice(4);
 			buttonChangedROMDevice = true;
 		}
 	}
