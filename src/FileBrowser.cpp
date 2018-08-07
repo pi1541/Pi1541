@@ -875,7 +875,8 @@ bool FileBrowser::AddToCaddy(FileBrowser::BrowsableList::Entry* current)
 	{
 		return AddImageToCaddy(current);
 	}
-	else if (current->filImage.fattrib & AM_DIR)
+
+	else if ( (current->filImage.fattrib & AM_DIR) && ( strcmp(current->filImage.fname, "..") != 0) )
 	{
 		bool ret = false;
 		f_chdir(current->filImage.fname);
