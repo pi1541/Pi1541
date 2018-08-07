@@ -886,6 +886,9 @@ bool FileBrowser::AddToCaddy(FileBrowser::BrowsableList::Entry* current)
 		for (unsigned i = 0; i < folder.entries.size(); ++i)
 			ret |= AddImageToCaddy(&folder.entries[i]);
 
+		folder.currentIndex = folder.entries.size() - 1;
+		folder.SetCurrent();
+
 		RefeshDisplay();
 		return ret;
 	}
