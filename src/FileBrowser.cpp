@@ -869,6 +869,31 @@ bool FileBrowser::FillCaddyWithSelections()
 
 bool FileBrowser::AddToCaddy(FileBrowser::BrowsableList::Entry* current)
 {
+	if (!current) return false;
+
+	else if (!(current->filImage.fattrib & AM_DIR) && DiskImage::IsDiskImageExtention(current->filImage.fname))
+	{
+		return AddImageToCaddy(current);
+	}
+	else if (current->filImage.fattrib & AM_DIR)
+	{
+		bool ret = false;
+		f_chdir(current->filImage.fname);
+		RefreshFolderEntries();
+		RefeshDisplay();
+
+		for (unsigned i = 0; i < folder.entries.size(); ++i)
+			ret |= AddImageToCaddy(&folder.entries[i]);
+
+		RefeshDisplay();
+		return ret;
+	}
+	return false;
+
+}
+
+bool FileBrowser::AddImageToCaddy(FileBrowser::BrowsableList::Entry* current)
+{
 	bool added = false;
 
 	if (current && !(current->filImage.fattrib & AM_DIR) && DiskImage::IsDiskImageExtention(current->filImage.fname))

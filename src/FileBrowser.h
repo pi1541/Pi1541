@@ -211,6 +211,7 @@ private:
 	bool FillCaddyWithSelections();
 
 	bool AddToCaddy(FileBrowser::BrowsableList::Entry* current);
+	bool AddImageToCaddy(FileBrowser::BrowsableList::Entry* current);
 
 	bool CheckForPNG(const char* filename, FILINFO& filIcon);
 	void DisplayPNG();
