@@ -193,6 +193,7 @@ public:
 
 	static u32 Colour(int index);
 
+	bool MakeLST(const char* filenameLST);
 	bool SelectLST(const char* filenameLST);
 
 	void SetScrollHighlightRate(float value) { scrollHighlightRate = value; }

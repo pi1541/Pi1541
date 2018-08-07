@@ -1030,6 +1030,23 @@ void FileBrowser::UpdateInputFolders()
 	{
 		CheckAutoMountImage(EXIT_RESET, this);
 	}
+	else if (inputMappings->MakeLSTFile())
+	{
+		MakeLST("autoswap.lst");
+		FolderChanged();
+		FileBrowser::BrowsableList::Entry* current = 0;
+		for (unsigned index = 0; index < folder.entries.size(); ++index)
+		{
+			current = &folder.entries[index];
+			if (strcasecmp(current->filImage.fname, "autoswap.lst") == 0)
+			{
+				folder.currentIndex = index;
+				folder.SetCurrent();
+				dirty=true;
+				break;
+			}
+		}
+	}
 	else
 	{
 		dirty = folder.CheckBrowseNavigation();
@@ -1060,6 +1077,42 @@ bool FileBrowser::SelectROMOrDevice(u32 index)
 	return false;
 }
 
+
+bool FileBrowser::MakeLST(const char* filenameLST)
+{
+	bool retcode=true;
+	FIL fp;
+	FRESULT res;
+	res = f_open(&fp, filenameLST,  FA_CREATE_ALWAYS | FA_WRITE);
+	if (res == FR_OK)
+	{
+		FileBrowser::BrowsableList::Entry* entry = 0;
+		u32 bytes;
+
+		for (unsigned index = 0; index < folder.entries.size(); ++index)
+		{
+			entry = &folder.entries[index];
+			if (entry->filImage.fattrib & AM_DIR)
+				continue;	// skip dirs
+
+			if ( DiskImage::IsDiskImageExtention(entry->filImage.fname)
+				&& !DiskImage::IsLSTExtention(entry->filImage.fname) )
+			{
+				f_write(&fp,
+					entry->filImage.fname,
+					strlen(entry->filImage.fname),
+					&bytes);
+				f_write(&fp, "\r\n", 2, &bytes);
+			}
+		}
+
+		f_close(&fp);
+	}
+	else
+		retcode=false;
+
+	return retcode;
+}
 
 bool FileBrowser::SelectLST(const char* filenameLST)
 {

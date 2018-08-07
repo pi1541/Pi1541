@@ -42,7 +42,7 @@
 #define AUTOLOAD_FLAG		(1 << 15)
 #define FAKERESET_FLAG		(1 << 16)
 #define WRITEPROTECT_FLAG	(1 << 17)
-//#define SPARE_FLAG		(1 << 18)
+#define MAKELST_FLAG		(1 << 18)
 #define HOME_FLAG		(1 << 19)
 #define END_FLAG		(1 << 20)
 
@@ -169,6 +169,8 @@ public:
 	inline bool BrowseFakeReset() { return KeyboardFlag(FAKERESET_FLAG); }
 
 	inline bool BrowseWriteProtect() { return KeyboardFlag(WRITEPROTECT_FLAG); }
+
+	inline bool MakeLSTFile() { return KeyboardFlag(MAKELST_FLAG); }
 
 	inline bool BrowseHome() { return KeyboardFlag(HOME_FLAG); }
 

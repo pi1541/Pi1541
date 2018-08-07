@@ -246,30 +246,24 @@ bool InputMappings::CheckKeyboardBrowseMode()
 		SetKeyboardFlag(FAKERESET_FLAG);
 	else if (keyboard->KeyHeld(KEY_W) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(WRITEPROTECT_FLAG);
+	else if (keyboard->KeyHeld(KEY_L) && keyboard->KeyEitherAlt() )
+		SetKeyboardFlag(MAKELST_FLAG);
 	else
 	{
 		if (keyboard->KeyNoModifiers())
 		{
 			unsigned index;
 
-			for (index = KEY_1; index <= KEY_0; ++index)
+			for (index = 0; index <= 9; ++index)
 			{
-				if (keyboard->KeyHeld(index))
+				if (keyboard->KeyHeld(KEY_1+index) || keyboard->KeyHeld(KEY_KP1+index))
 				{
 					SetKeyboardFlag(NUMLET_FLAG);
-					keyboardNumLetter = index-KEY_1+'1';	// key 1 is ascii '1'
+					keyboardNumLetter = index+'1';	// key 1 is ascii '1'
 					if (keyboardNumLetter > '9') keyboardNumLetter = '0';
 				}
 			}
-			for (index = KEY_KP1; index <= KEY_KP0; ++index)
-			{
-				if (keyboard->KeyHeld(index))
-				{
-					SetKeyboardFlag(NUMLET_FLAG);
-					keyboardNumLetter = index-KEY_KP1+'1';	// key 1 is ascii '1'
-					if (keyboardNumLetter > '9') keyboardNumLetter = '0';
-				}
-			}
+
 			for (index = KEY_A; index <= KEY_Z; ++index)
 			{
 				if (keyboard->KeyHeld(index))
