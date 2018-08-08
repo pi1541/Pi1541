@@ -1329,13 +1329,16 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 		int blocksFree = 0;
 		int bamTrack;
 		int lastTrackUsed = (int)diskImage->LastTrackUsed() >> 1;
-		for (bamTrack = 0; bamTrack < 35; ++bamTrack)
+		x_px = bmBAMOffsetX;
+		int x_size = PNG_WIDTH/lastTrackUsed;
+		int y_size = PNG_HEIGHT/21;
+
+		for (bamTrack = 0; bamTrack <= lastTrackUsed; ++bamTrack)
 		{
 			if ((bamTrack + 1) != 18)
 				blocksFree += buffer[BAM_OFFSET + bamTrack * BAM_ENTRY_SIZE];
 
-			x = BAMOffsetX;
-			x_px = bmBAMOffsetX;
+			y_px = 0;
 			for (int bit = 0; bit < DiskImage::SectorsPerTrack[bamTrack]; bit++)
 			{
 				u32 bits = buffer[BAM_OFFSET + 1 + (bit >> 3) + bamTrack * BAM_ENTRY_SIZE];
@@ -1343,37 +1346,22 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 
 				if (!used)
 				{
-//					snprintf(bufferOut, 128, "%c", screen2petscii(87));
-//					screenMain->PrintText(true, x, y, bufferOut, usedColour, bgColour);
-					for (int xx = 0; xx < PNG_WIDTH/30; xx++)
-						screenMain->PlotPixel(x_px+xx, y_px, usedColour);
+					for (int yy = 0; yy < y_size-2; yy++)
+						for (int xx = 0; xx < x_size-2; xx++)
+							screenMain->PlotPixel(x_px+xx, y_px+yy, usedColour);
 				}
 				else
 				{
-//					snprintf(bufferOut, 128, "%c", screen2petscii(81));
-//					screenMain->PrintText(true, x, y, bufferOut, freeColour, bgColour);
-
-					for (int xx = 0; xx < PNG_WIDTH/30; xx++)
-						screenMain->PlotPixel(x_px+xx, y_px, freeColour);
+					for (int yy = 0; yy < y_size-2; yy++)
+						for (int xx = 0; xx < x_size-2; xx++)
+							screenMain->PlotPixel(x_px+xx, y_px+yy, freeColour);
 				}
-				x += 8;
-				x_px += PNG_WIDTH/30 + 2;
+				y_px += y_size;
 				bits <<= 1;
 			}
-			y += fontHeight;
-			y_px += PNG_HEIGHT/40;
+			x_px += x_size;
 		}
-		for (; bamTrack < lastTrackUsed; ++bamTrack)
-		{
-			x = BAMOffsetX;
-			for (int bit = 0; bit < DiskImage::SectorsPerTrack[bamTrack]; bit++)
-			{
-				snprintf(bufferOut, 128, "%c", screen2petscii(87));
-				screenMain->PrintText(true, x, y, bufferOut, usedColour, bgColour);
-				x += 8;
-			}
-			y += fontHeight;
-		}
+
 		x = 0;
 		y = 0;
 		snprintf(bufferOut, 128, "0");
