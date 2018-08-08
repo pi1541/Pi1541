@@ -127,5 +127,5 @@ void ScreenLCD::SwapBuffers()
 void ScreenLCD::RefreshRows(u32 start, u32 amountOfRows)
 {
 	if (ssd1306)
-		ssd1306->RefreshRows(start, amountOfRows);
+		ssd1306->RefreshTextRows(start, amountOfRows);
 }

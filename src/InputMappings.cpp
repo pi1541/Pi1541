@@ -23,6 +23,7 @@
 extern "C"
 {
 #include "rpi-aux.h"
+extern void reboot_now(void);
 }
 
 // If disk swaps can be done via multiple cores then directDiskSwapRequest needs to be volatile. WARNING: volatile acesses can be very expensive.
@@ -43,18 +44,61 @@ InputMappings::InputMappings()
 bool InputMappings::CheckButtonsBrowseMode()
 {
 	buttonFlags = 0;
-	//if (IEC_Bus::GetInputButtonPressed(0))
-	//	SetButtonFlag(ENTER_FLAG);
-	//else
-		if (IEC_Bus::GetInputButtonRepeating(1))
-		SetButtonFlag(UP_FLAG);
-	else if (IEC_Bus::GetInputButtonRepeating(2))
-		SetButtonFlag(DOWN_FLAG);
-	else if (IEC_Bus::GetInputButtonPressed(3))
-		SetButtonFlag(BACK_FLAG);
-	//else if (IEC_Bus::GetInputButtonPressed(4))
-	//	SetButtonFlag(INSERT_FLAG);
 
+	if (IEC_Bus::GetInputButtonHeld(INPUT_BUTTON_INSERT))	// Change DeviceID
+	{
+		if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_ENTER))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 8;
+		}
+		else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_UP))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 9;
+		}
+		else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_DOWN))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 10;
+		}
+		else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_BACK))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 11;
+		}
+	}
+	else if (IEC_Bus::GetInputButtonHeld(INPUT_BUTTON_ENTER))	// Change ROMs
+	{
+		if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_UP))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 1;
+		}
+		else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_DOWN))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 2;
+		}
+		else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_BACK))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 3;
+		}
+		else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_INSERT))
+		{
+			SetButtonFlag(FUNCTION_FLAG);
+			inputROMOrDevice = 4;
+		}
+	}
+	else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_UP))
+		SetButtonFlag(UP_FLAG);
+	else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_DOWN))
+		SetButtonFlag(DOWN_FLAG);
+	else if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_BACK))
+		SetButtonFlag(BACK_FLAG);
+
+// edge detection
 	insertButtonPressed = !IEC_Bus::GetInputButtonReleased(4);
 	if (insertButtonPressedPrev && !insertButtonPressed)
 		SetButtonFlag(INSERT_FLAG);
@@ -72,14 +116,16 @@ void InputMappings::CheckButtonsEmulationMode()
 {
 	buttonFlags = 0;
 
-	if (IEC_Bus::GetInputButtonPressed(0))
+	if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_ENTER))
 		SetButtonFlag(ESC_FLAG);
-	else if (IEC_Bus::GetInputButtonPressed(1))
+	else if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_UP))
 		SetButtonFlag(NEXT_FLAG);
-	else if (IEC_Bus::GetInputButtonPressed(2))
+	else if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_DOWN))
 		SetButtonFlag(PREV_FLAG);
-	//else if (IEC_Bus::GetInputButtonPressed(3))
+	//else if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_BACK))
 	//	SetButtonFlag(BACK_FLAG);
+	//else if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_INSERT))
+	//	SetButtonFlag(INSERT_FLAG);
 }
 
 
@@ -151,6 +197,14 @@ bool InputMappings::CheckKeyboardBrowseMode()
 	Keyboard* keyboard = Keyboard::Instance();
 
 	keyboardFlags = 0;
+	keyboardNumLetter = 0;
+	if (!keyboard->CheckChanged())
+	{
+		return false;
+	}
+
+	if (keyboard->KeyHeld(KEY_DELETE) && keyboard->KeyLCtrlAlt() )
+		reboot_now();
 
 	if (keyboard->KeyHeld(KEY_ESC))
 		SetKeyboardFlag(ESC_FLAG);
@@ -192,36 +246,30 @@ bool InputMappings::CheckKeyboardBrowseMode()
 		SetKeyboardFlag(FAKERESET_FLAG);
 	else if (keyboard->KeyHeld(KEY_W) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(WRITEPROTECT_FLAG);
+	else if (keyboard->KeyHeld(KEY_L) && keyboard->KeyEitherAlt() )
+		SetKeyboardFlag(MAKELST_FLAG);
 	else
 	{
 		if (keyboard->KeyNoModifiers())
 		{
 			unsigned index;
 
-			for (index = KEY_1; index <= KEY_0; ++index)
+			for (index = 0; index <= 9; ++index)
 			{
-				if (keyboard->KeyHeld(index))
+				if (keyboard->KeyHeld(KEY_1+index) || keyboard->KeyHeld(KEY_KP1+index))
 				{
-					SetKeyboardFlag(NUMBER_FLAG);
-					keyboardNumber = index-KEY_1+'1';	// key 1 is ascii '1'
-					if (keyboardNumber > '9') keyboardNumber = '0';
+					SetKeyboardFlag(NUMLET_FLAG);
+					keyboardNumLetter = index+'1';	// key 1 is ascii '1'
+					if (keyboardNumLetter > '9') keyboardNumLetter = '0';
 				}
 			}
-			for (index = KEY_KP1; index <= KEY_KP0; ++index)
-			{
-				if (keyboard->KeyHeld(index))
-				{
-					SetKeyboardFlag(NUMBER_FLAG);
-					keyboardNumber = index-KEY_KP1+'1';	// key 1 is ascii '1'
-					if (keyboardNumber > '9') keyboardNumber = '0';
-				}
-			}
+
 			for (index = KEY_A; index <= KEY_Z; ++index)
 			{
 				if (keyboard->KeyHeld(index))
 				{
-					SetKeyboardFlag(LETTER_FLAG);
-					keyboardLetter = index-KEY_A+'A';	// key A is ascii 'A'
+					SetKeyboardFlag(NUMLET_FLAG);
+					keyboardNumLetter = index-KEY_A+'A';	// key A is ascii 'A'
 				}
 			}
 			for (index = KEY_F1; index <= KEY_F12; ++index)	// F13 isnt contiguous
@@ -229,7 +277,7 @@ bool InputMappings::CheckKeyboardBrowseMode()
 				if (keyboard->KeyHeld(index))
 				{
 					SetKeyboardFlag(FUNCTION_FLAG);
-					keyboardFunction = index-KEY_F1+1;	// key F1 is 1
+					inputROMOrDevice = index-KEY_F1+1;	// key F1 is 1
 				}
 			}
 		}
@@ -243,28 +291,31 @@ void InputMappings::CheckKeyboardEmulationMode(unsigned numberOfImages, unsigned
 	Keyboard* keyboard = Keyboard::Instance();
 
 	keyboardFlags = 0;
-	if (keyboard->CheckChanged())
+	if (!keyboard->CheckChanged())
+		return;
+
+	if (keyboard->KeyHeld(KEY_DELETE) && keyboard->KeyLCtrlAlt() )
+		reboot_now();
+
+	if (keyboard->KeyHeld(KEY_ESC))
+		SetKeyboardFlag(ESC_FLAG);
+	else if (keyboard->KeyHeld(KEY_PAGEUP))
+		SetKeyboardFlag(PREV_FLAG);
+	else if (keyboard->KeyHeld(KEY_PAGEDOWN))
+		SetKeyboardFlag(NEXT_FLAG);
+	else if (keyboard->KeyHeld(KEY_A) && keyboard->KeyEitherAlt() )
+		SetKeyboardFlag(AUTOLOAD_FLAG);
+	else if (keyboard->KeyHeld(KEY_R) && keyboard->KeyEitherAlt() )
+		SetKeyboardFlag(FAKERESET_FLAG);
+	else if (numberOfImages > 1)
 	{
-		if (keyboard->KeyHeld(KEY_ESC))
-			SetKeyboardFlag(ESC_FLAG);
-		else if (keyboard->KeyHeld(KEY_PAGEUP))
-			SetKeyboardFlag(PREV_FLAG);
-		else if (keyboard->KeyHeld(KEY_PAGEDOWN))
-			SetKeyboardFlag(NEXT_FLAG);
-		else if (keyboard->KeyHeld(KEY_A) && keyboard->KeyEitherAlt() )
-			SetKeyboardFlag(AUTOLOAD_FLAG);
-		else if (keyboard->KeyHeld(KEY_R) && keyboard->KeyEitherAlt() )
-			SetKeyboardFlag(FAKERESET_FLAG);
-		else if (numberOfImages > 1)
+		unsigned index;
+		for (index = 0; index < 10; index++)
 		{
-			unsigned index;
-			for (index = 0; index < sizeof(NumberKeys)/sizeof(NumberKeys[0]); index+=3)
-			{
-				if (keyboard->KeyHeld(NumberKeys[index])
-					|| keyboard->KeyHeld(NumberKeys[index + 1])
-					|| keyboard->KeyHeld(NumberKeys[index + 2]) )
-					directDiskSwapRequest |= (1 << index/3);
-			}
+			if ( keyboard->KeyHeld(KEY_F1+index)
+				|| keyboard->KeyHeld(KEY_1+index)
+				|| keyboard->KeyHeld(KEY_KP1+index) )
+				directDiskSwapRequest |= (1 << index);
 		}
 	}
 }

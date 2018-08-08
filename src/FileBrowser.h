@@ -48,6 +48,8 @@
 
 #define STATUS_BAR_POSITION_Y (40 * 16 + 10)
 
+#define KEYBOARD_SEARCH_BUFFER_SIZE 512
+
 class FileBrowser
 {
 public:
@@ -95,13 +97,7 @@ public:
 	class BrowsableList
 	{
 	public:
-		BrowsableList()
-			: current(0)
-			, currentIndex(0)
-			, currentHighlightTime(0)
-			, scrollHighlightRate(0)
-		{
-		}
+		BrowsableList();
 
 		void Clear()
 		{
@@ -163,6 +159,10 @@ public:
 		float currentHighlightTime;
 		float scrollHighlightRate;
 
+		u32 lastUpdateTime;
+		char searchPrefix[KEYBOARD_SEARCH_BUFFER_SIZE];
+		u32 searchPrefixIndex;
+		u32 searchLastKeystrokeTime;
 		std::vector<BrowsableListView> views;
 	};
 
@@ -193,6 +193,7 @@ public:
 
 	static u32 Colour(int index);
 
+	bool MakeLST(const char* filenameLST);
 	bool SelectLST(const char* filenameLST);
 
 	void SetScrollHighlightRate(float value) { scrollHighlightRate = value; }
@@ -211,6 +212,7 @@ private:
 	bool FillCaddyWithSelections();
 
 	bool AddToCaddy(FileBrowser::BrowsableList::Entry* current);
+	bool AddImageToCaddy(FileBrowser::BrowsableList::Entry* current);
 
 	bool CheckForPNG(const char* filename, FILINFO& filIcon);
 	void DisplayPNG();

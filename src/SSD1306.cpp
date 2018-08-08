@@ -25,8 +25,6 @@ extern "C"
 #include "xga_font_data.h"
 }
 
-unsigned char frame[SSD1306_128x64_BYTES];
-
 SSD1306::SSD1306(int BSCMaster, u8 address, unsigned width, unsigned height, int flip, LCD_MODEL type)
 	: BSCMaster(BSCMaster)
 	, address(address)
@@ -36,8 +34,10 @@ SSD1306::SSD1306(int BSCMaster, u8 address, unsigned width, unsigned height, int
 	, width(width)
 	, height(height)
 {
+	sizeof_frame = width*height/8;
+	frame = (unsigned char *)malloc(sizeof_frame);
+	oldFrame = (unsigned char *)malloc(sizeof_frame);
 	RPI_I2CInit(BSCMaster, 1);
-
 	InitHardware();
 }
 
@@ -117,10 +117,10 @@ void SSD1306::SendData(u8 data)
 
 void SSD1306::Home()
 {
-	MoveCursorByte(0, 0);
+	SetDataPointer(0, 0);
 }
 
-void SSD1306::MoveCursorByte(u8 page, u8 col)
+void SSD1306::SetDataPointer(u8 page, u8 col)
 {
 	if (col > width-1) { col = width-1; }
 	if (page > height/8-1) { page = height/8-1; }
@@ -142,7 +142,8 @@ void SSD1306::RefreshScreen()
 	}
 }
 
-void SSD1306::RefreshRows(u32 start, u32 amountOfRows)
+// assumes a text row is 16 bit high
+void SSD1306::RefreshTextRows(u32 start, u32 amountOfRows)
 {
 	unsigned int i;
 
@@ -154,6 +155,10 @@ void SSD1306::RefreshRows(u32 start, u32 amountOfRows)
 	}
 }
 
+// Some very basic optimisation is implemented.
+// it scans the page to work out the first (new_start) and last (new_end) changed bytes
+// Only update that window on the OLED
+// If someone is keen, a smarter algorithm could work out a series of ranges to update
 void SSD1306::RefreshPage(u32 page)
 {
 	if (page >= height/8)
@@ -170,16 +175,33 @@ void SSD1306::RefreshPage(u32 page)
 	int start = page*width;
 	int end = start + width;
 
-	MoveCursorByte(page, 0);
+	int new_start = -1;
+	int new_end = -1;
 	for (i = start; i < end; i++)
 	{
-		SendData(frame[i]);
+		if (oldFrame[i] ^ frame[i])
+		{
+			if (new_start == -1)
+				new_start = i;
+			new_end = i;
+		}
+	}
+
+	if (new_start >= 0)
+	{
+		SetDataPointer(page, new_start-start);
+		for (i = new_start; i <= new_end; i++)
+		{
+			SendData(frame[i]);
+			oldFrame[i] = frame[i];
+		}
 	}
 }
 
 void SSD1306::ClearScreen()
 {
-	memset(frame, 0, sizeof(frame));
+	memset(frame, 0, sizeof_frame);
+	memset(oldFrame, 0xff, sizeof_frame);	// to force update
 	RefreshScreen();
 }
 
@@ -210,6 +232,7 @@ void SSD1306::SetVCOMDeselect(u8 value)
 
 void SSD1306::PlotText(int x, int y, char* str, bool inverse)
 {
+// assumes 16 character width
 	int i;
 	i = 0;
 	while (str[i] && x < 16)
@@ -258,9 +281,9 @@ void SSD1306::PlotPixel(int x, int y, int c)
 {
 	switch (c)
 	{
-		case 1:   frame[x+ (y/8)*SSD1306_LCDWIDTH] |=  (1 << (y&7)); break;
-		case 0:   frame[x+ (y/8)*SSD1306_LCDWIDTH] &= ~(1 << (y&7)); break;
-		case -1:  frame[x+ (y/8)*SSD1306_LCDWIDTH] ^=  (1 << (y&7)); break;
+		case 1:   frame[x+ (y/8)*width] |=  (1 << (y&7)); break;
+		case 0:   frame[x+ (y/8)*width] &= ~(1 << (y&7)); break;
+		case -1:  frame[x+ (y/8)*width] ^=  (1 << (y&7)); break;
 	}
 }
 

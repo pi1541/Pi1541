@@ -46,7 +46,7 @@ extern "C"
 #include "ssd_logo.h"
 
 unsigned versionMajor = 1;
-unsigned versionMinor = 10;
+unsigned versionMinor = 11;
 
 // When the emulated CPU starts we execute the first million odd cycles in non-real-time (ie as fast as possible so the emulated 1541 becomes responsive to CBM-Browser asap)
 // During these cycles the CPU is executing the ROM self test routines (these do not need to be cycle accurate)
@@ -441,9 +441,9 @@ void UpdateScreen()
 	u32 textColour = COLOUR_BLACK;
 	u32 bgColour = COLOUR_WHITE;
 
+	RGBA atnColour = COLOUR_YELLOW;
 	RGBA dataColour = COLOUR_GREEN;
 	RGBA clockColour = COLOUR_CYAN;
-	RGBA atnColour = COLOUR_YELLOW;
 	RGBA BkColour = FileBrowser::Colour(VIC2_COLOUR_INDEX_BLUE);
 
 	int height = screen.ScaleY(60);
@@ -487,6 +487,9 @@ void UpdateScreen()
 			//refreshUartStatusDisplay = true;
 		}
 
+		if (options.GraphIEC())
+			screen.DrawLineV(graphX, top3, bottom, BkColour);
+
 		value = IEC_Bus::GetPI_Atn();
 		if (options.GraphIEC())
 		{
@@ -497,7 +500,6 @@ void UpdateScreen()
 			}
 			else
 			{
-				screen.DrawLineV(graphX, top3, bottom, BkColour);
 				if (value) screen.PlotPixel(graphX, top3, atnColour);
 				else screen.PlotPixel(graphX, bottom, atnColour);
 			}
@@ -520,7 +522,6 @@ void UpdateScreen()
 			}
 			else
 			{
-				screen.DrawLineV(graphX, top2, bottom, BkColour);
 				if (value) screen.PlotPixel(graphX, top2, dataColour);
 				else screen.PlotPixel(graphX, bottom, dataColour);
 			}
@@ -543,7 +544,6 @@ void UpdateScreen()
 			}
 			else
 			{
-				screen.DrawLineV(graphX, top, bottom, BkColour);
 				if (value) screen.PlotPixel(graphX, top, clockColour);
 				else screen.PlotPixel(graphX, bottom, clockColour);
 			}
@@ -557,6 +557,9 @@ void UpdateScreen()
 		}
 
 		if (graphX++ > screenWidthM1) graphX = 0;
+// black vertical line ahead of graph
+		if (options.GraphIEC())
+			screen.DrawLineV(graphX, top3, bottom, COLOUR_BLACK);
 
 		u32 track = pi1541.drive.Track();
 		if (track != oldTrack)
@@ -690,9 +693,13 @@ void emulator()
 		{
 			IEC_Bus::VIA = 0;
 
+			IEC_Bus::Reset();
+// workaround for occasional oled curruption
+			if (screenLCD)
+				screenLCD->ClearInit(0);
+
 			roms.ResetCurrentROMIndex();
 			fileBrowser->ClearScreen();
-			IEC_Bus::Reset();
 
 			fileBrowserSelectedName = 0;
 			fileBrowser->ClearSelections();
@@ -947,6 +954,10 @@ void emulator()
 					//	- pass in a call back function?
 					if (diskCaddy.Empty())
 						IEC_Bus::WaitMicroSeconds(2 * 1000000);
+
+// workaround for occasional oled curruption
+//					if (screenLCD)
+//						screenLCD->ClearInit(0);
 
 					fileBrowser->ClearSelections();
 					fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
