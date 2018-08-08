@@ -1189,21 +1189,28 @@ static void CheckOptions()
 	u32 widthScreen = screen.Width();
 	u32 heightScreen = screen.Height();
 	u32 xpos, ypos;
-	const char* ROMName;
 
 	deviceID = (u8)options.GetDeviceID();
 	DEBUG_LOG("DeviceID = %d\r\n", deviceID);
 
-	ROMName = options.GetRomFontName();
-	if (ROMName)
+	const char* FontROMName = options.GetRomFontName();
+	if (FontROMName)
 	{
+		char FontROMName2[256] = "/roms/";
+
+		if (FontROMName[0] != '/')	// not a full path, prepend /roms/
+			strncat (FontROMName2, FontROMName, 240);
+		else
+			FontROMName2[0] = 0;
+
 		//DEBUG_LOG("%d Rom Name = %s\r\n", ROMIndex, ROMName);
-		if (FR_OK == f_open(&fp, ROMName, FA_READ))
+		if ( (FR_OK == f_open(&fp, FontROMName, FA_READ))
+			|| (FR_OK == f_open(&fp, FontROMName2, FA_READ)) )
 		{
 			u32 bytesRead;
 
 			screen.Clear(COLOUR_BLACK);
-			snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
+			snprintf(tempBuffer, tempBufferSize, "Loading Font ROM %s\r\n", FontROMName);
 			screen.MeasureText(false, tempBuffer, &widthText, &heightText);
 			xpos = (widthScreen - widthText) >> 1;
 			ypos = (heightScreen - heightText) >> 1;
