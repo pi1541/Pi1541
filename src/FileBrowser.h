@@ -193,6 +193,7 @@ public:
 
 	static u32 Colour(int index);
 
+	bool MakeLST(const char* filenameLST);
 	bool SelectLST(const char* filenameLST);
 
 	void SetScrollHighlightRate(float value) { scrollHighlightRate = value; }
@@ -211,6 +212,7 @@ private:
 	bool FillCaddyWithSelections();
 
 	bool AddToCaddy(FileBrowser::BrowsableList::Entry* current);
+	bool AddImageToCaddy(FileBrowser::BrowsableList::Entry* current);
 
 	bool CheckForPNG(const char* filename, FILINFO& filIcon);
 	void DisplayPNG();

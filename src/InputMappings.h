@@ -32,7 +32,8 @@
 #define SPACE_FLAG		(1 << 8)
 #define BACK_FLAG		(1 << 9)
 #define INSERT_FLAG		(1 << 10)
-#define NUMBER_FLAG		(1 << 11)
+
+#define NUMLET_FLAG		(1 << 11)
 
 #define PAGEDOWN_LCD_FLAG	(1 << 12)
 #define PAGEUP_LCD_FLAG		(1 << 13)
@@ -41,26 +42,13 @@
 #define AUTOLOAD_FLAG		(1 << 15)
 #define FAKERESET_FLAG		(1 << 16)
 #define WRITEPROTECT_FLAG	(1 << 17)
-#define LETTER_FLAG		(1 << 18)
+#define MAKELST_FLAG		(1 << 18)
 #define HOME_FLAG		(1 << 19)
 #define END_FLAG		(1 << 20)
+
 #define FUNCTION_FLAG		(1 << 21)
 // dont exceed 32!!
 
-const unsigned NumberKeys[33] =
-{
-	KEY_F1, KEY_KP1, KEY_1,
-	KEY_F2, KEY_KP2, KEY_2,
-	KEY_F3, KEY_KP3, KEY_3,
-	KEY_F4, KEY_KP4, KEY_4,
-	KEY_F5, KEY_KP5, KEY_5,
-	KEY_F6, KEY_KP6, KEY_6,
-	KEY_F7, KEY_KP7, KEY_7,
-	KEY_F8, KEY_KP8, KEY_8,
-	KEY_F9, KEY_KP9, KEY_9,
-	KEY_F10, KEY_KP0, KEY_0,
-	KEY_F11, KEY_KPMINUS, KEY_MINUS
-};
 
 class InputMappings : public Singleton<InputMappings>
 {
@@ -78,9 +66,8 @@ protected:
 	bool enterButtonPressedPrev;
 	bool enterButtonPressed;
 
-	unsigned keyboardNumber;
-	unsigned keyboardLetter;
-	unsigned keyboardFunction;
+	unsigned keyboardNumLetter;
+	unsigned inputROMOrDevice;
 
 	//inline void SetUartFlag(unsigned flag) { uartFlags |= flag;	}
 	//inline bool UartFlag(unsigned flag) { return (uartFlags & flag) != 0; }
@@ -170,6 +157,11 @@ public:
 		return KeyboardFlag(INSERT_FLAG)/* | UartFlag(INSERT_FLAG)*/ | ButtonFlag(INSERT_FLAG);
 	}
 
+	inline bool BrowseFunction()
+	{
+		return KeyboardFlag(FUNCTION_FLAG) | ButtonFlag(FUNCTION_FLAG);
+	}
+
 	inline bool BrowseNewD64() { return KeyboardFlag(NEWD64_FLAG); }
 
 	inline bool BrowseAutoLoad() { return KeyboardFlag(AUTOLOAD_FLAG); }
@@ -178,17 +170,14 @@ public:
 
 	inline bool BrowseWriteProtect() { return KeyboardFlag(WRITEPROTECT_FLAG); }
 
-	inline bool BrowseNumber() { return KeyboardFlag(NUMBER_FLAG); }
-	inline bool BrowseLetter() { return KeyboardFlag(LETTER_FLAG); }
-	inline bool BrowseFunction() { return KeyboardFlag(FUNCTION_FLAG); }
+	inline bool MakeLSTFile() { return KeyboardFlag(MAKELST_FLAG); }
 
 	inline bool BrowseHome() { return KeyboardFlag(HOME_FLAG); }
 
 	inline bool BrowseEnd() { return KeyboardFlag(END_FLAG); }
 
-	inline char getKeyboardNumber() { return keyboardNumber; }
-	inline char getKeyboardLetter() { return (char) keyboardLetter; }
-	inline unsigned getKeyboardFunction() { return (char) keyboardFunction; }
+	inline char getKeyboardNumLetter() { return keyboardNumLetter; }
+	inline unsigned getROMOrDevice() { return inputROMOrDevice; }
 
 	// Used by the 2 cores so need to be volatile
 	//volatile static unsigned directDiskSwapRequest;
