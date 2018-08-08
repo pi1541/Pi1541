@@ -1067,8 +1067,15 @@ static bool AttemptToLoadROM(char* ROMName)
 	FIL fp;
 	FRESULT res;
 
-	res = f_open(&fp, ROMName, FA_READ);
-	if (res == FR_OK)
+	char ROMName2[256] = "/roms/";
+
+	if (ROMName[0] != '/')	// not a full path, prepend /roms/
+		strncat (ROMName2, ROMName, 240);
+	else
+		ROMName2[0] = 0;
+
+	if ( (FR_OK == f_open(&fp, ROMName, FA_READ))
+		|| (FR_OK == f_open(&fp, ROMName2, FA_READ)) )
 	{
 		u32 bytesRead;
 		SetACTLed(true);
@@ -1182,22 +1189,28 @@ static void CheckOptions()
 	u32 widthScreen = screen.Width();
 	u32 heightScreen = screen.Height();
 	u32 xpos, ypos;
-	const char* ROMName;
 
 	deviceID = (u8)options.GetDeviceID();
 	DEBUG_LOG("DeviceID = %d\r\n", deviceID);
 
-	ROMName = options.GetRomFontName();
-	if (ROMName)
+	const char* FontROMName = options.GetRomFontName();
+	if (FontROMName)
 	{
+		char FontROMName2[256] = "/roms/";
+
+		if (FontROMName[0] != '/')	// not a full path, prepend /roms/
+			strncat (FontROMName2, FontROMName, 240);
+		else
+			FontROMName2[0] = 0;
+
 		//DEBUG_LOG("%d Rom Name = %s\r\n", ROMIndex, ROMName);
-		res = f_open(&fp, ROMName, FA_READ);
-		if (res == FR_OK)
+		if ( (FR_OK == f_open(&fp, FontROMName, FA_READ))
+			|| (FR_OK == f_open(&fp, FontROMName2, FA_READ)) )
 		{
 			u32 bytesRead;
 
 			screen.Clear(COLOUR_BLACK);
-			snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
+			snprintf(tempBuffer, tempBufferSize, "Loading Font ROM %s\r\n", FontROMName);
 			screen.MeasureText(false, tempBuffer, &widthText, &heightText);
 			xpos = (widthScreen - widthText) >> 1;
 			ypos = (heightScreen - heightText) >> 1;
@@ -1221,33 +1234,40 @@ static void CheckOptions()
 	{
 		roms.ROMValid[ROMIndex] = false;
 		const char* ROMName = options.GetRomName(ROMIndex);
-		if (ROMName[0])
+		char ROMName2[256] = "/roms/";
+
+		if (ROMName[0] == 0)
+			continue;
+
+		if (ROMName[0] != '/')	// not a full path, prepend /roms/
+			strncat (ROMName2, ROMName, 240);
+		else
+			ROMName2[0] = 0;
+
+		//DEBUG_LOG("%d Rom Name = %s\r\n", ROMIndex, ROMName);
+		if ( (FR_OK == f_open(&fp, ROMName, FA_READ))
+			|| (FR_OK == f_open(&fp, ROMName2, FA_READ)) )
 		{
-			//DEBUG_LOG("%d Rom Name = %s\r\n", ROMIndex, ROMName);
-			res = f_open(&fp, ROMName, FA_READ);
-			if (res == FR_OK)
+			u32 bytesRead;
+
+			screen.Clear(COLOUR_BLACK);
+			snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
+			screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+			xpos = (widthScreen - widthText) >> 1;
+			ypos = (heightScreen - heightText) >> 1;
+			screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+
+			SetACTLed(true);
+			res = f_read(&fp, roms.ROMImages[ROMIndex], ROMs::ROM_SIZE, &bytesRead);
+			SetACTLed(false);
+			if (res == FR_OK && bytesRead == ROMs::ROM_SIZE)
 			{
-				u32 bytesRead;
-
-				screen.Clear(COLOUR_BLACK);
-				snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
-				screen.MeasureText(false, tempBuffer, &widthText, &heightText);
-				xpos = (widthScreen - widthText) >> 1;
-				ypos = (heightScreen - heightText) >> 1;
-				screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
-
-				SetACTLed(true);
-				res = f_read(&fp, roms.ROMImages[ROMIndex], ROMs::ROM_SIZE, &bytesRead);
-				SetACTLed(false);
-				if (res == FR_OK && bytesRead == ROMs::ROM_SIZE)
-				{
-					strncpy(roms.ROMNames[ROMIndex], ROMName, 255);
-					roms.ROMValid[ROMIndex] = true;
-					roms.UpdateLongestRomNameLen( strlen(roms.ROMNames[ROMIndex]) );
-				}
-				f_close(&fp);
-				//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
+				strncpy(roms.ROMNames[ROMIndex], ROMName, 255);
+				roms.ROMValid[ROMIndex] = true;
+				roms.UpdateLongestRomNameLen( strlen(roms.ROMNames[ROMIndex]) );
 			}
+			f_close(&fp);
+			//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
 		}
 	}
 
