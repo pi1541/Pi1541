@@ -48,6 +48,8 @@
 
 #define STATUS_BAR_POSITION_Y (40 * 16 + 10)
 
+#define KEYBOARD_SEARCH_BUFFER_SIZE 512
+
 class FileBrowser
 {
 public:
@@ -95,13 +97,7 @@ public:
 	class BrowsableList
 	{
 	public:
-		BrowsableList()
-			: current(0)
-			, currentIndex(0)
-			, currentHighlightTime(0)
-			, scrollHighlightRate(0)
-		{
-		}
+		BrowsableList();
 
 		void Clear()
 		{
@@ -163,6 +159,10 @@ public:
 		float currentHighlightTime;
 		float scrollHighlightRate;
 
+		u32 lastUpdateTime;
+		char searchPrefix[KEYBOARD_SEARCH_BUFFER_SIZE];
+		u32 searchPrefixIndex;
+		u32 searchLastKeystrokeTime;
 		std::vector<BrowsableListView> views;
 	};
 

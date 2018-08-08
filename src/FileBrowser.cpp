@@ -333,6 +333,18 @@ bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
 	return dirty;
 }
 
+FileBrowser::BrowsableList::BrowsableList()
+	: current(0)
+	, currentIndex(0)
+	, currentHighlightTime(0)
+	, scrollHighlightRate(0)
+	, searchPrefixIndex(0)
+	, searchLastKeystrokeTime(0)
+{
+	lastUpdateTime = read32(ARM_SYSTIMER_CLO);
+	searchPrefix[0] = 0;
+}
+
 void FileBrowser::BrowsableList::ClearSelections()
 {
 	u32 entryIndex;
@@ -368,6 +380,21 @@ bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 
 	bool dirty = false;
 	u32 index;
+
+	// Calculate the number of micro seconds since we were last called.
+	u32 updateTime = read32(ARM_SYSTIMER_CLO);
+	u32 timeDelta;
+	if (updateTime < lastUpdateTime)
+		timeDelta = updateTime + (0xffffffff - lastUpdateTime);	// wrapped
+	else
+		timeDelta = updateTime - lastUpdateTime;
+	lastUpdateTime = updateTime;
+
+	if (searchPrefixIndex != 0)	// Are they typing?
+	{
+		searchLastKeystrokeTime += timeDelta;
+	}
+
 	for (index = 0; index < views.size(); ++index)
 	{
 		dirty |= views[index].CheckBrowseNavigation(index != 0);
@@ -380,11 +407,21 @@ bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 		unsigned found=0;
 		u32 i=0;
 
+		searchLastKeystrokeTime = 0;
+
+		searchPrefix[searchPrefixIndex] = searchChar;
+		if (searchPrefixIndex < KEYBOARD_SEARCH_BUFFER_SIZE - 1)
+		{
+			searchPrefixIndex++;
+			searchPrefix[searchPrefixIndex] = 0;
+			dirty |= 1;
+		}
+
 		// first look from next to last
 		for (i=1+currentIndex; i <= numberOfEntriesMinus1 ; i++)
 		{
 			FileBrowser::BrowsableList::Entry* entry = &entries[i];
-			if (strncasecmp(&searchChar, entry->filImage.fname, 1) == 0)
+			if (strncasecmp(searchPrefix, entry->filImage.fname, searchPrefixIndex) == 0)
 			{
 				found=i;
 				break;
@@ -396,7 +433,7 @@ bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 			for (i=0; i< 1+currentIndex ; i++)
 			{
 				FileBrowser::BrowsableList::Entry* entry = &entries[i];
-				if (strncasecmp(&searchChar, entry->filImage.fname, 1) == 0)
+				if (strncasecmp(searchPrefix, entry->filImage.fname, searchPrefixIndex) == 0)
 				{
 					found=i;
 					break;
@@ -411,17 +448,28 @@ bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 			dirty |= 1;
 		}
 	}
-	else if (inputMappings->BrowseHome())
+	else
 	{
-		currentIndex = 0;
-		SetCurrent();
-		dirty |= 1;
-	}
-	else if (inputMappings->BrowseEnd())
-	{
-		currentIndex = numberOfEntriesMinus1;
-		SetCurrent();
-		dirty |= 1;
+		if (searchLastKeystrokeTime > 500000)
+		{
+			searchPrefixIndex = 0;
+			searchPrefix[0] = 0;
+			searchLastKeystrokeTime = 0;
+			dirty |= 1;
+		}
+
+		if (inputMappings->BrowseHome())
+		{
+			currentIndex = 0;
+			SetCurrent();
+			dirty |= 1;
+		}
+		else if (inputMappings->BrowseEnd())
+		{
+			currentIndex = numberOfEntriesMinus1;
+			SetCurrent();
+			dirty |= 1;
+		}
 	}
 	return dirty;
 }
@@ -660,12 +708,11 @@ void FileBrowser::RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* brow
 
 void FileBrowser::RefeshDisplay()
 {
+	u32 textColour = Colour(VIC2_COLOUR_INDEX_LGREEN);
+	u32 bgColour = Colour(VIC2_COLOUR_INDEX_GREY);
 	char buffer[1024];
 	if (f_getcwd(buffer, 1024) == FR_OK)
 	{
-		u32 textColour = Colour(VIC2_COLOUR_INDEX_LGREEN);
-		u32 bgColour = Colour(VIC2_COLOUR_INDEX_GREY);
-			
 		screenMain->ClearArea(0, 0, (int)screenMain->Width(), 17, bgColour);
 		screenMain->PrintText(false, 0, 0, buffer, textColour, bgColour);
 	}
@@ -679,6 +726,12 @@ void FileBrowser::RefeshDisplay()
 
 	DisplayPNG();
 	DisplayStatusBar();
+
+	if (folder.searchPrefixIndex > 0)
+	{
+		u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y);
+		screenMain->PrintText(false, 0, y, folder.searchPrefix, textColour, bgColour);
+	}
 }
 
 bool FileBrowser::CheckForPNG(const char* filename, FILINFO& filIcon)
@@ -843,7 +896,7 @@ void FileBrowser::Update()
 {
 	InputMappings* inputMappings = InputMappings::Instance();
 
-	if ( inputMappings->CheckKeyboardBrowseMode() || inputMappings->CheckButtonsBrowseMode() )
+	if ( inputMappings->CheckKeyboardBrowseMode() || inputMappings->CheckButtonsBrowseMode() || (folder.searchPrefixIndex != 0) )
 		UpdateInputFolders();
 
 	UpdateCurrentHighlight();
