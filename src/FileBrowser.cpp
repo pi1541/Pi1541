@@ -801,8 +801,8 @@ void FileBrowser::DisplayPNG()
 	if (displayPNGIcons && folder.current)
 	{
 		FileBrowser::BrowsableList::Entry* current = folder.current;
-		u32 x = screenMain->ScaleX(1024 - 320);
-		u32 y = screenMain->ScaleY(666) - 240;
+		u32 x = screenMain->ScaleX(1024) - PNG_WIDTH;
+		u32 y = screenMain->ScaleY(666) - PNG_HEIGHT;
 		DisplayPNG(current->filIcon, x, y);
 	}
 }
@@ -1306,6 +1306,10 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 	u32 freeColour = palette[VIC2_COLOUR_INDEX_LGREEN];
 	u32 BAMOffsetX = screenMain->ScaleX(400);
 
+	u32 bmBAMOffsetX = screenMain->ScaleX(1024) - PNG_WIDTH;
+	u32 x_px = 0;
+	u32 y_px = 0;
+
 	ClearScreen();
 
 	if (diskImage->GetDecodedSector(track, sectorNo, buffer))
@@ -1325,12 +1329,16 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 		int blocksFree = 0;
 		int bamTrack;
 		int lastTrackUsed = (int)diskImage->LastTrackUsed() >> 1;
-		for (bamTrack = 0; bamTrack < 35; ++bamTrack)
+		x_px = bmBAMOffsetX;
+		int x_size = PNG_WIDTH/lastTrackUsed;
+		int y_size = PNG_HEIGHT/21;
+
+		for (bamTrack = 0; bamTrack <= lastTrackUsed; ++bamTrack)
 		{
 			if ((bamTrack + 1) != 18)
 				blocksFree += buffer[BAM_OFFSET + bamTrack * BAM_ENTRY_SIZE];
 
-			x = BAMOffsetX;
+			y_px = 0;
 			for (int bit = 0; bit < DiskImage::SectorsPerTrack[bamTrack]; bit++)
 			{
 				u32 bits = buffer[BAM_OFFSET + 1 + (bit >> 3) + bamTrack * BAM_ENTRY_SIZE];
@@ -1338,30 +1346,22 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 
 				if (!used)
 				{
-					snprintf(bufferOut, 128, "%c", screen2petscii(87));
-					screenMain->PrintText(true, x, y, bufferOut, usedColour, bgColour);
+					for (int yy = 0; yy < y_size-2; yy++)
+						for (int xx = 0; xx < x_size-2; xx++)
+							screenMain->PlotPixel(x_px+xx, y_px+yy, usedColour);
 				}
 				else
 				{
-					snprintf(bufferOut, 128, "%c", screen2petscii(81));
-					screenMain->PrintText(true, x, y, bufferOut, freeColour, bgColour);
+					for (int yy = 0; yy < y_size-2; yy++)
+						for (int xx = 0; xx < x_size-2; xx++)
+							screenMain->PlotPixel(x_px+xx, y_px+yy, freeColour);
 				}
-				x += 8;
+				y_px += y_size;
 				bits <<= 1;
 			}
-			y += fontHeight;
+			x_px += x_size;
 		}
-		for (; bamTrack < lastTrackUsed; ++bamTrack)
-		{
-			x = BAMOffsetX;
-			for (int bit = 0; bit < DiskImage::SectorsPerTrack[bamTrack]; bit++)
-			{
-				snprintf(bufferOut, 128, "%c", screen2petscii(87));
-				screenMain->PrintText(true, x, y, bufferOut, usedColour, bgColour);
-				x += 8;
-			}
-			y += fontHeight;
-		}
+
 		x = 0;
 		y = 0;
 		snprintf(bufferOut, 128, "0");
