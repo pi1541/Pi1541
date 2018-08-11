@@ -47,7 +47,7 @@ void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int B
 	opened = true;
 }
 
-void ScreenLCD::ClearArea(u32 x1, u32 y1, u32 x2, u32 y2, RGBA colour)
+void ScreenLCD::DrawRectangle(u32 x1, u32 y1, u32 x2, u32 y2, RGBA colour)
 {
 	ClipRect(x1, y1, x2, y2);
 }

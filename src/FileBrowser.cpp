@@ -713,7 +713,7 @@ void FileBrowser::RefeshDisplay()
 	char buffer[1024];
 	if (f_getcwd(buffer, 1024) == FR_OK)
 	{
-		screenMain->ClearArea(0, 0, (int)screenMain->Width(), 17, bgColour);
+		screenMain->DrawRectangle(0, 0, (int)screenMain->Width(), 17, bgColour);
 		screenMain->PrintText(false, 0, 0, buffer, textColour, bgColour);
 	}
 
@@ -801,8 +801,8 @@ void FileBrowser::DisplayPNG()
 	if (displayPNGIcons && folder.current)
 	{
 		FileBrowser::BrowsableList::Entry* current = folder.current;
-		u32 x = screenMain->ScaleX(1024 - 320);
-		u32 y = screenMain->ScaleY(666) - 240;
+		u32 x = screenMain->ScaleX(1024) - PNG_WIDTH;
+		u32 y = screenMain->ScaleY(666) - PNG_HEIGHT;
 		DisplayPNG(current->filIcon, x, y);
 	}
 }
@@ -1304,7 +1304,12 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 
 	u32 usedColour = palette[VIC2_COLOUR_INDEX_RED];
 	u32 freeColour = palette[VIC2_COLOUR_INDEX_LGREEN];
+	u32 thisColour = 0;
 	u32 BAMOffsetX = screenMain->ScaleX(400);
+
+	u32 bmBAMOffsetX = screenMain->ScaleX(1024) - PNG_WIDTH;
+	u32 x_px = 0;
+	u32 y_px = 0;
 
 	ClearScreen();
 
@@ -1319,49 +1324,78 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 		//165,166 ($A5,$A6) $32,$41 ASCII chars "2A" DOS indicator
 		//167-170 ($A7-$AA) $A0 Shift Space
 		//171-255 ($AB-$FF) $00 Not used, filled with zero (The bytes 180 to 191 can have the contents "blocks free" on many disks.)
+		//AB-FF: Normally unused ($00), except for 40 track extended format,
+		//	see the following two entries:
+		//AC-BF: DOLPHIN DOS track 36-40 BAM entries (only for 40 track)
+		//C0-D3: SPEED DOS track 36-40 BAM entries (only for 40 track)
 
 		strncpy(name, (char*)&buffer[144], 16);
 
 		int blocksFree = 0;
 		int bamTrack;
-		int lastTrackUsed = (int)diskImage->LastTrackUsed() >> 1;
-		for (bamTrack = 0; bamTrack < 35; ++bamTrack)
-		{
-			if ((bamTrack + 1) != 18)
-				blocksFree += buffer[BAM_OFFSET + bamTrack * BAM_ENTRY_SIZE];
+		int lastTrackUsed = (int)diskImage->LastTrackUsed() >> 1;	// 0..34 (or 39)
+		int bamOffset = BAM_OFFSET;
+		int guess40 = 0;
 
-			x = BAMOffsetX;
+		x_px = bmBAMOffsetX;
+		int x_size = PNG_WIDTH/lastTrackUsed;
+		int y_size = PNG_HEIGHT/21;
+
+// try to guess the 40 track format
+		if (lastTrackUsed == 39)
+		{
+			int dolphin_sum = 0;
+			int speeddos_sum = 0;
+			for (int i=0; i<20; i++)
+			{
+				dolphin_sum += buffer[0xac+i];
+				speeddos_sum += buffer[0xc0+i];
+			}
+			if ( dolphin_sum == 0 && speeddos_sum != 0)
+				guess40 = 0xc0;
+			if ( dolphin_sum != 0 && speeddos_sum == 0)
+				guess40 = 0xac;
+
+// debugging
+//snprintf(bufferOut, 128, "LTU %d dd %d sd %d g40 %d", lastTrackUsed, dolphin_sum, speeddos_sum, guess40);
+//screenMain->PrintText(false, x_px, PNG_HEIGHT+30, bufferOut, textColour, bgColour);
+		}
+
+
+		for (bamTrack = 0; bamTrack <= lastTrackUsed; ++bamTrack)
+		{
+			if (bamTrack >= 35)
+				bamOffset = guess40;
+			else
+				bamOffset = BAM_OFFSET;
+
+			if (bamOffset && (bamTrack + 1) != 18)
+				blocksFree += buffer[bamOffset + bamTrack * BAM_ENTRY_SIZE];
+
+			y_px = 0;
 			for (int bit = 0; bit < DiskImage::SectorsPerTrack[bamTrack]; bit++)
 			{
-				u32 bits = buffer[BAM_OFFSET + 1 + (bit >> 3) + bamTrack * BAM_ENTRY_SIZE];
-				bool used = (bits & (1 << (bit & 0x7))) == 0;
+				u32 bits = buffer[bamOffset + 1 + (bit >> 3) + bamTrack * BAM_ENTRY_SIZE];
 
-				if (!used)
-				{
-					snprintf(bufferOut, 128, "%c", screen2petscii(87));
-					screenMain->PrintText(true, x, y, bufferOut, usedColour, bgColour);
-				}
+				if (!guess40 && bamTrack>= 35)
+					thisColour = 0;
+				else if (bits & (1 << (bit & 0x7)))
+					thisColour = freeColour;
 				else
-				{
-					snprintf(bufferOut, 128, "%c", screen2petscii(81));
-					screenMain->PrintText(true, x, y, bufferOut, freeColour, bgColour);
-				}
-				x += 8;
+					thisColour = usedColour;
+
+// highight track 18
+				if ((bamTrack + 1) == 18)
+					screenMain->DrawRectangle(x_px, y_px, x_px+x_size, y_px+y_size, textColour);
+
+				screenMain->DrawRectangle(x_px+1, y_px+1, x_px+x_size-1, y_px+y_size-1, thisColour);
+
+				y_px += y_size;
 				bits <<= 1;
 			}
-			y += fontHeight;
+			x_px += x_size;
 		}
-		for (; bamTrack < lastTrackUsed; ++bamTrack)
-		{
-			x = BAMOffsetX;
-			for (int bit = 0; bit < DiskImage::SectorsPerTrack[bamTrack]; bit++)
-			{
-				snprintf(bufferOut, 128, "%c", screen2petscii(87));
-				screenMain->PrintText(true, x, y, bufferOut, usedColour, bgColour);
-				x += 8;
-			}
-			y += fontHeight;
-		}
+
 		x = 0;
 		y = 0;
 		snprintf(bufferOut, 128, "0");

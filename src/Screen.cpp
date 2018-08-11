@@ -146,7 +146,7 @@ void Screen::PlotPixel8(u32 pixel_offset, RGBA Colour)
 	framebuffer[pixel_offset++] = RED(Colour);
 }
 
-void Screen::ClearArea(u32 x1, u32 y1, u32 x2, u32 y2, RGBA colour)
+void Screen::DrawRectangle(u32 x1, u32 y1, u32 x2, u32 y2, RGBA colour)
 {
 	ClipRect(x1, y1, x2, y2);
 
@@ -182,7 +182,7 @@ void Screen::ScrollArea(u32 x1, u32 y1, u32 x2, u32 y2)
 
 void Screen::Clear(RGBA colour)
 {
-	ClearArea(0, 0, width, height, colour);
+	DrawRectangle(0, 0, width, height, colour);
 }
 
 u32 Screen::GetFontHeight()
@@ -299,7 +299,7 @@ u32 Screen::PrintText(bool petscii, u32 x, u32 y, char *ptr, RGBA TxtColour, RGB
 		{
 			if (!measureOnly)
 			{
-				ClearArea(xCursor, yCursor, xCursor + BitFontWth, yCursor + fontHeight, BkColour);
+				DrawRectangle(xCursor, yCursor, xCursor + BitFontWth, yCursor + fontHeight, BkColour);
 				WriteChar(petscii, xCursor, yCursor, c, TxtColour);
 			}
 			xCursor += BitFontWth;
