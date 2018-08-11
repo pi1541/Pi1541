@@ -23,14 +23,14 @@
 #include "debug.h"
 #include "ssd_logo.h"
 
-void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int BSCMaster, int LCDAddress, int LCDFlip, int LCDType)
+void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int BSCMaster, int LCDAddress, int LCDFlip, LCD_MODEL LCDType)
 {
 	bpp = 1;
 
 	if (widthDesired < 128)
 		widthDesired = 128;
-	if (heightDesired < 64)
-		heightDesired = 64;
+	if (heightDesired < 32)
+		heightDesired = 32;
 	if (widthDesired > 128)
 		widthDesired = 128;
 	if (heightDesired > 64)
@@ -39,7 +39,7 @@ void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int B
 	width = widthDesired;
 	height = heightDesired;
 
-	ssd1306 = new SSD1306(BSCMaster, LCDAddress, LCDFlip, LCDType);
+	ssd1306 = new SSD1306(BSCMaster, LCDAddress, width, height, LCDFlip, LCDType);
 	ssd1306->ClearScreen();
 	ssd1306->RefreshScreen();
 	ssd1306->DisplayOn();
@@ -127,5 +127,5 @@ void ScreenLCD::SwapBuffers()
 void ScreenLCD::RefreshRows(u32 start, u32 amountOfRows)
 {
 	if (ssd1306)
-		ssd1306->RefreshRows(start, amountOfRows);
+		ssd1306->RefreshTextRows(start, amountOfRows);
 }

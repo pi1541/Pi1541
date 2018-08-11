@@ -46,7 +46,7 @@ extern "C"
 #include "ssd_logo.h"
 
 unsigned versionMajor = 1;
-unsigned versionMinor = 9;
+unsigned versionMinor = 11;
 
 // When the emulated CPU starts we execute the first million odd cycles in non-real-time (ie as fast as possible so the emulated 1541 becomes responsive to CBM-Browser asap)
 // During these cycles the CPU is executing the ROM self test routines (these do not need to be cycle accurate)
@@ -102,12 +102,6 @@ unsigned int screenHeight = 768;
 const char* termainalTextRed = "\E[31m";
 const char* termainalTextNormal = "\E[0m";
 
-typedef enum {
-	EXIT_UNKNOWN,
-	EXIT_RESET,
-	EXIT_CD,
-	EXIT_KEYBOARD
-} EXIT_TYPE;
 EXIT_TYPE exitReason = EXIT_UNKNOWN;
 
 // Hooks required for USPi library
@@ -277,26 +271,30 @@ void InitialiseLCD()
 	int i2cLcdOnContrast = options.I2CLcdOnContrast();
 	int i2cLcdDimContrast = options.I2CLcdDimContrast();
 	int i2cLcdDimTime = options.I2CLcdDimTime();
-	int i2cLcdModel = options.I2CLcdModel();
+	LCD_MODEL i2cLcdModel = options.I2CLcdModel();
 
 	if (i2cLcdModel)
 	{
+		int width = 128;
+		int height = 64;
+		if (i2cLcdModel == LCD_1306_128x32)
+			height = 32;
 		screenLCD = new ScreenLCD();
-		screenLCD->Open(128, 64, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
+		screenLCD->Open(width, height, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
 		screenLCD->SetContrast(i2cLcdOnContrast);
 		screenLCD->ClearInit(0); // sh1106 needs this
 
 		bool logo_done = false;
-		if (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0)
+		if ( (height == 64) && (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0) )
 		{
-			screenLCD->PlotRawImage(logo_ssd_1541ii, 0, 0, 128, 64);
+			screenLCD->PlotRawImage(logo_ssd_1541ii, 0, 0, width, height);
 			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
 			screenLCD->PrintText(0, 16, 0, tempBuffer, 0xffffffff);
 			logo_done = true;
 		}
-		else if (strcasecmp(options.GetLcdLogoName(), "1541classic") == 0)
+		else if (( height == 64) && (strcasecmp(options.GetLcdLogoName(), "1541classic") == 0) )
 		{
-			screenLCD->PlotRawImage(logo_ssd_1541classic, 0, 0, 128, 64);
+			screenLCD->PlotRawImage(logo_ssd_1541classic, 0, 0, width, height);
 			logo_done = true;
 		}
 		else if (f_stat(options.GetLcdLogoName(), &filLcdIcon) == FR_OK && filLcdIcon.fsize <= LCD_LOGO_MAX_SIZE)
@@ -310,7 +308,7 @@ void InitialiseLCD()
 				u32 bytesRead;
 				f_read(&fp, LcdLogoFile, LCD_LOGO_MAX_SIZE, &bytesRead);
 				f_close(&fp);
-				screenLCD->PlotRawImage(LcdLogoFile, 0, 0, 128, 64);
+				screenLCD->PlotRawImage(LcdLogoFile, 0, 0, width, height);
 				logo_done = true;
 			}
 		}
@@ -318,8 +316,8 @@ void InitialiseLCD()
 		if (!logo_done)
 		{
 			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
-			int x = (128 - 8*strlen(tempBuffer) ) /2;
-			int y = (64-16)/2;
+			int x = (width - 8*strlen(tempBuffer) ) /2;
+			int y = (height-16)/2;
 			screenLCD->PrintText(0, x, y, tempBuffer, 0x0);
 		}
 		screenLCD->RefreshScreen();
@@ -355,9 +353,9 @@ void UpdateScreen()
 	u32 textColour = COLOUR_BLACK;
 	u32 bgColour = COLOUR_WHITE;
 
+	RGBA atnColour = COLOUR_YELLOW;
 	RGBA dataColour = COLOUR_GREEN;
 	RGBA clockColour = COLOUR_CYAN;
-	RGBA atnColour = COLOUR_YELLOW;
 	RGBA BkColour = FileBrowser::Colour(VIC2_COLOUR_INDEX_BLUE);
 
 	int height = screen.ScaleY(60);
@@ -401,6 +399,9 @@ void UpdateScreen()
 			//refreshUartStatusDisplay = true;
 		}
 
+		if (options.GraphIEC())
+			screen.DrawLineV(graphX, top3, bottom, BkColour);
+
 		value = IEC_Bus::GetPI_Atn();
 		if (options.GraphIEC())
 		{
@@ -411,7 +412,6 @@ void UpdateScreen()
 			}
 			else
 			{
-				screen.DrawLineV(graphX, top3, bottom, BkColour);
 				if (value) screen.PlotPixel(graphX, top3, atnColour);
 				else screen.PlotPixel(graphX, bottom, atnColour);
 			}
@@ -434,7 +434,6 @@ void UpdateScreen()
 			}
 			else
 			{
-				screen.DrawLineV(graphX, top2, bottom, BkColour);
 				if (value) screen.PlotPixel(graphX, top2, dataColour);
 				else screen.PlotPixel(graphX, bottom, dataColour);
 			}
@@ -457,7 +456,6 @@ void UpdateScreen()
 			}
 			else
 			{
-				screen.DrawLineV(graphX, top, bottom, BkColour);
 				if (value) screen.PlotPixel(graphX, top, clockColour);
 				else screen.PlotPixel(graphX, bottom, clockColour);
 			}
@@ -471,6 +469,9 @@ void UpdateScreen()
 		}
 
 		if (graphX++ > screenWidthM1) graphX = 0;
+// black vertical line ahead of graph
+		if (options.GraphIEC())
+			screen.DrawLineV(graphX, top3, bottom, COLOUR_BLACK);
 
 		u32 track = pi1541.drive.Track();
 		if (track != oldTrack)
@@ -549,20 +550,15 @@ static void PlaySoundDMA()
 	write32(DMA0_BASE + DMA_CS, DMA_ACTIVE);
 }
 
-static void SetVIAsDeviceID(u8 id)
-{
-	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, id & 1);
-	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, id & 2);
-}
-
 void GlobalSetDeviceID(u8 id)
 {
 	deviceID = id;
 	m_IEC_Commands.SetDeviceId(id);
-	SetVIAsDeviceID(id);
+	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, id & 1);
+	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, id & 2);
 }
 
-static void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
+void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
 {
 	const char* autoMountImageName = options.GetAutoMountImageName();
 	if (autoMountImageName[0] != 0)
@@ -570,8 +566,9 @@ static void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowse
 		switch (reset_reason)
 		{
 			case EXIT_UNKNOWN:
+			case EXIT_AUTOLOAD:
 			case EXIT_RESET:
-				fileBrowser->AutoSelectImage(autoMountImageName);
+				fileBrowser->SelectAutoMountImage(autoMountImageName);
 			break;
 			case EXIT_CD:
 			case EXIT_KEYBOARD:
@@ -608,9 +605,13 @@ void emulator()
 		{
 			IEC_Bus::VIA = 0;
 
+			IEC_Bus::Reset();
+// workaround for occasional oled curruption
+			if (screenLCD)
+				screenLCD->ClearInit(0);
+
 			roms.ResetCurrentROMIndex();
 			fileBrowser->ClearScreen();
-			IEC_Bus::Reset();
 
 			fileBrowserSelectedName = 0;
 			fileBrowser->ClearSelections();
@@ -649,17 +650,14 @@ void emulator()
 							CheckAutoMountImage(EXIT_UNKNOWN, fileBrowser);
 							break;
 						case IEC_Commands::NONE:
-							{
-								fileBrowser->Update();
+							fileBrowser->Update();
 
-								// Check selections made via FileBrowser
-								if (fileBrowser->SelectionsMade())
-									emulating = BeginEmulating(fileBrowser, fileBrowser->LastSelectionName());
-							}
+							// Check selections made via FileBrowser
+							if (fileBrowser->SelectionsMade())
+								emulating = BeginEmulating(fileBrowser, fileBrowser->LastSelectionName());
 							break;
 						case IEC_Commands::IMAGE_SELECTED:
-						{
-							// Check selections made via FileBrowser
+							// Check selections made via IEC commands (like fb64)
 
 							fileBrowserSelectedName = m_IEC_Commands.GetNameOfImageSelected();
 
@@ -681,8 +679,10 @@ void emulator()
 								DEBUG_LOG("IEC mounting %s\r\n", filInfoSelected->fname);
 								bool readOnly = (filInfoSelected->fattrib & AM_RDO) != 0;
 
-								if (diskCaddy.Insert(filInfoSelected, readOnly)) emulating = BeginEmulating(fileBrowser, filInfoSelected->fname);
-								else fileBrowserSelectedName = 0;
+								if (diskCaddy.Insert(filInfoSelected, readOnly))
+									emulating = BeginEmulating(fileBrowser, filInfoSelected->fname);
+								else
+									fileBrowserSelectedName = 0;
 							}
 							else
 							{
@@ -693,8 +693,7 @@ void emulator()
 								m_IEC_Commands.Reset();
 
 							selectedViaIECCommands = true;
-						}
-						break;
+							break;
 						case IEC_Commands::DIR_PUSHED:
 							fileBrowser->FolderChanged();
 							break;
@@ -711,7 +710,6 @@ void emulator()
 						case IEC_Commands::DEVICEID_CHANGED:
 							GlobalSetDeviceID( m_IEC_Commands.GetDeviceId() );
 							fileBrowser->ShowDeviceAndROM();
-							SetVIAsDeviceID(deviceID);	// Let the emulated VIA know
 							break;
 						default:
 							break;
@@ -840,41 +838,16 @@ void emulator()
 					IEC_Bus::RefreshOuts();	// Now output all outputs.
 				}
 
-				// We have now output so HERE is where the next phi2 cycle starts.
-				pi1541.Update();
-
 				// Other core will check the uart (as it is slow) (could enable uart irqs - will they execute on this core?)
 				inputMappings->CheckKeyboardEmulationMode(numberOfImages, numberOfImagesMax);
 				inputMappings->CheckButtonsEmulationMode();
 
 				bool exitEmulation = inputMappings->Exit();
-				bool nextDisk = inputMappings->NextDisk();
-				bool prevDisk = inputMappings->PrevDisk();
+				bool exitDoAutoLoad = inputMappings->AutoLoad();
 
-				if (nextDisk)
-				{
-					pi1541.drive.Insert(diskCaddy.PrevDisk());
-				}
-				else if (prevDisk)
-				{
-					pi1541.drive.Insert(diskCaddy.NextDisk());
-				}
-				else if (numberOfImages > 1 && inputMappings->directDiskSwapRequest != 0)
-				{
-					for (caddyIndex = 0; caddyIndex < numberOfImagesMax; ++caddyIndex)
-					{
-						if (inputMappings->directDiskSwapRequest & (1 << caddyIndex))
-						{
-							DiskImage* diskImage = diskCaddy.SelectImage(caddyIndex);
-							if (diskImage && diskImage != pi1541.drive.GetDiskImage())
-							{
-								pi1541.drive.Insert(diskImage);
-								break;
-							}
-						}
-					}
-					inputMappings->directDiskSwapRequest = 0;
-				}
+				// We have now output so HERE is where the next phi2 cycle starts.
+				pi1541.Update();
+
 
 				bool reset = IEC_Bus::IsReset();
 				if (reset)
@@ -882,7 +855,7 @@ void emulator()
 				else
 					resetCount = 0;
 
-				if (!emulating || (resetCount > 10) || exitEmulation)
+				if (!emulating || (resetCount > 10) || exitEmulation || exitDoAutoLoad)
 				{
 					// Clearing the caddy now
 					//	- will write back all changed/dirty/written to disk images now
@@ -890,6 +863,10 @@ void emulator()
 					//	- pass in a call back function?
 					if (diskCaddy.Empty())
 						IEC_Bus::WaitMicroSeconds(2 * 1000000);
+
+// workaround for occasional oled curruption
+//					if (screenLCD)
+//						screenLCD->ClearInit(0);
 
 					fileBrowser->ClearSelections();
 					fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
@@ -906,8 +883,9 @@ void emulator()
 					}
 					if (exitEmulation)
 						exitReason = EXIT_KEYBOARD;
+					if (exitDoAutoLoad)
+						exitReason = EXIT_AUTOLOAD;
 					break;
-
 				}
 
 				if (cycleCount < FAST_BOOT_CYCLES)	// cycleCount is used so we can quickly get through 1541's self test code. This will make the emulated 1541 responsive to commands asap.
@@ -931,6 +909,36 @@ void emulator()
 					while (ctAfter == ctBefore);
 				}
 				ctBefore = ctAfter;
+
+				if (numberOfImages > 1)
+				{
+					bool nextDisk = inputMappings->NextDisk();
+					bool prevDisk = inputMappings->PrevDisk();
+					if (nextDisk)
+					{
+						pi1541.drive.Insert(diskCaddy.PrevDisk());
+					}
+					else if (prevDisk)
+					{
+						pi1541.drive.Insert(diskCaddy.NextDisk());
+					}
+					else if (inputMappings->directDiskSwapRequest != 0)
+					{
+						for (caddyIndex = 0; caddyIndex < numberOfImagesMax; ++caddyIndex)
+						{
+							if (inputMappings->directDiskSwapRequest & (1 << caddyIndex))
+							{
+								DiskImage* diskImage = diskCaddy.SelectImage(caddyIndex);
+								if (diskImage && diskImage != pi1541.drive.GetDiskImage())
+								{
+									pi1541.drive.Insert(diskImage);
+									break;
+								}
+							}
+						}
+						inputMappings->directDiskSwapRequest = 0;
+					}
+				}
 			}
 		}
 	}
@@ -968,8 +976,15 @@ static bool AttemptToLoadROM(char* ROMName)
 	FIL fp;
 	FRESULT res;
 
-	res = f_open(&fp, ROMName, FA_READ);
-	if (res == FR_OK)
+	char ROMName2[256] = "/roms/";
+
+	if (ROMName[0] != '/')	// not a full path, prepend /roms/
+		strncat (ROMName2, ROMName, 240);
+	else
+		ROMName2[0] = 0;
+
+	if ( (FR_OK == f_open(&fp, ROMName, FA_READ))
+		|| (FR_OK == f_open(&fp, ROMName2, FA_READ)) )
 	{
 		u32 bytesRead;
 		SetACTLed(true);
@@ -1083,22 +1098,28 @@ static void CheckOptions()
 	u32 widthScreen = screen.Width();
 	u32 heightScreen = screen.Height();
 	u32 xpos, ypos;
-	const char* ROMName;
 
 	deviceID = (u8)options.GetDeviceID();
 	DEBUG_LOG("DeviceID = %d\r\n", deviceID);
 
-	ROMName = options.GetRomFontName();
-	if (ROMName)
+	const char* FontROMName = options.GetRomFontName();
+	if (FontROMName)
 	{
+		char FontROMName2[256] = "/roms/";
+
+		if (FontROMName[0] != '/')	// not a full path, prepend /roms/
+			strncat (FontROMName2, FontROMName, 240);
+		else
+			FontROMName2[0] = 0;
+
 		//DEBUG_LOG("%d Rom Name = %s\r\n", ROMIndex, ROMName);
-		res = f_open(&fp, ROMName, FA_READ);
-		if (res == FR_OK)
+		if ( (FR_OK == f_open(&fp, FontROMName, FA_READ))
+			|| (FR_OK == f_open(&fp, FontROMName2, FA_READ)) )
 		{
 			u32 bytesRead;
 
 			screen.Clear(COLOUR_BLACK);
-			snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
+			snprintf(tempBuffer, tempBufferSize, "Loading Font ROM %s\r\n", FontROMName);
 			screen.MeasureText(false, tempBuffer, &widthText, &heightText);
 			xpos = (widthScreen - widthText) >> 1;
 			ypos = (heightScreen - heightText) >> 1;
@@ -1122,32 +1143,40 @@ static void CheckOptions()
 	{
 		roms.ROMValid[ROMIndex] = false;
 		const char* ROMName = options.GetRomName(ROMIndex);
-		if (ROMName[0])
+		char ROMName2[256] = "/roms/";
+
+		if (ROMName[0] == 0)
+			continue;
+
+		if (ROMName[0] != '/')	// not a full path, prepend /roms/
+			strncat (ROMName2, ROMName, 240);
+		else
+			ROMName2[0] = 0;
+
+		//DEBUG_LOG("%d Rom Name = %s\r\n", ROMIndex, ROMName);
+		if ( (FR_OK == f_open(&fp, ROMName, FA_READ))
+			|| (FR_OK == f_open(&fp, ROMName2, FA_READ)) )
 		{
-			//DEBUG_LOG("%d Rom Name = %s\r\n", ROMIndex, ROMName);
-			res = f_open(&fp, ROMName, FA_READ);
-			if (res == FR_OK)
+			u32 bytesRead;
+
+			screen.Clear(COLOUR_BLACK);
+			snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
+			screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+			xpos = (widthScreen - widthText) >> 1;
+			ypos = (heightScreen - heightText) >> 1;
+			screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+
+			SetACTLed(true);
+			res = f_read(&fp, roms.ROMImages[ROMIndex], ROMs::ROM_SIZE, &bytesRead);
+			SetACTLed(false);
+			if (res == FR_OK && bytesRead == ROMs::ROM_SIZE)
 			{
-				u32 bytesRead;
-
-				screen.Clear(COLOUR_BLACK);
-				snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
-				screen.MeasureText(false, tempBuffer, &widthText, &heightText);
-				xpos = (widthScreen - widthText) >> 1;
-				ypos = (heightScreen - heightText) >> 1;
-				screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
-
-				SetACTLed(true);
-				res = f_read(&fp, roms.ROMImages[ROMIndex], ROMs::ROM_SIZE, &bytesRead);
-				SetACTLed(false);
-				if (res == FR_OK && bytesRead == ROMs::ROM_SIZE)
-				{
-					strncpy(roms.ROMNames[ROMIndex], ROMName, 255);
-					roms.ROMValid[ROMIndex] = true;
-				}
-				f_close(&fp);
-				//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
+				strncpy(roms.ROMNames[ROMIndex], ROMName, 255);
+				roms.ROMValid[ROMIndex] = true;
+				roms.UpdateLongestRomNameLen( strlen(roms.ROMNames[ROMIndex]) );
 			}
+			f_close(&fp);
+			//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
 		}
 	}
 
@@ -1299,10 +1328,9 @@ extern "C"
 
 		f_chdir("/1541");
 
-		m_IEC_Commands.SetDeviceId(deviceID);
 		m_IEC_Commands.SetStarFileName(options.GetStarFileName());
 
-		SetVIAsDeviceID(deviceID);
+		GlobalSetDeviceID(deviceID);
 
 		pi1541.drive.SetVIA(&pi1541.VIA[1]);
 		pi1541.VIA[0].GetPortB()->SetPortOut(0, IEC_Bus::PortB_OnPortOut);

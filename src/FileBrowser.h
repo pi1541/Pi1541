@@ -48,6 +48,8 @@
 
 #define STATUS_BAR_POSITION_Y (40 * 16 + 10)
 
+#define KEYBOARD_SEARCH_BUFFER_SIZE 512
+
 class FileBrowser
 {
 public:
@@ -95,13 +97,7 @@ public:
 	class BrowsableList
 	{
 	public:
-		BrowsableList()
-			: current(0)
-			, currentIndex(0)
-			, currentHighlightTime(0)
-			, scrollHighlightRate(0)
-		{
-		}
+		BrowsableList();
 
 		void Clear()
 		{
@@ -163,12 +159,16 @@ public:
 		float currentHighlightTime;
 		float scrollHighlightRate;
 
+		u32 lastUpdateTime;
+		char searchPrefix[KEYBOARD_SEARCH_BUFFER_SIZE];
+		u32 searchPrefixIndex;
+		u32 searchLastKeystrokeTime;
 		std::vector<BrowsableListView> views;
 	};
 
 	FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate);
 
-	void AutoSelectImage(const char* image);
+	void SelectAutoMountImage(const char* image);
 	void DisplayRoot();
 	void Update();
 
@@ -191,10 +191,9 @@ public:
 	static const long int LSTBuffer_size = 1024 * 8;
 	static unsigned char LSTBuffer[];
 
-	static const unsigned SwapKeys[];
-
 	static u32 Colour(int index);
 
+	bool MakeLST(const char* filenameLST);
 	bool SelectLST(const char* filenameLST);
 
 	void SetScrollHighlightRate(float value) { scrollHighlightRate = value; }
@@ -213,9 +212,12 @@ private:
 	bool FillCaddyWithSelections();
 
 	bool AddToCaddy(FileBrowser::BrowsableList::Entry* current);
+	bool AddImageToCaddy(FileBrowser::BrowsableList::Entry* current);
 
 	bool CheckForPNG(const char* filename, FILINFO& filIcon);
 	void DisplayPNG();
+
+	bool SelectROMOrDevice(u32 index);
 
 	enum State
 	{
@@ -230,7 +232,7 @@ private:
 	ROMs* roms;
 	u8* deviceID;
 	bool displayPNGIcons;
-	bool buttonChangedDevice;
+	bool buttonChangedROMDevice;
 
 	BrowsableList caddySelections;
 

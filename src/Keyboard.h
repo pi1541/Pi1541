@@ -340,13 +340,14 @@ public:
 		u64 mask = 1ULL << (rawKey & 0x3f);
 		return (keyStatus[keyStatusIndex] & mask);
 	}
+
 	inline bool KeyAnyHeld()
-	{
-		return (keyStatus[0] | keyStatus[1]);
-	}
-	inline bool KeyEitherAlt()
-	{
-		return (modifier & (KEY_MOD_LALT | KEY_MOD_RALT) );
-	}
+	{ return (keyStatus[0] | keyStatus[1]); }
+
+	inline bool KeyEitherAlt() { return (modifier & (KEY_MOD_LALT | KEY_MOD_RALT) ); }
+
+	inline bool KeyNoModifiers() { return (!modifier ); }
+
+	inline bool KeyLCtrlAlt() { return (modifier == (KEY_MOD_LALT | KEY_MOD_LCTRL) ); }
 };
 #endif

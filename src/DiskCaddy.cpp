@@ -32,6 +32,8 @@ static char buffer[256] = { 0 };
 static u32 white = RGBA(0xff, 0xff, 0xff, 0xff);
 static u32 red = RGBA(0xff, 0, 0, 0xff);
 
+#define LCDFONTHEIGHT 16
+
 bool DiskCaddy::Empty()
 {
 	int x;
@@ -62,7 +64,7 @@ bool DiskCaddy::Empty()
 
 				snprintf(buffer, 256, "Saving");
 				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), BkColour);
-				y += 16;
+				y += LCDFONTHEIGHT;
 				snprintf(buffer, 256, "%s                ", disks[index].GetName());
 				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 				screenLCD->SwapBuffers();
@@ -91,7 +93,7 @@ bool DiskCaddy::Empty()
 
 			snprintf(buffer, 256, "Saving");
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), BkColour);
-			y += 16;
+			y += LCDFONTHEIGHT;
 			snprintf(buffer, 256, "Complete                ");
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			screenLCD->SwapBuffers();
@@ -130,7 +132,7 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 
 			snprintf(buffer, 256, "Loading");
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), BkColour);
-			y += 16;
+			y += LCDFONTHEIGHT;
 			snprintf(buffer, 256, "%s                ", fileInfo->fname);
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			screenLCD->SwapBuffers();
@@ -282,47 +284,50 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 	if (screenLCD)
 	{
 		unsigned numberOfImages = GetNumberOfImages();
+		unsigned numberOfDisplayedImages = screenLCD->Height()/LCDFONTHEIGHT-1;
 		unsigned caddyIndex;
 
-		if (screenLCD)
+		RGBA BkColour = RGBA(0, 0, 0, 0xFF);
+		//screenLCD->Clear(BkColour);
+		x = 0;
+		y = 0;
+
+		snprintf(buffer, 256, "        D %d/%d %c        "
+			, index + 1
+			, numberOfImages
+			, GetImage(index)->GetReadOnly() ? 'R' : ' '
+			);
+		screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
+		y += LCDFONTHEIGHT;
+
+		if (numberOfImages > numberOfDisplayedImages && index > numberOfDisplayedImages-1)
 		{
-			RGBA BkColour = RGBA(0, 0, 0, 0xFF);
-			//screenLCD->Clear(BkColour);
-			x = 0;
-			y = 0;
-
-			//snprintf(buffer, 256, "Emulating %d/%d           ", index + 1, numberOfImages);
-			snprintf(buffer, 256, "        D %d/%d           ", index + 1, numberOfImages);
-			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
-			y += 16;
-
-			if (numberOfImages > 3 && index > 2)
-			{
-				if (numberOfImages - index < 3)
-					caddyIndex = numberOfImages - 3;
-				else
-					caddyIndex = index;
-			}
+			if (numberOfImages - index < numberOfDisplayedImages)
+				caddyIndex = numberOfImages - numberOfDisplayedImages;
 			else
-			{
-				caddyIndex = 0;
-			}
-
-			for (; caddyIndex < numberOfImages; ++caddyIndex)
-			{
-				DiskImage* image = GetImage(caddyIndex);
-				const char* name = image->GetName();
-				if (name)
-				{
-					snprintf(buffer, 256, "%d %s                 ", caddyIndex + 1, name);
-					screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), caddyIndex == index ? RGBA(0xff, 0xff, 0xff, 0xff) : BkColour);
-					y += 16;
-				}
-				if (y >= screenLCD->Height())
-					break;
-			}
-			screenLCD->SwapBuffers();
+				caddyIndex = index;
 		}
+		else
+		{
+			caddyIndex = 0;
+		}
+
+		for (; caddyIndex < numberOfImages; ++caddyIndex)
+		{
+			DiskImage* image = GetImage(caddyIndex);
+			const char* name = image->GetName();
+			if (name)
+			{
+				memset(buffer, ' ',  screenLCD->Width()/screenLCD->GetFontWidth());
+				screenLCD->PrintText(false, x, y, buffer, BkColour, BkColour);
+				snprintf(buffer, 256, "%d %s", caddyIndex + 1, name);
+				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), caddyIndex == index ? RGBA(0xff, 0xff, 0xff, 0xff) : BkColour);
+				y += LCDFONTHEIGHT;
+			}
+			if (y >= screenLCD->Height())
+				break;
+		}
+		screenLCD->SwapBuffers();
 	}
 }
 

@@ -32,13 +32,23 @@
 #define SPACE_FLAG		(1 << 8)
 #define BACK_FLAG		(1 << 9)
 #define INSERT_FLAG		(1 << 10)
-#define NUMBER_FLAG		(1 << 11)
+
+#define NUMLET_FLAG		(1 << 11)
 
 #define PAGEDOWN_LCD_FLAG	(1 << 12)
 #define PAGEUP_LCD_FLAG		(1 << 13)
 
 #define NEWD64_FLAG		(1 << 14)
+#define AUTOLOAD_FLAG		(1 << 15)
+#define FAKERESET_FLAG		(1 << 16)
+#define WRITEPROTECT_FLAG	(1 << 17)
+#define MAKELST_FLAG		(1 << 18)
+#define HOME_FLAG		(1 << 19)
+#define END_FLAG		(1 << 20)
+
+#define FUNCTION_FLAG		(1 << 21)
 // dont exceed 32!!
+
 
 class InputMappings : public Singleton<InputMappings>
 {
@@ -52,6 +62,12 @@ protected:
 
 	bool insertButtonPressedPrev;
 	bool insertButtonPressed;
+
+	bool enterButtonPressedPrev;
+	bool enterButtonPressed;
+
+	unsigned keyboardNumLetter;
+	unsigned inputROMOrDevice;
 
 	//inline void SetUartFlag(unsigned flag) { uartFlags |= flag;	}
 	//inline bool UartFlag(unsigned flag) { return (uartFlags & flag) != 0; }
@@ -95,6 +111,10 @@ public:
 		return KeyboardFlag(PREV_FLAG)/* | UartFlag(PREV_FLAG)*/ | ButtonFlag(PREV_FLAG);
 	}
 
+	inline bool AutoLoad() { return KeyboardFlag(AUTOLOAD_FLAG); }
+
+	inline bool FakeReset() { return KeyboardFlag(FAKERESET_FLAG); }
+
 	inline bool BrowseSelect()
 	{
 		return KeyboardFlag(ENTER_FLAG)/* | UartFlag(ENTER_FLAG)*/ | ButtonFlag(ENTER_FLAG);
@@ -119,10 +139,7 @@ public:
 	{
 		return KeyboardFlag(PAGEUP_FLAG)/* | UartFlag(PAGEUP_FLAG)*/;
 	}
-	inline bool BrowsePageUpLCD()
-	{
-		return KeyboardFlag(PAGEUP_LCD_FLAG);
-	}
+	inline bool BrowsePageUpLCD() { return KeyboardFlag(PAGEUP_LCD_FLAG); }
 
 	inline bool BrowseDown()
 	{
@@ -133,20 +150,34 @@ public:
 	{
 		return KeyboardFlag(PAGEDOWN_FLAG)/* | UartFlag(PAGEDOWN_FLAG)*/;
 	}
-	inline bool BrowsePageDownLCD()
-	{
-		return KeyboardFlag(PAGEDOWN_LCD_FLAG);
-	}
+	inline bool BrowsePageDownLCD() { return KeyboardFlag(PAGEDOWN_LCD_FLAG); }
 
 	inline bool BrowseInsert()
 	{
 		return KeyboardFlag(INSERT_FLAG)/* | UartFlag(INSERT_FLAG)*/ | ButtonFlag(INSERT_FLAG);
 	}
 
-	inline bool BrowseNewD64()
+	inline bool BrowseFunction()
 	{
-		return KeyboardFlag(NEWD64_FLAG);
+		return KeyboardFlag(FUNCTION_FLAG) | ButtonFlag(FUNCTION_FLAG);
 	}
+
+	inline bool BrowseNewD64() { return KeyboardFlag(NEWD64_FLAG); }
+
+	inline bool BrowseAutoLoad() { return KeyboardFlag(AUTOLOAD_FLAG); }
+
+	inline bool BrowseFakeReset() { return KeyboardFlag(FAKERESET_FLAG); }
+
+	inline bool BrowseWriteProtect() { return KeyboardFlag(WRITEPROTECT_FLAG); }
+
+	inline bool MakeLSTFile() { return KeyboardFlag(MAKELST_FLAG); }
+
+	inline bool BrowseHome() { return KeyboardFlag(HOME_FLAG); }
+
+	inline bool BrowseEnd() { return KeyboardFlag(END_FLAG); }
+
+	inline char getKeyboardNumLetter() { return keyboardNumLetter; }
+	inline unsigned getROMOrDevice() { return inputROMOrDevice; }
 
 	// Used by the 2 cores so need to be volatile
 	//volatile static unsigned directDiskSwapRequest;
@@ -156,3 +187,4 @@ public:
 //	static unsigned escapeSequenceIndex;
 };
 #endif
+

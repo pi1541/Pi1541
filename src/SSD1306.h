@@ -18,6 +18,8 @@
 
 #ifndef SSD1306_H
 #define SSD1306_H
+
+#include <stdlib.h>
 #include "types.h"
 extern "C"
 {
@@ -66,17 +68,14 @@ extern "C"
 //0000000					|							 0
 //________________________________________________________
 
-#define SSD1306_LCDWIDTH 128
-#define SSD1306_LCDHEIGHT 64
-
-#define SSD1306_128x64_BYTES ((SSD1306_LCDWIDTH * SSD1306_LCDHEIGHT) / 8)
+#define SSD1306_128x64_BYTES ((128 * 64) / 8)
 
 class SSD1306
 {
 public:
 	// 128x32 0x3C
 	// 128x64 0x3D or 0x3C (if SA0 is grounded)
-	SSD1306(int BSCMaster = 1, u8 address = 0x3C, int flip = 0, int type=1306);
+	SSD1306(int BSCMaster = 1, u8 address = 0x3C, unsigned width = 128, unsigned height = 64, int flip = 0, LCD_MODEL type=LCD_UNKNOWN);
 
 	void PlotCharacter(int x, int y, char ascii, bool inverse);
 	void PlotText(int x, int y, char* str, bool inverse);
@@ -91,7 +90,7 @@ public:
 	void ClearScreen();
 	void RefreshScreen();
 	void RefreshPage(u32 page);
-	void RefreshRows(u32 start, u32 amountOfRows);
+	void RefreshTextRows(u32 start, u32 amountOfRows);
 	void SetDisplayWindow(u8 x1, u8 y1, u8 x2, u8 y2);
 	void PlotPixel(int x, int y, int c);
 	void PlotImage(const unsigned char * source);
@@ -101,15 +100,21 @@ protected:
 	void SendData(u8 data);
 
 	void Home();
-	void MoveCursorByte(u8 row, u8 col);
+	void SetDataPointer(u8 row, u8 col);
 
-	unsigned char frame[SSD1306_128x64_BYTES];
+//	unsigned char frame[SSD1306_128x64_BYTES];
+//	unsigned char oldFrame[SSD1306_128x64_BYTES];
+	unsigned char * frame;
+	unsigned char * oldFrame;
+	unsigned sizeof_frame;
 
 	int BSCMaster;
 	u8 address;
 	int type;
 	int flip;
 	int contrast;
+	unsigned width;
+	unsigned height;
 };
 #endif
 
