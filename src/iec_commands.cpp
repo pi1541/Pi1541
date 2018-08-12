@@ -1778,7 +1778,6 @@ void IEC_Commands::OpenFile()
 			}
 			if (C128BootSectorName)
 			{
-//blah
 				FIL fpBS;
 				u32 bytes;
 				if (FR_OK == f_open(&fpBS, C128BootSectorName, FA_READ))
