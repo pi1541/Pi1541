@@ -1,0 +1,5 @@
+buzbard's c128 bootsect.7z
+http://www.lemon64.com/forum/viewtopic.php?t=54219
+modified by penfold42 to include a sleep for 2 secs while cpm.d64 loads
+bootcpm.128
+
