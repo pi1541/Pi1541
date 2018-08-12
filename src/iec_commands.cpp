@@ -235,6 +235,7 @@ IEC_Commands::IEC_Commands()
 {
 	deviceID = 8;
 	usingVIC20 = false;
+	autoBootFB128 = false;
 	Reset();
 	starFileName = 0;
 }
@@ -1718,8 +1719,66 @@ void IEC_Commands::OpenFile()
 	Channel& channel = channels[secondary];
 	if (channel.command[0] == '#')
 	{
+		Channel& channelCommand = channels[15];
+
 		// Direct acces is unsupported. Without a mounted disk image tracks and sectors have no meaning.
 		//DEBUG_LOG("Driect access\r\n");
+		if (strcmp((char*)channelCommand.buffer, "U1:13 0 01 00") == 0)
+		{
+			// This is a 128 trying to auto boot
+			memset(channel.buffer, 0, 256);
+			channel.cursor = 256;
+
+			if (autoBootFB128)
+			{
+				int index = 0;
+				channel.buffer[0] = 'C';
+				channel.buffer[1] = 'B';
+				channel.buffer[2] = 'M';
+				index += 3;
+				index += 4;
+				channel.buffer[index++] = 'P';
+				channel.buffer[index++] = 'I';
+				channel.buffer[index++] = '1';
+				channel.buffer[index++] = '5';
+				channel.buffer[index++] = '4';
+				channel.buffer[index++] = '1';
+				channel.buffer[index++] = ' ';
+				channel.buffer[index++] = 'F';
+				channel.buffer[index++] = 'B';
+				channel.buffer[index++] = '1';
+				channel.buffer[index++] = '2';
+				channel.buffer[index++] = '8';
+				index++;
+				channel.buffer[index++] = 'F';
+				channel.buffer[index++] = 'B';
+				channel.buffer[index++] = '1';
+				channel.buffer[index++] = '2';
+				channel.buffer[index++] = '8';
+				index++;
+				channel.buffer[index++] = 0xa2;
+				channel.buffer[index] = (index + 5);
+				index++;
+				channel.buffer[index++] = 0xa0;
+				channel.buffer[index++] = 0xb;
+				channel.buffer[index++] = 0x4c;
+				channel.buffer[index++] = 0xa5;
+				channel.buffer[index++] = 0xaf;
+				channel.buffer[index++] = 'R';
+				channel.buffer[index++] = 'U';
+				channel.buffer[index++] = 'N';
+				channel.buffer[index++] = '\"';
+				channel.buffer[index++] = 'F';
+				channel.buffer[index++] = 'B';
+				channel.buffer[index++] = '1';
+				channel.buffer[index++] = '2';
+				channel.buffer[index++] = '8';
+				channel.buffer[index++] = '\"';
+			}
+
+			if (SendBuffer(channel, true))
+				return;
+		}
 	}
 	else if (channel.command[0] == '$')
 	{
@@ -1771,7 +1830,7 @@ void IEC_Commands::OpenFile()
 				{
 					if (strcasecmp(cwd, "/1541") == 0)
 					{
-						DEBUG_LOG("use star %s\r\n", starFileName);
+						//DEBUG_LOG("use star %s\r\n", starFileName);
 						strncpy(filename, starFileName, sizeof(filename) - 1);
 					}
 				}

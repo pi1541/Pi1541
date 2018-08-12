@@ -71,6 +71,8 @@ public:
 	void SetDeviceId(u8 id) { deviceID = id; }
 	u8 GetDeviceId() { return deviceID; }
 
+	void SetAutoBootFB128(bool autoBootFB128) { this->autoBootFB128 = autoBootFB128; }
+
 	void Reset(void);
 	void SimulateIECBegin(void);
 	UpdateAction SimulateIECUpdate(void);
@@ -157,6 +159,7 @@ protected:
 	bool receivedCommand : 1;
 	bool receivedEOI : 1;	// End Or Identify
 	bool usingVIC20 : 1;	// When sending data we need to wait longer for the 64 as its VICII may be stealing its cycles. VIC20 does not have this problem and can accept data faster.
+	bool autoBootFB128 : 1;
 
 	u8 deviceID;
 	u8 secondaryAddress;

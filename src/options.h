@@ -69,6 +69,8 @@ public:
 	inline unsigned int InvertIECOutputs() const { return invertIECOutputs; }
 	inline unsigned int IgnoreReset() const { return ignoreReset; }
 
+	inline unsigned int AutoBootFB128() const { return autoBootFB128; }
+
 	inline unsigned int ScreenWidth() const { return screenWidth; }
 	inline unsigned int ScreenHeight() const { return screenHeight; }
 
@@ -114,6 +116,7 @@ private:
 	unsigned int invertIECOutputs;
 	unsigned int splitIECLines;
 	unsigned int ignoreReset;
+	unsigned int autoBootFB128;
 
 	unsigned int screenWidth;
 	unsigned int screenHeight;
