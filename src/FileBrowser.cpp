@@ -1121,7 +1121,7 @@ bool FileBrowser::SelectROMOrDevice(u32 index)
 	index--;
 	if ((index < ROMs::MAX_ROMS) && (roms->ROMValid[index]))
 	{
-		roms->currentROMIndex = index;
+		roms->SelectROM(index);
 		roms->lastManualSelectedROMIndex = index;
 		DEBUG_LOG("Swap ROM %d %s\r\n", index, roms->ROMNames[index]);
 		ShowDeviceAndROM();
@@ -1277,7 +1277,7 @@ void FileBrowser::ShowDeviceAndROM()
 	snprintf(buffer, 256, "Device %2d %*s\r\n"
 		, *deviceID
 		, roms->GetLongestRomNameLen()
-		, roms->ROMNames[roms->currentROMIndex]
+		, roms->ROMNames[roms->GetCurrentROMIndex()]
 		);
 	screenMain->PrintText(false, x, y, buffer, textColour, bgColour);
 }

@@ -220,7 +220,7 @@ u8 peek6502(u16 address)
 	u8 value;
 	if (address & 0x8000)	// address line 15 selects the ROM
 	{
-		value = roms.Read(address);
+		value = roms.Read32k(address);
 	}
 	else
 	{
@@ -988,12 +988,12 @@ static bool AttemptToLoadROM(char* ROMName)
 	{
 		u32 bytesRead;
 		SetACTLed(true);
-		f_read(&fp, roms.ROMImages[0], ROMs::ROM_SIZE, &bytesRead);
+		f_read(&fp, roms.ROMImages[0], ROMs::MAX_ROM_SIZE, &bytesRead);
 		strncpy(roms.ROMNames[0], ROMName, 255);
 		roms.ROMValid[0] = true;
 		SetACTLed(false);
 		f_close(&fp);
-		DEBUG_LOG("Opened ROM %s %d %d %d\r\n", ROMName, ROMs::ROM_SIZE, bytesRead, bytesRead == ROMs::ROM_SIZE);
+		DEBUG_LOG("Opened ROM %s %d %d %d\r\n", ROMName, ROMs::MAX_ROM_SIZE, bytesRead, bytesRead == ROMs::ROM_SIZE);
 		return true;
 	}
 	else
@@ -1158,22 +1158,30 @@ static void CheckOptions()
 			|| (FR_OK == f_open(&fp, ROMName2, FA_READ)) )
 		{
 			u32 bytesRead;
+			FSIZE_t filesize = f_size(&fp);
 
-			screen.Clear(COLOUR_BLACK);
-			snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
-			screen.MeasureText(false, tempBuffer, &widthText, &heightText);
-			xpos = (widthScreen - widthText) >> 1;
-			ypos = (heightScreen - heightText) >> 1;
-			screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
-
-			SetACTLed(true);
-			res = f_read(&fp, roms.ROMImages[ROMIndex], ROMs::ROM_SIZE, &bytesRead);
-			SetACTLed(false);
-			if (res == FR_OK && bytesRead == ROMs::ROM_SIZE)
+			if ( (filesize == 16384) || (filesize == 24576) || (filesize == 32768) )
 			{
-				strncpy(roms.ROMNames[ROMIndex], ROMName, 255);
-				roms.ROMValid[ROMIndex] = true;
-				roms.UpdateLongestRomNameLen( strlen(roms.ROMNames[ROMIndex]) );
+				screen.Clear(COLOUR_BLACK);
+				snprintf(tempBuffer, tempBufferSize, "Loading ROM %s %d\r\n", ROMName, (int)filesize);
+				screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+				xpos = (widthScreen - widthText) >> 1;
+				ypos = (heightScreen - heightText) >> 1;
+				screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+
+				SetACTLed(true);
+				if (filesize == 24576)
+					res = f_read(&fp, 8192+roms.ROMImages[ROMIndex], ROMs::MAX_ROM_SIZE, &bytesRead);
+				else
+					res = f_read(&fp, roms.ROMImages[ROMIndex], ROMs::MAX_ROM_SIZE, &bytesRead);
+				SetACTLed(false);
+				if (res == FR_OK && bytesRead == filesize)
+				{
+					strncpy(roms.ROMNames[ROMIndex], ROMName, 255);
+					roms.ROMSizes[ROMIndex] = filesize;
+					roms.ROMValid[ROMIndex] = true;
+					roms.UpdateLongestRomNameLen( strlen(roms.ROMNames[ROMIndex]) );
+				}
 			}
 			f_close(&fp);
 			//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
@@ -1201,7 +1209,8 @@ static void CheckOptions()
 u8 readRam(u16 address) { return s_u8Memory[address]; }
 u8 readVIA0(u16 address) { return pi1541.VIA[0].Read(address); }
 u8 readVIA1(u16 address) { return pi1541.VIA[1].Read(address); }
-u8 readROM(u16 address) { return roms.Read(address); }
+u8 readROM16k(u16 address) { return roms.Read16k(address); }
+u8 readROM32k(u16 address) { return roms.Read32k(address); }
 u8 readNULL(u16 address) { return address >> 8; }
 
 void writeRam(u16 address, u8 data) { s_u8Memory[address] = data; }
@@ -1209,38 +1218,56 @@ void writeVIA0(u16 address, u8 data) { pi1541.VIA[0].Write(address, data); }
 void writeVIA1(u16 address, u8 data) { pi1541.VIA[1].Write(address, data); }
 void writeNULL(u16 address, u8 data) { }
 
+
 void Initialise6502JumpTables()
 {
 	for (int i=0; i< N_JUMPS; i++)
 	{
-		if (i < 0x08)
+		// For safety, pre-init everything
+		ReadJump[0][i] = readNULL;
+		WriteJump[0][i] = writeNULL;
+
+		// start with standard address mapping entries
+		// standard RAM
+		if (i <= 0x7F)
 		{
-			ReadJump[0][i] = readRam;
-			WriteJump[0][i] = writeRam;
+// 74LS42 has !A15 as an enable and A12,11,10 as decoded lines
+			switch ( (i & 0b00011100 ) >> 2)
+			{
+				case 0:
+				case 1:
+					ReadJump[0][i] = readRam;
+					WriteJump[0][i] = writeRam;
+					break;
+				case 6:
+					ReadJump[0][i] = readVIA0;
+					WriteJump[0][i] = writeVIA0;
+					break;
+				case 7:
+					ReadJump[0][i] = readVIA1;
+					WriteJump[0][i] = writeVIA1;
+					break;
+				default:
+					break;
+			}
 		}
-		else if ((i >= 0x18) && (i < 0x1c))
+
+		if ( i >= 0x80 )
 		{
-			ReadJump[0][i] = readVIA0;
-			WriteJump[0][i] = writeVIA0;
-		}
-		else if ((i >= 0x1c) && (i < 0x20))
-		{
-			ReadJump[0][i] = readVIA1;
-			WriteJump[0][i] = writeVIA1;
-		}
-		else if ( (i >= 0x80) && (i < 0xA0) && options.GetRAMBOard() )
-		{
-			ReadJump[0][i] = readRam;
-			WriteJump[0][i] = writeRam;
-		}
-		else if (i >= 0xc0)
-		{
-			ReadJump[0][i] = readROM;
-		}
-		else
-		{
-			ReadJump[0][i] = readNULL;
-			WriteJump[0][i] = writeNULL;
+			if (roms.GetCurrentROMSize() == 16384) 
+				ReadJump[0][i] = readROM16k;
+
+			if (roms.GetCurrentROMSize() == 24576)
+				ReadJump[0][i] = readROM32k;	// assumes file is pushed back 8k
+
+			if ( options.GetRAMBOard() && (i < 0xA0) )
+			{
+				ReadJump[0][i] = readRam;
+				WriteJump[0][i] = writeRam;
+			}
+
+			if (roms.GetCurrentROMSize() == 32768) 
+				ReadJump[0][i] = readROM32k;
 		}
 	}
 }
@@ -1268,8 +1295,6 @@ extern "C"
 		DisplayLogo();
 
 		InitialiseLCD();
-
-		Initialise6502JumpTables();
 
 		int y_pos = 184;
 		snprintf(tempBuffer, tempBufferSize, "Copyright(C) 2018 Stephen White");
@@ -1331,6 +1356,8 @@ extern "C"
 		m_IEC_Commands.SetStarFileName(options.GetStarFileName());
 
 		GlobalSetDeviceID(deviceID);
+
+		Initialise6502JumpTables();
 
 		pi1541.drive.SetVIA(&pi1541.VIA[1]);
 		pi1541.VIA[0].GetPortB()->SetPortOut(0, IEC_Bus::PortB_OnPortOut);

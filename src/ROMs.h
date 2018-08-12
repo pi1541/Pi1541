@@ -25,29 +25,38 @@ class ROMs
 {
 public:
 	void SelectROM(const char* ROMName);
+	void SelectROM(unsigned index);
 
-	inline u8 Read(u16 address)
+	inline u8 Read16k(u16 address)
 	{
 		return ROMImages[currentROMIndex][address & 0x3fff];
 	}
 
+	inline u8 Read32k(u16 address)
+	{
+		return ROMImages[currentROMIndex][address & 0x7fff];
+	}
+
 	void ResetCurrentROMIndex();
 
-	static const int ROM_SIZE = 16384;
+	static const int MAX_ROM_SIZE = 32768;
 	static const int MAX_ROMS = 7;
 
-	unsigned char ROMImages[MAX_ROMS][ROM_SIZE];
+	unsigned char ROMImages[MAX_ROMS][MAX_ROM_SIZE];
 	char ROMNames[MAX_ROMS][256];
+	unsigned ROMSizes[MAX_ROMS];
 	bool ROMValid[MAX_ROMS];
 
-	unsigned currentROMIndex;
 	unsigned lastManualSelectedROMIndex;
 
 	unsigned GetLongestRomNameLen() { return longestRomNameLen; }
+	unsigned GetCurrentROMIndex() { return currentROMIndex; }
+	unsigned GetCurrentROMSize() { return ROMSizes[currentROMIndex]; }
 	unsigned UpdateLongestRomNameLen( unsigned maybeLongest );
 
 protected:
 	unsigned longestRomNameLen;
+	unsigned currentROMIndex;
 };
 
 #endif
