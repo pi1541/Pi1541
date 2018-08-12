@@ -46,7 +46,7 @@ public:
 	{
 	}
 
-	virtual void ClearArea(u32 x1, u32 y1, u32 x2, u32 y2, RGBA colour) = 0;
+	virtual void DrawRectangle(u32 x1, u32 y1, u32 x2, u32 y2, RGBA colour) = 0;
 	virtual void Clear(RGBA colour) = 0;
 
 	virtual void ScrollArea(u32 x1, u32 y1, u32 x2, u32 y2) = 0;
