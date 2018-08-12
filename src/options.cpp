@@ -154,6 +154,7 @@ Options::Options(void)
 	strcpy(ROMFontName, "chargen");
 	strcpy(LcdLogoName, "1541ii");
 	strcpy(autoBaseName, "autoname");
+	C128BootSectorName[0] = 0;
 	starFileName[0] = 0;
 	ROMName[0] = 0;
 	ROMNameSlot2[0] = 0;
@@ -231,6 +232,10 @@ void Options::Process(char* buffer)
 		{
 			strncpy(autoBaseName, pValue, 255);
 		}
+		else if ((strcasecmp(pOption, "128BootSectorName") == 0))
+		{
+			strncpy(C128BootSectorName, pValue, 255);
+		}
 		else if ((strcasecmp(pOption, "StarFileName") == 0))
 		{
 			strncpy(starFileName, pValue, 255);
@@ -248,7 +253,6 @@ void Options::Process(char* buffer)
 				i2cLcdModel = LCD_1306_128x32;
 			else if (strcasecmp(pValue, "sh1106_128x64") == 0)
 				i2cLcdModel = LCD_1106_128x64;
-
 		}
 		else if ((strcasecmp(pOption, "ROM") == 0) || (strcasecmp(pOption, "ROM1") == 0))
 		{

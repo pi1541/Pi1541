@@ -238,6 +238,7 @@ IEC_Commands::IEC_Commands()
 	autoBootFB128 = false;
 	Reset();
 	starFileName = 0;
+	C128BootSectorName = 0;
 }
 
 void IEC_Commands::Reset(void)
@@ -1774,6 +1775,16 @@ void IEC_Commands::OpenFile()
 				channel.buffer[index++] = '2';
 				channel.buffer[index++] = '8';
 				channel.buffer[index++] = '\"';
+			}
+			if (C128BootSectorName)
+			{
+//blah
+				FIL fpBS;
+				u32 bytes;
+				if (FR_OK == f_open(&fpBS, C128BootSectorName, FA_READ))
+					f_read(&fpBS, channel.buffer, 256, &bytes);
+				else
+					memset(channel.buffer, 0, 256);
 			}
 
 			if (SendBuffer(channel, true))
