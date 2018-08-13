@@ -27,12 +27,8 @@ public:
 	void SelectROM(const char* ROMName);
 	void SelectROM(unsigned index);
 
-	inline u8 Read16k(u16 address)
-	{
-		return ROMImages[currentROMIndex][address & 0x3fff];
-	}
 
-	inline u8 Read32k(u16 address)
+	inline u8 Read(u16 address)
 	{
 		return ROMImages[currentROMIndex][address & 0x7fff];
 	}

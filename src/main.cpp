@@ -213,29 +213,6 @@ void write6502(u16 address, u8 data)
 	(* WriteJump[0][address>>8])(address, data);
 }
 
-
-// Use for debugging (Reads VIA registers without the regular VIA read side effects)
-u8 peek6502(u16 address)
-{
-	u8 value;
-	if (address & 0x8000)	// address line 15 selects the ROM
-	{
-		value = roms.Read32k(address);
-	}
-	else
-	{
-		// Address lines 15, 12, 11 and 10 are fed into a 74LS42 for decoding
-		u16 addressLines15_12_11_10 = (address & 0x1c00) >> 10;
-		addressLines15_12_11_10 |= (address & 0x8000) >> (15 - 3);
-		if (addressLines15_12_11_10 == 0 || addressLines15_12_11_10 == 1) value = s_u8Memory[address & 0x7ff]; // 74LS42 outputs low on pin 1 or pin 2
-		else if (addressLines15_12_11_10 == 6) value = pi1541.VIA[0].Peek(address);	// 74LS42 outputs low on pin 7
-		else if (addressLines15_12_11_10 == 7) value = pi1541.VIA[1].Peek(address);	// 74LS42 outputs low on pin 9
-		else value = address >> 8;	// Empty address bus
-	}
-	return value;
-}
-
-
 void InitialiseHardware()
 {
 #if defined(RPI3)
@@ -1172,10 +1149,22 @@ static void CheckOptions()
 				screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
 
 				SetACTLed(true);
-				if (filesize == 24576)
-					res = f_read(&fp, 8192+roms.ROMImages[ROMIndex], ROMs::MAX_ROM_SIZE, &bytesRead);
-				else
-					res = f_read(&fp, roms.ROMImages[ROMIndex], ROMs::MAX_ROM_SIZE, &bytesRead);
+				switch (filesize) {
+				case 16384:
+					res = f_read(&fp, roms.ROMImages[ROMIndex], filesize, &bytesRead);
+					memcpy (16384+roms.ROMImages[ROMIndex], roms.ROMImages[ROMIndex], 16384);
+					break;
+				case 24576:
+					res = f_read(&fp, 8192+roms.ROMImages[ROMIndex], filesize, &bytesRead);
+					break;
+				case 32768:
+					res = f_read(&fp, roms.ROMImages[ROMIndex], filesize, &bytesRead);
+					break;
+				default:
+					res = FR_INVALID_PARAMETER;
+					break;
+				}
+
 				SetACTLed(false);
 				if (res == FR_OK && bytesRead == filesize)
 				{
@@ -1211,8 +1200,7 @@ static void CheckOptions()
 u8 readRam(u16 address) { return s_u8Memory[address]; }
 u8 readVIA0(u16 address) { return pi1541.VIA[0].Read(address); }
 u8 readVIA1(u16 address) { return pi1541.VIA[1].Read(address); }
-u8 readROM16k(u16 address) { return roms.Read16k(address); }
-u8 readROM32k(u16 address) { return roms.Read32k(address); }
+u8 readROM(u16 address) { return roms.Read(address); }
 u8 readNULL(u16 address) { return address >> 8; }
 
 void writeRam(u16 address, u8 data) { s_u8Memory[address] = data; }
@@ -1256,11 +1244,7 @@ void Initialise6502JumpTables()
 
 		if ( i >= 0x80 )
 		{
-			if (roms.GetCurrentROMSize() == 16384) 
-				ReadJump[0][i] = readROM16k;
-
-			if (roms.GetCurrentROMSize() == 24576)
-				ReadJump[0][i] = readROM32k;	// assumes file is pushed back 8k
+			ReadJump[0][i] = readROM;
 
 			if ( options.GetRAMBOard() && (i < 0xA0) )
 			{
@@ -1268,8 +1252,9 @@ void Initialise6502JumpTables()
 				WriteJump[0][i] = writeRam;
 			}
 
-			if (roms.GetCurrentROMSize() == 32768) 
-				ReadJump[0][i] = readROM32k;
+			// over-ride any ROMBOard setting
+			if (roms.GetCurrentROMSize() == 32768)
+				ReadJump[0][i] = readROM;
 		}
 	}
 }

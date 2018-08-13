@@ -43,13 +43,8 @@ public:
 	M6502 m6502;
 
 private:
-	//u8 Memory[0xc000];
 
-	//static u8 Read6502(u16 address, void* data);
-	//static u8 Read6502ExtraRAM(u16 address, void* data);
-	//static u8 Peek6502(u16 address, void* data);
-	//static void Write6502(u16 address, const u8 value, void* data);
-	//static void Write6502ExtraRAM(u16 address, const u8 value, void* data);
 };
 
 #endif
+
