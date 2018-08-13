@@ -35,8 +35,6 @@ public:
 
 	void Reset();
 
-	//void ConfigureOfExtraRAM(bool extraRAM);
-
 	Drive drive;
 	m6522 VIA[2];
 
