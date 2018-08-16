@@ -128,9 +128,9 @@ private:
 	unsigned int i2cLcdOnContrast;
 	unsigned int i2cLcdDimContrast;
 	unsigned int i2cLcdDimTime;
-//	unsigned int i2cLcdModel;
 	LCD_MODEL i2cLcdModel = LCD_UNKNOWN;
-
+	RESET_ACTION OnResetEmulator = RESET_IGNORE;
+	RESET_ACTION OnResetBrowser = RESET_IGNORE;
 	float scrollHighlightRate;
 
 	unsigned int keyboardBrowseLCDScreen;

@@ -147,6 +147,8 @@ Options::Options(void)
 	, i2cLcdFlip(0)
 	, i2cLcdOnContrast(127)
 	, i2cLcdModel(LCD_UNKNOWN)
+	, OnResetEmulator(RESET_IGNORE)
+	, OnResetBrowser(RESET_IGNORE)
 	, scrollHighlightRate(0.125f)
 	, keyboardBrowseLCDScreen(0)
 {
@@ -248,7 +250,28 @@ void Options::Process(char* buffer)
 				i2cLcdModel = LCD_1306_128x32;
 			else if (strcasecmp(pValue, "sh1106_128x64") == 0)
 				i2cLcdModel = LCD_1106_128x64;
-
+		}
+		else if ((strcasecmp(pOption, "OnResetEmulator") == 0))
+		{
+			if (strcasecmp(pValue, "ignore") == 0)
+				OnResetEmulator = RESET_IGNORE;
+			else if (strcasecmp(pValue, "resetCPU") == 0)
+				OnResetEmulator = RESET_CPU;
+			else if (strcasecmp(pValue, "cd/1541") == 0)
+				OnResetEmulator = RESET_CD1541;
+			else if (strcasecmp(pValue, "autoload") == 0)
+				OnResetEmulator = RESET_AUTOLOAD;
+		}
+		else if ((strcasecmp(pOption, "OnResetBrowser") == 0))
+		{
+			if (strcasecmp(pValue, "ignore") == 0)
+				OnResetBrowser = RESET_IGNORE;
+			else if (strcasecmp(pValue, "resetCPU") == 0)
+				OnResetBrowser = RESET_CPU;
+			else if (strcasecmp(pValue, "cd/1541") == 0)
+				OnResetBrowser = RESET_CD1541;
+			else if (strcasecmp(pValue, "autoload") == 0)
+				OnResetBrowser = RESET_AUTOLOAD;
 		}
 		else if ((strcasecmp(pOption, "ROM") == 0) || (strcasecmp(pOption, "ROM1") == 0))
 		{

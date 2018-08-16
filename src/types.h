@@ -24,4 +24,11 @@ typedef enum {
 	EXIT_AUTOLOAD
 } EXIT_TYPE;
 
+typedef enum {
+	RESET_IGNORE,
+	RESET_CPU,
+	RESET_CD1541,
+	RESET_AUTOLOAD
+} RESET_ACTION;
+
 #endif
