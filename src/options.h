@@ -82,6 +82,8 @@ public:
 	inline unsigned int I2CLcdDimContrast() const { return i2cLcdDimContrast; }
 	inline unsigned int I2CLcdDimTime() const { return i2cLcdDimTime; }
 	inline LCD_MODEL I2CLcdModel() const { return i2cLcdModel; }
+	inline RESET_ACTION GetOnResetEmulator() const { return OnResetEmulator; }
+	inline RESET_ACTION GetOnResetBrowser() const { return OnResetBrowser; }
 
 	inline const char* GetLcdLogoName() const { return LcdLogoName; }
 

@@ -706,11 +706,7 @@ void emulator()
 			fileBrowserSelectedName = 0;
 			fileBrowser->ClearSelections();
 
-			// Go back to the root folder so you can load fb* again?
-//			if ((resetWhileEmulating && options.GetOnResetChangeToStartingFolder()) || selectedViaIECCommands)
-//				fileBrowser->DisplayRoot(); // Go back to the root folder and display it.
-//			else
-				fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
+			fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
 
 			resetWhileEmulating = false;
 			selectedViaIECCommands = false;
@@ -733,11 +729,28 @@ void emulator()
 					switch (updateAction)
 					{
 						case IEC_Commands::RESET:
+							IEC_Bus::Reset();
+							m_IEC_Commands.SimulateIECBegin();
+							switch (options.GetOnResetBrowser())
+							{
+								case RESET_CD1541:
+									fileBrowser->DisplayRoot();
+									break;
+								case RESET_AUTOLOAD:
+									CheckAutoMountImage(EXIT_UNKNOWN, fileBrowser);
+									break;
+								case RESET_IGNORE:
+								case RESET_CPU:
+								default:
+									break;
+							}
+/*
 							if (options.GetOnResetChangeToStartingFolder())
 								fileBrowser->DisplayRoot();
 							IEC_Bus::Reset();
 							m_IEC_Commands.SimulateIECBegin();
 							CheckAutoMountImage(EXIT_UNKNOWN, fileBrowser);
+*/
 							break;
 						case IEC_Commands::NONE:
 							fileBrowser->Update();
@@ -935,7 +948,7 @@ void emulator()
 				inputMappings->CheckKeyboardEmulationMode(numberOfImages, numberOfImagesMax);
 				inputMappings->CheckButtonsEmulationMode();
 
-				bool exitEmulation = inputMappings->Exit();
+				bool exitEmulationInput = inputMappings->Exit();
 				bool exitDoAutoLoad = inputMappings->AutoLoad();
 
 				// We have now output so HERE is where the next phi2 cycle starts.
@@ -948,7 +961,7 @@ void emulator()
 				else
 					resetCount = 0;
 
-				if (!emulating || (resetCount > 10) || exitEmulation || exitDoAutoLoad)
+				if (!emulating || (resetCount > 10) || exitEmulationInput || exitDoAutoLoad)
 				{
 					// Clearing the caddy now
 					//	- will write back all changed/dirty/written to disk images now
@@ -974,7 +987,7 @@ void emulator()
 						if (options.GetOnResetChangeToStartingFolder() || selectedViaIECCommands)
 							fileBrowser->DisplayRoot(); // TO CHECK
 					}
-					if (exitEmulation)
+					if (exitEmulationInput)
 						exitReason = EXIT_KEYBOARD;
 					if (exitDoAutoLoad)
 						exitReason = EXIT_AUTOLOAD;
@@ -1356,7 +1369,10 @@ extern "C"
 		IEC_Bus::SetSplitIECLines(options.SplitIECLines());
 		IEC_Bus::SetInvertIECInputs(options.InvertIECInputs());
 		IEC_Bus::SetInvertIECOutputs(options.InvertIECOutputs());
-		IEC_Bus::SetIgnoreReset(options.IgnoreReset());
+		IEC_Bus::SetIgnoreResetBrowser(
+			options.IgnoreReset() || (options.GetOnResetBrowser() == RESET_IGNORE) );
+		IEC_Bus::SetIgnoreResetEmulator(
+			options.IgnoreReset() || (options.GetOnResetEmulator() == RESET_IGNORE) );
 
 		if (!options.SoundOnGPIO())
 		{
