@@ -686,6 +686,7 @@ void emulator()
 	pi1541.Initialise();
 
 	m_IEC_Commands.SetAutoBootFB128(options.AutoBootFB128());
+	m_IEC_Commands.Set128BootSectorName(options.Get128BootSectorName());
 
 	emulating = false;
 

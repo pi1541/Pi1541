@@ -39,6 +39,10 @@ OnResetChangeToStartingFolder = 1
 // If you are using a FB128 in 128 mode you can get FB128 to auto boot using this option
 //AutoBootFB128 = 1
 
+// If you are using a 128 you can  auto boot anything using this option
+// This over-rides AutoBootFB128
+//128BootSectorName = bootsect.128
+
 // If you would ever like to disable browse mode completely ypu can do so here
 //DisableSD2IECCommands = 1
 
