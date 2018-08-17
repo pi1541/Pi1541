@@ -828,6 +828,10 @@ void superviseEmulator( FileBrowser* fileBrowser, InputMappings* inputMappings)
 
 	ctBefore = read32(ARM_SYSTIMER_CLO);
 
+	bool exitEmulationInput = false;
+	bool exitDoAutoLoad = false;
+	bool exitIECReset = false;
+
 	while (1)
 	{
 		IEC_Bus::ReadEmulationMode();
@@ -910,8 +914,8 @@ void superviseEmulator( FileBrowser* fileBrowser, InputMappings* inputMappings)
 		inputMappings->CheckKeyboardEmulationMode(numberOfImages, numberOfImagesMax);
 		inputMappings->CheckButtonsEmulationMode();
 
-		bool exitEmulationInput = inputMappings->Exit();
-		bool exitDoAutoLoad = inputMappings->AutoLoad();
+		exitEmulationInput = inputMappings->Exit();
+		exitDoAutoLoad = inputMappings->AutoLoad();
 
 		// We have now output so HERE is where the next phi2 cycle starts.
 		pi1541.Update();
@@ -923,7 +927,15 @@ void superviseEmulator( FileBrowser* fileBrowser, InputMappings* inputMappings)
 		else
 			resetCount = 0;
 
-		if (!emulating || (resetCount > 10) || exitEmulationInput || exitDoAutoLoad)
+		if (resetCount > 10)
+		{
+			if (options.GetOnResetEmulator() == RESET_CPU)
+				pi1541.m6502.Reset();
+			else
+				exitIECReset = true;
+		}
+
+		if (!emulating || exitIECReset || exitEmulationInput || exitDoAutoLoad)
 		{
 			// Clearing the caddy now
 			//	- will write back all changed/dirty/written to disk images now
@@ -943,7 +955,7 @@ void superviseEmulator( FileBrowser* fileBrowser, InputMappings* inputMappings)
 			//DEBUG_LOG("6502 resetting\r\n");
 			emulating = false;
 
-			if (reset)
+			if (exitIECReset)
 				exitReason = EXIT_RESET;
 			if (exitEmulationInput)
 				exitReason = EXIT_KEYBOARD;
