@@ -646,7 +646,7 @@ void GlobalSetDeviceID(u8 id)
 	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, id & 2);
 }
 
-void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
+void CheckAutoMountImage(FileBrowser* fileBrowser)
 {
 	const char* autoMountImageName = options.GetAutoMountImageName();
 	if (autoMountImageName[0] != 0)
@@ -680,9 +680,27 @@ void superviseSD2IEC( FileBrowser* fileBrowser)
 {
 	m_IEC_Commands.SimulateIECBegin();
 
-	if ( (options.GetOnResetBrowser() == RESET_AUTOLOAD)
-		&& (exitReason == EXIT_RESET) )
-		CheckAutoMountImage(EXIT_AUTOLOAD, fileBrowser);
+	if ( (exitReason == EXIT_FIRSTRUN) && (options.GetOnResetBrowser() == RESET_AUTOLOAD) )
+		CheckAutoMountImage(fileBrowser);
+
+	if (exitReason == EXIT_AUTOLOAD)
+		CheckAutoMountImage(fileBrowser);
+
+	if (exitReason == EXIT_RESET)
+		switch (options.GetOnResetEmulator())
+		{
+			case RESET_CD1541:
+				fileBrowser->DisplayRoot();
+				break;
+			case RESET_AUTOLOAD:
+				CheckAutoMountImage(fileBrowser);
+				break;
+			case RESET_IGNORE:	// should never happen
+			case RESET_CPU:		// should never happen
+			case RESET_EXIT:
+			default:
+				break;
+		}
 
 	while (!emulating)
 	{
@@ -699,7 +717,7 @@ void superviseSD2IEC( FileBrowser* fileBrowser)
 						fileBrowser->DisplayRoot();
 						break;
 					case RESET_AUTOLOAD:
-						CheckAutoMountImage(EXIT_AUTOLOAD, fileBrowser);
+						CheckAutoMountImage(fileBrowser);
 						break;
 					case RESET_IGNORE:
 					case RESET_CPU:
@@ -1003,7 +1021,7 @@ void emulator()
 	m_IEC_Commands.Set128BootSectorName(options.Get128BootSectorName());
 
 	emulating = false;
-	exitReason = EXIT_RESET;	// 1st run treated like an IEC reset
+	exitReason = EXIT_FIRSTRUN;	// not really an exit
 
 	while (1)
 	{

@@ -47,7 +47,6 @@ public:
 	void Process(char* buffer);
 
 	inline unsigned int GetDeviceID() const { return deviceID; }
-	inline unsigned int GetOnResetChangeToStartingFolder() const { return onResetChangeToStartingFolder; }
 	inline const char* GetAutoMountImageName() const { return autoMountImageName; }
 	inline const char* GetRomFontName() const { return ROMFontName; }
 	const char* GetRomName(int index) const;

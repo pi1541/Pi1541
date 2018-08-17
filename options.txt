@@ -30,8 +30,10 @@ scrollHighlightRate = 0.07
 
 //ChargenFont = chargen		// 8 bit font file
 
+// REMOVED! INSTEAD USE: onResetEmulator = cd/1541
 // If using CBMFileBrowser then it is best to specify this option. When the computer resets the Pi will always revert back to the root folder ready to load CBMFileBrowser again.
-OnResetChangeToStartingFolder = 1
+// OnResetChangeToStartingFolder = 1
+// REMOVED!
 
 // When in Browser mode and IEC bus reset happens do what?
 // ignore - ignore it

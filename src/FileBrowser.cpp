@@ -40,7 +40,7 @@ extern Options options;
 #define PNG_HEIGHT 200
 
 extern void GlobalSetDeviceID(u8 id);
-extern void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser);
+extern void CheckAutoMountImage(FileBrowser* fileBrowser);
 
 unsigned char FileBrowser::LSTBuffer[FileBrowser::LSTBuffer_size];
 
@@ -1081,7 +1081,7 @@ void FileBrowser::UpdateInputFolders()
 	}
 	else if (inputMappings->BrowseAutoLoad())
 	{
-		CheckAutoMountImage(EXIT_RESET, this);
+		CheckAutoMountImage(this);
 	}
 	else if (inputMappings->MakeLSTFile())
 	{

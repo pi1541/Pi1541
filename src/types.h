@@ -18,6 +18,7 @@ typedef enum {
 
 typedef enum {
 	EXIT_UNKNOWN,
+	EXIT_FIRSTRUN,
 	EXIT_RESET,
 	EXIT_CD,
 	EXIT_KEYBOARD,
@@ -27,6 +28,7 @@ typedef enum {
 typedef enum {
 	RESET_IGNORE,
 	RESET_CPU,
+	RESET_EXIT,
 	RESET_CD1541,
 	RESET_AUTOLOAD
 } RESET_ACTION;

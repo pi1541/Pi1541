@@ -122,7 +122,6 @@ bool TextParser::ParseComment()
 Options::Options(void)
 	: TextParser()
 	, deviceID(8)
-	, onResetChangeToStartingFolder(0)
 	, extraRAM(0)
 	, RAMBOard(0)
 	, disableSD2IECCommands(0)
@@ -202,7 +201,6 @@ void Options::Process(char* buffer)
 			strncpy(autoMountImageName, pValue, 255);
 		}
 		ELSE_CHECK_DECIMAL_OPTION(deviceID)
-		ELSE_CHECK_DECIMAL_OPTION(onResetChangeToStartingFolder)
 		ELSE_CHECK_DECIMAL_OPTION(extraRAM)
 		ELSE_CHECK_DECIMAL_OPTION(RAMBOard)
 		ELSE_CHECK_DECIMAL_OPTION(disableSD2IECCommands)
@@ -262,6 +260,8 @@ void Options::Process(char* buffer)
 				OnResetEmulator = RESET_IGNORE;
 			else if (strcasecmp(pValue, "resetCPU") == 0)
 				OnResetEmulator = RESET_CPU;
+			else if (strcasecmp(pValue, "exit") == 0)
+				OnResetEmulator = RESET_EXIT;
 			else if (strcasecmp(pValue, "cd/1541") == 0)
 				OnResetEmulator = RESET_CD1541;
 			else if (strcasecmp(pValue, "autoload") == 0)
