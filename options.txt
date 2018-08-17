@@ -33,6 +33,21 @@ scrollHighlightRate = 0.07
 // If using CBMFileBrowser then it is best to specify this option. When the computer resets the Pi will always revert back to the root folder ready to load CBMFileBrowser again.
 OnResetChangeToStartingFolder = 1
 
+// When in Browser mode and IEC bus reset happens do what?
+// ignore - ignore it
+// cd/1541 - change to starting folder
+// autoload - attempt to use AutoMountImage
+onResetBrowser = autoload
+
+// When in Emulator mode and IEC bus reset happens do what?
+// ignore - ignore it
+// resetCPU - just reset the drive CPU
+// cd/1541 - exit emulator, change to starting folder
+// exit - exit emulator, stay in folder
+// autoload - attempt to use AutoMountImage
+onResetEmulator = ignore
+
+
 // If you use FB64 (CBMFileBrowser) and want to use a fast loader cartridge (AR6, EFL, FC3) to load it then use this option to autmatically mount it. 
 //AutoMountImage = fb.d64 // You MUST have a disk image in \1541 with this filename
 
