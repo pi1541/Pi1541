@@ -156,6 +156,7 @@ Options::Options(void)
 	strcpy(ROMFontName, "chargen");
 	strcpy(LcdLogoName, "1541ii");
 	strcpy(autoBaseName, "autoname");
+	C128BootSectorName[0] = 0;
 	starFileName[0] = 0;
 	ROMName[0] = 0;
 	ROMNameSlot2[0] = 0;
@@ -232,6 +233,10 @@ void Options::Process(char* buffer)
 		else if ((strcasecmp(pOption, "AutoBaseName") == 0))
 		{
 			strncpy(autoBaseName, pValue, 255);
+		}
+		else if ((strcasecmp(pOption, "128BootSectorName") == 0))
+		{
+			strncpy(C128BootSectorName, pValue, 255);
 		}
 		else if ((strcasecmp(pOption, "StarFileName") == 0))
 		{

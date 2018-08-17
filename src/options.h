@@ -70,6 +70,7 @@ public:
 	inline unsigned int IgnoreReset() const { return ignoreReset; }
 
 	inline unsigned int AutoBootFB128() const { return autoBootFB128; }
+	inline const char* Get128BootSectorName() const { return C128BootSectorName; }
 
 	inline unsigned int ScreenWidth() const { return screenWidth; }
 	inline unsigned int ScreenHeight() const { return screenHeight; }
@@ -138,6 +139,7 @@ private:
 	unsigned int keyboardBrowseLCDScreen;
 
 	char starFileName[256];
+	char C128BootSectorName[256];
 	char autoBaseName[256];
 	char LCDName[256];
 	char LcdLogoName[256];

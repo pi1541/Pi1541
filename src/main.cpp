@@ -681,7 +681,7 @@ void superviseSD2IEC( FileBrowser* fileBrowser)
 	m_IEC_Commands.SimulateIECBegin();
 
 	if ( (options.GetOnResetBrowser() == RESET_AUTOLOAD)
-		&& (exitReason != EXIT_KEYBOARD) )
+		&& (exitReason == EXIT_RESET) )
 		CheckAutoMountImage(EXIT_AUTOLOAD, fileBrowser);
 
 	while (!emulating)
@@ -1000,8 +1000,10 @@ void emulator()
 	pi1541.Initialise();
 
 	m_IEC_Commands.SetAutoBootFB128(options.AutoBootFB128());
+	m_IEC_Commands.Set128BootSectorName(options.Get128BootSectorName());
 
 	emulating = false;
+	exitReason = EXIT_RESET;	// 1st run treated like an IEC reset
 
 	while (1)
 	{

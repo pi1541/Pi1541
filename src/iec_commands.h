@@ -72,6 +72,13 @@ public:
 	u8 GetDeviceId() { return deviceID; }
 
 	void SetAutoBootFB128(bool autoBootFB128) { this->autoBootFB128 = autoBootFB128; }
+	void Set128BootSectorName(const char* SectorName) 
+	{
+		if (SectorName && SectorName[0])
+			this->C128BootSectorName = SectorName;
+		else
+			this->C128BootSectorName = 0;
+	}
 
 	void Reset(void);
 	void SimulateIECBegin(void);
@@ -174,6 +181,7 @@ protected:
 	FILINFO filInfoSelectedImage;
 
 	const char* starFileName;
+	const char* C128BootSectorName;
 };
 #endif
 
