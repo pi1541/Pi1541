@@ -17,6 +17,11 @@ typedef enum {
 } LCD_MODEL;
 
 typedef enum {
+	RTC_UNKNOWN,
+	RTC_DS1307,
+} RTC_MODEL;
+
+typedef enum {
 	EXIT_UNKNOWN,
 	EXIT_RESET,
 	EXIT_CD,
