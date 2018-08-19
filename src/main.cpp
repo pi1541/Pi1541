@@ -40,6 +40,7 @@ extern "C"
 #include "Pi1541.h"
 #include "FileBrowser.h"
 #include "ScreenLCD.h"
+#include "DS1307RTC.h"
 
 #include "logo.h"
 #include "sample.h"
@@ -91,6 +92,7 @@ Pi1541 pi1541;
 CEMMCDevice	m_EMMC;
 Screen screen;
 ScreenLCD* screenLCD = 0;
+DS1307RTC* RTC = 0;
 Options options;
 const char* fileBrowserSelectedName;
 u8 deviceID = 8;
@@ -346,6 +348,14 @@ void InitialiseHardware()
 	RPI_PropertyInit();
 	RPI_PropertyAddTag(TAG_SET_CLOCK_RATE, ARM_CLK_ID, MaxClk);
 	RPI_PropertyProcess();
+}
+
+void InitialiseRTC()
+{
+	if (options.I2CRtcModel() == RTC_DS1307)
+	{
+		RTC = new DS1307RTC(options.I2CBusMaster(), options.I2CRtcAddress(), options.I2CRtcModel() );
+	}
 }
 
 void InitialiseLCD()
@@ -1132,11 +1142,12 @@ static void LoadOptions()
 	}
 }
 
-void DisplayOptions(int y_pos)
+int DisplayOptions(int y_pos)
 {
 	// print confirmation of parsed options
 	snprintf(tempBuffer, tempBufferSize, "ignoreReset = %d\r\n", options.IgnoreReset());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+
 	snprintf(tempBuffer, tempBufferSize, "RAMBOard = %d\r\n", options.GetRAMBOard());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "splitIECLines = %d\r\n", options.SplitIECLines());
@@ -1145,16 +1156,15 @@ void DisplayOptions(int y_pos)
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", options.InvertIECOutputs());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+
 	snprintf(tempBuffer, tempBufferSize, "i2cLcdAddress = %d\r\n", options.I2CLcdAddress());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	snprintf(tempBuffer, tempBufferSize, "i2cLcdFlip = %d\r\n", options.I2CLcdFlip());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	snprintf(tempBuffer, tempBufferSize, "LCDName = %s\r\n", options.GetLCDName());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	snprintf(tempBuffer, tempBufferSize, "LcdLogoName = %s\r\n", options.GetLcdLogoName());
+	snprintf(tempBuffer, tempBufferSize, "i2cRtcAddress = %d model %d\r\n"
+		, options.I2CRtcAddress(), options.I2CRtcModel());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "AutoBaseName = %s\r\n", options.GetAutoBaseName());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	return (y_pos);
 }
 
 void DisplayI2CScan(int y_pos)
@@ -1327,8 +1337,29 @@ extern "C"
 			DisplayI2CScan(y_pos+=32);
 
 		if (options.ShowOptions())
-			DisplayOptions(y_pos+=32);
+		{
+			y_pos += 32;
+			y_pos = 32 + DisplayOptions(y_pos);
+		}
 
+		InitialiseRTC();
+		if (RTC)
+		{
+			time_t blah = RTC->get();
+			snprintf(tempBuffer, tempBufferSize, "time is %llu\r\n", blah);
+			screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+			IEC_Bus::WaitMicroSeconds(3 * 1000000);
+
+			blah = RTC->get();
+			snprintf(tempBuffer, tempBufferSize, "time is %llu\r\n", blah);
+			screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+			IEC_Bus::WaitMicroSeconds(3 * 1000000);
+
+			blah = RTC->get();
+			snprintf(tempBuffer, tempBufferSize, "time is %llu\r\n", blah);
+			screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+			IEC_Bus::WaitMicroSeconds(3 * 1000000);
+		}
 		if (!options.QuickBoot())
 			IEC_Bus::WaitMicroSeconds(3 * 1000000);
 

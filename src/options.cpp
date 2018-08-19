@@ -147,6 +147,7 @@ Options::Options(void)
 	, i2cLcdFlip(0)
 	, i2cLcdOnContrast(127)
 	, i2cLcdModel(LCD_UNKNOWN)
+	, i2cRtcModel(RTC_UNKNOWN)
 	, scrollHighlightRate(0.125f)
 	, keyboardBrowseLCDScreen(0)
 {
@@ -221,6 +222,7 @@ void Options::Process(char* buffer)
 		ELSE_CHECK_DECIMAL_OPTION(screenHeight)
 		ELSE_CHECK_DECIMAL_OPTION(i2cBusMaster)
 		ELSE_CHECK_DECIMAL_OPTION(i2cLcdAddress)
+		ELSE_CHECK_DECIMAL_OPTION(i2cRtcAddress)
 		ELSE_CHECK_DECIMAL_OPTION(i2cScan)
 		ELSE_CHECK_DECIMAL_OPTION(i2cLcdFlip)
 		ELSE_CHECK_DECIMAL_OPTION(i2cLcdOnContrast)
@@ -253,6 +255,13 @@ void Options::Process(char* buffer)
 				i2cLcdModel = LCD_1306_128x32;
 			else if (strcasecmp(pValue, "sh1106_128x64") == 0)
 				i2cLcdModel = LCD_1106_128x64;
+		}
+		else if ((strcasecmp(pOption, "RTCName") == 0))
+		{
+			if (strcasecmp(pValue, "ds1307") == 0)
+				i2cRtcModel = RTC_DS1307;
+			else if (strcasecmp(pValue, "ds3231") == 0)
+				i2cRtcModel = RTC_DS3231;
 		}
 		else if ((strcasecmp(pOption, "ROM") == 0) || (strcasecmp(pOption, "ROM1") == 0))
 		{

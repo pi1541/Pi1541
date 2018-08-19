@@ -83,6 +83,8 @@ public:
 	inline unsigned int I2CLcdDimContrast() const { return i2cLcdDimContrast; }
 	inline unsigned int I2CLcdDimTime() const { return i2cLcdDimTime; }
 	inline LCD_MODEL I2CLcdModel() const { return i2cLcdModel; }
+	inline RTC_MODEL I2CRtcModel() const { return i2cRtcModel; }
+	inline unsigned int I2CRtcAddress() const { return i2cRtcAddress; }
 
 	inline const char* GetLcdLogoName() const { return LcdLogoName; }
 
@@ -130,6 +132,9 @@ private:
 	unsigned int i2cLcdDimContrast;
 	unsigned int i2cLcdDimTime;
 	LCD_MODEL i2cLcdModel = LCD_UNKNOWN;
+
+	unsigned int i2cRtcAddress;
+	RTC_MODEL i2cRtcModel = RTC_UNKNOWN;
 
 	float scrollHighlightRate;
 

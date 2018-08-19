@@ -57,7 +57,7 @@ DS1307RTC::DS1307RTC(int BSCMaster, u8 address, RTC_MODEL type)
 	, type(type)
 	, exists(false)
 {
-	RPI_I2CInit(BSCMaster, 1);
+	RPI_I2CInit(BSCMaster, 0);
 }
 
  

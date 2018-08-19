@@ -19,6 +19,7 @@ typedef enum {
 typedef enum {
 	RTC_UNKNOWN,
 	RTC_DS1307,
+	RTC_DS3231,
 } RTC_MODEL;
 
 typedef enum {
