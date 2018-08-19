@@ -1289,6 +1289,20 @@ static void CheckOptions()
 		}
 		while (1);
 	}
+
+
+	InputMappings* inputMappings = InputMappings::Instance();
+	if (options.GetButtonEnter() )
+		inputMappings->INPUT_BUTTON_ENTER = options.GetButtonEnter()-1;
+	if (options.GetButtonUp() )
+		inputMappings->INPUT_BUTTON_UP = options.GetButtonUp()-1;
+	if (options.GetButtonDown() )
+		inputMappings->INPUT_BUTTON_DOWN = options.GetButtonDown()-1;
+	if (options.GetButtonBack() )
+		inputMappings->INPUT_BUTTON_BACK = options.GetButtonBack()-1;
+	if (options.GetButtonInsert() )
+		inputMappings->INPUT_BUTTON_INSERT = options.GetButtonInsert()-1;
+
 }
 
 extern "C"
@@ -1348,15 +1362,8 @@ extern "C"
 		//	DEBUG_LOG("Mouse found\r\n");
 
 		Keyboard::Instance();
-//		InputMappings::Instance();
-		InputMappings* inputMappings = InputMappings::Instance();
+		InputMappings::Instance();
 		//USPiMouseRegisterStatusHandler(MouseHandler);
-
-		inputMappings->INPUT_BUTTON_ENTER = options.GetButtonEnter();
-		inputMappings->INPUT_BUTTON_UP = options.GetButtonUp();
-		inputMappings->INPUT_BUTTON_DOWN = options.GetButtonDown();
-		inputMappings->INPUT_BUTTON_BACK = options.GetButtonBack();
-		inputMappings->INPUT_BUTTON_INSERT = options.GetButtonInsert();
 
 		CheckOptions();
 

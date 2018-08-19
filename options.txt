@@ -91,8 +91,9 @@ GraphIEC = 1
 //IgnoreReset = 0
 
 // You can remap the physical button functions
-//buttonEnter = 0
-//buttonUp = 1
-//buttonDown = 2
-//buttonBack = 3
-//buttonInsert = 4
+// numbers correspond to the standard board layout
+//buttonEnter = 1
+//buttonUp = 2
+//buttonDown = 3
+//buttonBack = 4
+//buttonInsert = 5
