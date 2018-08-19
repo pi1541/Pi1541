@@ -85,6 +85,12 @@ public:
 	bool CheckButtonsBrowseMode();
 	void CheckButtonsEmulationMode();
 
+	u8 INPUT_BUTTON_ENTER = 0;
+	u8 INPUT_BUTTON_UP = 1;
+	u8 INPUT_BUTTON_DOWN = 2;
+	u8 INPUT_BUTTON_BACK = 3;
+	u8 INPUT_BUTTON_INSERT = 4;
+
 	void Reset()
 	{
 		keyboardFlags = 0;

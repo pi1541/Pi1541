@@ -28,11 +28,13 @@
 #define INPUT_BUTTON_DEBOUNCE_THRESHOLD 20000
 #define INPUT_BUTTON_REPEAT_THRESHOLD 460000
 
+/* moved to variables in InputMapping
 #define INPUT_BUTTON_ENTER 0
 #define INPUT_BUTTON_UP 1
 #define INPUT_BUTTON_DOWN 2
 #define INPUT_BUTTON_BACK 3
 #define INPUT_BUTTON_INSERT 4
+*/
 
 // DIN ATN is inverted and then connected to pb7 and ca1
 //	- also input to xor with ATNAout pb4
