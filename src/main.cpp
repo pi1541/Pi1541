@@ -19,6 +19,7 @@
 #include "defs.h"
 #include <string.h>
 #include <strings.h>
+#include <time.h>
 #include "Timer.h"
 #include "ROMs.h"
 #include "stb_image.h"
@@ -1157,7 +1158,8 @@ int DisplayOptions(int y_pos)
 	snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", options.InvertIECOutputs());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 
-	snprintf(tempBuffer, tempBufferSize, "i2cLcdAddress = %d\r\n", options.I2CLcdAddress());
+	snprintf(tempBuffer, tempBufferSize, "i2cLcdAddress = %d model %d\r\n"
+		, options.I2CLcdAddress(), options.I2CLcdModel());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "i2cRtcAddress = %d model %d\r\n"
 		, options.I2CRtcAddress(), options.I2CRtcModel());
@@ -1336,30 +1338,22 @@ extern "C"
 		if (options.I2CScan())
 			DisplayI2CScan(y_pos+=32);
 
+		InitialiseRTC();
+
 		if (options.ShowOptions())
 		{
 			y_pos += 32;
 			y_pos = 32 + DisplayOptions(y_pos);
+
+			if (RTC)
+			{
+				time_t nownow = RTC->get();
+				snprintf(tempBuffer, tempBufferSize, "epoch time is %llu %s\r\n"
+					, nownow, asctime(gmtime(&nownow)) );
+				screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+			}
 		}
 
-		InitialiseRTC();
-		if (RTC)
-		{
-			time_t blah = RTC->get();
-			snprintf(tempBuffer, tempBufferSize, "time is %llu\r\n", blah);
-			screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-			IEC_Bus::WaitMicroSeconds(3 * 1000000);
-
-			blah = RTC->get();
-			snprintf(tempBuffer, tempBufferSize, "time is %llu\r\n", blah);
-			screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-			IEC_Bus::WaitMicroSeconds(3 * 1000000);
-
-			blah = RTC->get();
-			snprintf(tempBuffer, tempBufferSize, "time is %llu\r\n", blah);
-			screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-			IEC_Bus::WaitMicroSeconds(3 * 1000000);
-		}
 		if (!options.QuickBoot())
 			IEC_Bus::WaitMicroSeconds(3 * 1000000);
 

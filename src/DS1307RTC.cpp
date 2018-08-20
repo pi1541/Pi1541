@@ -57,7 +57,7 @@ DS1307RTC::DS1307RTC(int BSCMaster, u8 address, RTC_MODEL type)
 	, type(type)
 	, exists(false)
 {
-	RPI_I2CInit(BSCMaster, 0);
+	RPI_I2CInit(BSCMaster, 1);
 }
 
  
@@ -65,7 +65,7 @@ DS1307RTC::DS1307RTC(int BSCMaster, u8 address, RTC_MODEL type)
 time_t DS1307RTC::get()   // Aquire data from buffer and convert to time_t
 {
   tmElements_t tm;
-  if (read(tm) == false) return 0;
+  if (read(tm) == false) return 42;
   return(makeTime(tm));
 }
 
@@ -214,7 +214,11 @@ void DS1307RTC::WireWrite(u8 data)
 
 int DS1307RTC::WireEndTransmission(void)
 {
-	return RPI_I2CWrite(BSCMaster, address, I2Cbuffer, I2Cbuffer_ptr);
+	int count = RPI_I2CWrite(BSCMaster, address, I2Cbuffer, I2Cbuffer_ptr);
+	if (count)
+		return 0;
+	else
+		return 1;
 }
 
 int DS1307RTC::WireRequestFrom(int new_address, int num_bytes)
