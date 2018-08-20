@@ -1348,7 +1348,7 @@ extern "C"
 			if (RTC)
 			{
 				time_t nownow = RTC->get();
-				snprintf(tempBuffer, tempBufferSize, "epoch time is %llu %s\r\n"
+				snprintf(tempBuffer, tempBufferSize, "Time is %llu %s\r\n"
 					, nownow, asctime(gmtime(&nownow)) );
 				screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 			}
