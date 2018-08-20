@@ -81,16 +81,18 @@ bool DS1307RTC::read(tmElements_t &tm)
 {
   uint8_t sec;
 
-//  Wire.beginTransmission(DS1307_CTRL_ID);
-  if ( !WireWrite((uint8_t)0x00) ) {
+  WireBeginTransmission(DS1307_CTRL_ID);
+  WireWrite((uint8_t)0x00);;
+  if (WireEndTransmission() != 0) {
     exists = false;
     return false;
   }
   exists = true;
 
   // request the 7 data fields   (secs, min, hr, dow, date, mth, yr)
-//  Wire.requestFrom(DS1307_CTRL_ID, tmNbrFields);
-//  if (Wire.available() < tmNbrFields) return false;
+#define tmNbrFields 7
+  WireRequestFrom(DS1307_CTRL_ID, tmNbrFields);
+  if (WireAvailable() < tmNbrFields) return false;
 
   sec = WireRead();
   tm.Second = bcd2dec(sec & 0x7f);   
@@ -110,31 +112,27 @@ bool DS1307RTC::write(tmElements_t &tm)
   // To eliminate any potential race conditions,
   // stop the clock before writing the values,
   // then restart it after.
-//  Wire.beginTransmission(DS1307_CTRL_ID);
+  WireBeginTransmission(DS1307_CTRL_ID);
+  WireWrite((uint8_t)0x00); // reset register pointer  
+  WireWrite((uint8_t)0x80); // Stop the clock. The seconds will be written last
+  WireWrite(dec2bcd(tm.Minute));
+  WireWrite(dec2bcd(tm.Hour));      // sets 24 hour format
+  WireWrite(dec2bcd(tm.Wday));   
+  WireWrite(dec2bcd(tm.Day));
+  WireWrite(dec2bcd(tm.Month));
+  WireWrite(dec2bcd(tmYearToY2k(tm.Year))); 
 
-  happy=true;
-  happy &= WireWrite((uint8_t)0x00); // reset register pointer  
-  happy &= WireWrite((uint8_t)0x80); // Stop the clock. The seconds will be written last
-  happy &= WireWrite(dec2bcd(tm.Minute));
-  happy &= WireWrite(dec2bcd(tm.Hour));      // sets 24 hour format
-  happy &= WireWrite(dec2bcd(tm.Wday));   
-  happy &= WireWrite(dec2bcd(tm.Day));
-  happy &= WireWrite(dec2bcd(tm.Month));
-  happy &= WireWrite(dec2bcd(tmYearToY2k(tm.Year))); 
-
-  if (!happy) {
+  if (WireEndTransmission() != 0) {
     exists = false;
     return false;
   }
   exists = true;
 
   // Now go back and set the seconds, starting the clock back up as a side effect
-//  Wire.beginTransmission(DS1307_CTRL_ID);
-
-  happy=true;
-  happy &= WireWrite((uint8_t)0x00); // reset register pointer  
-  happy &= WireWrite(dec2bcd(tm.Second)); // write the seconds, with the stop bit clear to restart
-  if (!happy) {
+  WireBeginTransmission(DS1307_CTRL_ID);
+  WireWrite((uint8_t)0x00); // reset register pointer  
+  WireWrite(dec2bcd(tm.Second)); // write the seconds, with the stop bit clear to restart
+  if (WireEndTransmission() != 0) {
     exists = false;
     return false;
   }
@@ -144,14 +142,14 @@ bool DS1307RTC::write(tmElements_t &tm)
 
 unsigned char DS1307RTC::isRunning()
 {
-//  Wire.beginTransmission(DS1307_CTRL_ID);
+  WireBeginTransmission(DS1307_CTRL_ID);
 
   WireWrite((uint8_t)0x00); 
 
-//  Wire.endTransmission();
+  WireEndTransmission();
 
   // Just fetch the seconds register and check the top bit
-//  Wire.requestFrom(DS1307_CTRL_ID, 1);
+  WireRequestFrom(DS1307_CTRL_ID, 1);
 
   return !(WireRead() & 0x80);
 }
@@ -160,23 +158,21 @@ void DS1307RTC::setCalibration(char calValue)
 {
   unsigned char calReg = abs(calValue) & 0x1f;
   if (calValue >= 0) calReg |= 0x20; // S bit is positive to speed up the clock
-//  Wire.beginTransmission(DS1307_CTRL_ID);
+  WireBeginTransmission(DS1307_CTRL_ID);
 
   WireWrite((uint8_t)0x07); // Point to calibration register
   WireWrite(calReg);
 
-//  Wire.endTransmission();  
+  WireEndTransmission();  
 }
 
 char DS1307RTC::getCalibration()
 {
-//  Wire.beginTransmission(DS1307_CTRL_ID);
-
+  WireBeginTransmission(DS1307_CTRL_ID);
   WireWrite((uint8_t)0x07); 
+  WireEndTransmission();
 
-//  Wire.endTransmission();
-
-//  Wire.requestFrom(DS1307_CTRL_ID, 1);
+  WireRequestFrom(DS1307_CTRL_ID, 1);
   unsigned char calReg = WireRead();
 
   char out = calReg & 0x1f;
@@ -202,21 +198,52 @@ uint8_t DS1307RTC::bcd2dec(uint8_t num)
 
 //DS1307RTC RTC = DS1307RTC(); // create an instance for the user
 
-int DS1307RTC::WireWrite(u8 command)
+void DS1307RTC::WireBeginTransmission(int new_address)
 {
-	char buffer[2];
+	if (new_address)
+		address = new_address;
+	I2Cbuffer_ptr = 0;
+	I2Cbuffer_len = 0;
+}
 
-	buffer[0] = command;
+void DS1307RTC::WireWrite(u8 data)
+{
+	if (I2Cbuffer_ptr < 256-1)
+		I2Cbuffer[I2Cbuffer_ptr++] = data;
+}
 
-	return RPI_I2CWrite(BSCMaster, address, buffer, sizeof(buffer));
+int DS1307RTC::WireEndTransmission(void)
+{
+	return RPI_I2CWrite(BSCMaster, address, I2Cbuffer, I2Cbuffer_ptr);
+}
+
+int DS1307RTC::WireRequestFrom(int new_address, int num_bytes)
+{
+	if (new_address)
+		address = new_address;
+
+	if (num_bytes < 256)
+	{
+		I2Cbuffer_ptr = 0;
+		I2Cbuffer_len = RPI_I2CRead(BSCMaster, address, I2Cbuffer, num_bytes);
+		return I2Cbuffer_len;
+	}
+	else
+	{
+		I2Cbuffer_ptr = 0;
+		I2Cbuffer_len = 0;
+		return 0;
+	}
+}
+
+int DS1307RTC::WireAvailable(void)
+{
+	return (I2Cbuffer_len - I2Cbuffer_ptr);
 }
 
 u8 DS1307RTC::WireRead(void)
 {
-	char buffer[2];
-
-	RPI_I2CRead(BSCMaster, address, buffer, 1);
-	return buffer[0];
+	return I2Cbuffer[I2Cbuffer_ptr++];
 }
 
 /*
