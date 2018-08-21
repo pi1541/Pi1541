@@ -88,6 +88,11 @@ u8 LcdLogoFile[LCD_LOGO_MAX_SIZE];
 
 u8 s_u8Memory[0xc000];
 
+extern "C"
+{
+extern time_t ClockTime;
+}
+
 DiskCaddy diskCaddy;
 Pi1541 pi1541;
 CEMMCDevice	m_EMMC;
@@ -449,6 +454,7 @@ void UpdateScreen()
 	bool oldCLOCK = false;
 
 	u32 oldTrack = 0;
+	time_t oldClockTime = 0;
 	u32 textColour = COLOUR_BLACK;
 	u32 bgColour = COLOUR_WHITE;
 
@@ -593,6 +599,13 @@ void UpdateScreen()
 		{
 			//refreshUartStatusDisplay =
 				diskCaddy.Update();
+		} else {
+			if (ClockTime != oldClockTime)
+			{
+				oldClockTime = ClockTime;
+				snprintf(tempBuffer, tempBufferSize, "%s" , asctime(gmtime(&oldClockTime)) );
+				screen.PrintText(false, 0, y-40, tempBuffer, COLOUR_BLACK, COLOUR_WHITE);
+			}
 		}
 
 		//if (options.GetSupportUARTInput())
@@ -1348,6 +1361,7 @@ extern "C"
 			if (RTC)
 			{
 				time_t nownow = RTC->get();
+				ClockTime = nownow;
 				snprintf(tempBuffer, tempBufferSize, "Time is %llu %s\r\n"
 					, nownow, asctime(gmtime(&nownow)) );
 				screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
