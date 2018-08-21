@@ -196,7 +196,27 @@ extern "C"
 }
 
 // Hooks for FatFs
-DWORD get_fattime() { return 0; }	// If you have hardware RTC return a correct value here. THis can then be reflected in file modification times/dates.
+// If you have hardware RTC return a correct value here. 
+// This can then be reflected in file modification times/dates.
+
+DWORD get_fattime () {
+	struct tm* my_time;
+	my_time = gmtime ( &ClockTime );
+
+	if (my_time->tm_year < 80)
+		return 0;	// clearly invalid if <1980
+	else
+		my_time->tm_year -= 80;
+
+	DWORD fattime =   (DWORD)(my_time->tm_year) << 25
+			| (DWORD)(my_time->tm_mon + 1) << 21
+			| (DWORD)(my_time->tm_mday) << 16
+			| (DWORD)(my_time->tm_hour) << 11
+			| (DWORD)(my_time->tm_min) << 5
+			| (DWORD)(my_time->tm_sec/2);
+
+	return fattime;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // 6502 Address bus functions.
@@ -361,6 +381,7 @@ void InitialiseRTC()
 	if (options.I2CRtcModel() == RTC_DS1307)
 	{
 		RTC = new DS1307RTC(options.I2CBusMaster(), options.I2CRtcAddress(), options.I2CRtcModel() );
+		ClockTime = RTC->get();
 	}
 }
 
@@ -1360,10 +1381,8 @@ extern "C"
 
 			if (RTC)
 			{
-				time_t nownow = RTC->get();
-				ClockTime = nownow;
-				snprintf(tempBuffer, tempBufferSize, "Time is %llu %s\r\n"
-					, nownow, asctime(gmtime(&nownow)) );
+				snprintf(tempBuffer, tempBufferSize, "Time is %s\r\n"
+					, asctime(gmtime(&ClockTime)) );
 				screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 			}
 		}

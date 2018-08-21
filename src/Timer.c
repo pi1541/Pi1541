@@ -57,7 +57,7 @@ static void TimerInterruptHandler(void* pParam)
 
 	++Ticks;
 
-	if (Ticks % HZ == 0)
+	if ( (Ticks % HZ == 0) && ( ClockTime > 1000) )
 	{
 		ClockTime++;
 	}
