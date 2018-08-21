@@ -60,14 +60,6 @@ class DallasRTC
     uint8_t dec2bcd(uint8_t num);
     uint8_t bcd2dec(uint8_t num);
 
-//    void WireBeginTransmission(int new_address);
-//    void WireWrite(u8 command);
- //   int WireEndTransmission(void);
-
-//    int WireRequestFrom(int new_address, int num_bytes);
-//    int WireAvailable(void);
-//    u8 WireRead(void);
-
     time_t makeTime(const tmElements_t &tm);
     void breakTime(time_t timeInput, tmElements_t &tm);
     char I2Cbuffer[256];

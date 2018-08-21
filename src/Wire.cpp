@@ -134,7 +134,10 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop){
   txBufferIndex = 0;
   txBufferLength = 0;
   transmitting = 0;
-  return ret;
+  if (ret == 1)
+    return 0;
+  else
+    return 4;
 }
 
 uint8_t TwoWire::endTransmission(void){

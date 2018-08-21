@@ -200,60 +200,6 @@ uint8_t DallasRTC::bcd2dec(uint8_t num)
 //DallasRTC RTC = DallasRTC(); // create an instance for the user
 
 /*
-void DallasRTC::WireBeginTransmission(int new_address)
-{
-	if (new_address)
-		address = new_address;
-	I2Cbuffer_ptr = 0;
-	I2Cbuffer_len = 0;
-}
-
-void DallasRTC::WireWrite(u8 data)
-{
-	if (I2Cbuffer_ptr < 256-1)
-		I2Cbuffer[I2Cbuffer_ptr++] = data;
-}
-
-int DallasRTC::WireEndTransmission(void)
-{
-	int count = RPI_I2CWrite(BSCMaster, address, I2Cbuffer, I2Cbuffer_ptr);
-	if (count)
-		return 0;
-	else
-		return 1;
-}
-
-int DallasRTC::WireRequestFrom(int new_address, int num_bytes)
-{
-	if (new_address)
-		address = new_address;
-
-	if (num_bytes < 256)
-	{
-		I2Cbuffer_ptr = 0;
-		I2Cbuffer_len = RPI_I2CRead(BSCMaster, address, I2Cbuffer, num_bytes);
-		return I2Cbuffer_len;
-	}
-	else
-	{
-		I2Cbuffer_ptr = 0;
-		I2Cbuffer_len = 0;
-		return 0;
-	}
-}
-
-int DallasRTC::WireAvailable(void)
-{
-	return (I2Cbuffer_len - I2Cbuffer_ptr);
-}
-
-u8 DallasRTC::WireRead(void)
-{
-	return I2Cbuffer[I2Cbuffer_ptr++];
-}
-*/
-
-/*
   time.c - low level time and date functions
   Copyright (c) Michael Margolis 2009-2014
 
