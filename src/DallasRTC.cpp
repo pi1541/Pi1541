@@ -19,7 +19,7 @@
 #include "DallasRTC.h"
 #include "debug.h"
 #include <string.h>
-
+#include "Wire.h"
 
 /*
  * DallasRTC.h - library for DS1307 style RTC
@@ -57,7 +57,8 @@ DallasRTC::DallasRTC(int BSCMaster, u8 address, RTC_MODEL type)
 	, type(type)
 	, exists(false)
 {
-	RPI_I2CInit(BSCMaster, 1);
+//	RPI_I2CInit(BSCMaster, 1);
+	Wire.begin(BSCMaster, 1);
 }
 
  
@@ -81,9 +82,9 @@ bool DallasRTC::read(tmElements_t &tm)
 {
   uint8_t sec;
 
-  WireBeginTransmission(DS1307_CTRL_ID);
-  WireWrite((uint8_t)0x00);;
-  if (WireEndTransmission() != 0) {
+  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.write((uint8_t)0x00);;
+  if (Wire.endTransmission() != 0) {
     exists = false;
     return false;
   }
@@ -91,17 +92,17 @@ bool DallasRTC::read(tmElements_t &tm)
 
   // request the 7 data fields   (secs, min, hr, dow, date, mth, yr)
 #define tmNbrFields 7
-  WireRequestFrom(DS1307_CTRL_ID, tmNbrFields);
-  if (WireAvailable() < tmNbrFields) return false;
+  Wire.requestFrom(DS1307_CTRL_ID, tmNbrFields);
+  if (Wire.available() < tmNbrFields) return false;
 
-  sec = WireRead();
+  sec = Wire.read();
   tm.Second = bcd2dec(sec & 0x7f);   
-  tm.Minute = bcd2dec(WireRead() );
-  tm.Hour =   bcd2dec(WireRead() & 0x3f);  // mask assumes 24hr clock
-  tm.Wday = bcd2dec(WireRead() );
-  tm.Day = bcd2dec(WireRead() );
-  tm.Month = bcd2dec(WireRead() );
-  tm.Year = y2kYearToTm((bcd2dec(WireRead())));
+  tm.Minute = bcd2dec(Wire.read() );
+  tm.Hour =   bcd2dec(Wire.read() & 0x3f);  // mask assumes 24hr clock
+  tm.Wday = bcd2dec(Wire.read() );
+  tm.Day = bcd2dec(Wire.read() );
+  tm.Month = bcd2dec(Wire.read() );
+  tm.Year = y2kYearToTm((bcd2dec(Wire.read())));
 
   if (sec & 0x80) return false; // clock is halted
   return true;
@@ -112,27 +113,27 @@ bool DallasRTC::write(tmElements_t &tm)
   // To eliminate any potential race conditions,
   // stop the clock before writing the values,
   // then restart it after.
-  WireBeginTransmission(DS1307_CTRL_ID);
-  WireWrite((uint8_t)0x00); // reset register pointer  
-  WireWrite((uint8_t)0x80); // Stop the clock. The seconds will be written last
-  WireWrite(dec2bcd(tm.Minute));
-  WireWrite(dec2bcd(tm.Hour));      // sets 24 hour format
-  WireWrite(dec2bcd(tm.Wday));   
-  WireWrite(dec2bcd(tm.Day));
-  WireWrite(dec2bcd(tm.Month));
-  WireWrite(dec2bcd(tmYearToY2k(tm.Year))); 
+  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.write((uint8_t)0x00); // reset register pointer  
+  Wire.write((uint8_t)0x80); // Stop the clock. The seconds will be written last
+  Wire.write(dec2bcd(tm.Minute));
+  Wire.write(dec2bcd(tm.Hour));      // sets 24 hour format
+  Wire.write(dec2bcd(tm.Wday));   
+  Wire.write(dec2bcd(tm.Day));
+  Wire.write(dec2bcd(tm.Month));
+  Wire.write(dec2bcd(tmYearToY2k(tm.Year))); 
 
-  if (WireEndTransmission() != 0) {
+  if (Wire.endTransmission() != 0) {
     exists = false;
     return false;
   }
   exists = true;
 
   // Now go back and set the seconds, starting the clock back up as a side effect
-  WireBeginTransmission(DS1307_CTRL_ID);
-  WireWrite((uint8_t)0x00); // reset register pointer  
-  WireWrite(dec2bcd(tm.Second)); // write the seconds, with the stop bit clear to restart
-  if (WireEndTransmission() != 0) {
+  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.write((uint8_t)0x00); // reset register pointer  
+  Wire.write(dec2bcd(tm.Second)); // write the seconds, with the stop bit clear to restart
+  if (Wire.endTransmission() != 0) {
     exists = false;
     return false;
   }
@@ -142,38 +143,38 @@ bool DallasRTC::write(tmElements_t &tm)
 
 unsigned char DallasRTC::isRunning()
 {
-  WireBeginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(DS1307_CTRL_ID);
 
-  WireWrite((uint8_t)0x00); 
+  Wire.write((uint8_t)0x00); 
 
-  WireEndTransmission();
+  Wire.endTransmission();
 
   // Just fetch the seconds register and check the top bit
-  WireRequestFrom(DS1307_CTRL_ID, 1);
+  Wire.requestFrom(DS1307_CTRL_ID, 1);
 
-  return !(WireRead() & 0x80);
+  return !(Wire.read() & 0x80);
 }
 
 void DallasRTC::setCalibration(char calValue)
 {
   unsigned char calReg = abs(calValue) & 0x1f;
   if (calValue >= 0) calReg |= 0x20; // S bit is positive to speed up the clock
-  WireBeginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(DS1307_CTRL_ID);
 
-  WireWrite((uint8_t)0x07); // Point to calibration register
-  WireWrite(calReg);
+  Wire.write((uint8_t)0x07); // Point to calibration register
+  Wire.write(calReg);
 
-  WireEndTransmission();  
+  Wire.endTransmission();  
 }
 
 char DallasRTC::getCalibration()
 {
-  WireBeginTransmission(DS1307_CTRL_ID);
-  WireWrite((uint8_t)0x07); 
-  WireEndTransmission();
+  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.write((uint8_t)0x07); 
+  Wire.endTransmission();
 
-  WireRequestFrom(DS1307_CTRL_ID, 1);
-  unsigned char calReg = WireRead();
+  Wire.requestFrom(DS1307_CTRL_ID, 1);
+  unsigned char calReg = Wire.read();
 
   char out = calReg & 0x1f;
   if (!(calReg & 0x20)) out = -out; // S bit clear means a negative value
@@ -198,6 +199,7 @@ uint8_t DallasRTC::bcd2dec(uint8_t num)
 
 //DallasRTC RTC = DallasRTC(); // create an instance for the user
 
+/*
 void DallasRTC::WireBeginTransmission(int new_address)
 {
 	if (new_address)
@@ -249,6 +251,7 @@ u8 DallasRTC::WireRead(void)
 {
 	return I2Cbuffer[I2Cbuffer_ptr++];
 }
+*/
 
 /*
   time.c - low level time and date functions

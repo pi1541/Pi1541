@@ -53,13 +53,15 @@ TwoWire::TwoWire(){}
 
 // Public Methods //////////////////////////////////////////////////////////////
 
-void TwoWire::begin(int bus, int dummy){
-  bus = bus;
+void TwoWire::begin(int i2cbus, int dummy){
+  bus = i2cbus;
+  RPI_I2CInit(bus, 1);
+
 //  twi_init(sda, scl);
 }
 
 void TwoWire::begin(void){
-  begin(1);
+  begin(0,1);
 }
 
 void TwoWire::begin(uint8_t address){
