@@ -90,3 +90,7 @@ GraphIEC = 1
 //ShowOptions = 0	// display some options on startup screen 
 //IgnoreReset = 0
 
+// Realtime clock support is provided
+//RTCName = ds1338	// ds1337, ds3231 should also work but untested. need 400khz capable device
+//i2cRtcAddress = 104	// = 0x68 which most devices use
+

@@ -41,7 +41,7 @@ extern "C"
 #include "Pi1541.h"
 #include "FileBrowser.h"
 #include "ScreenLCD.h"
-#include "DS1307RTC.h"
+#include "DallasRTC.h"
 
 #include "logo.h"
 #include "sample.h"
@@ -98,7 +98,7 @@ Pi1541 pi1541;
 CEMMCDevice	m_EMMC;
 Screen screen;
 ScreenLCD* screenLCD = 0;
-DS1307RTC* RTC = 0;
+DallasRTC* RTC = 0;
 Options options;
 const char* fileBrowserSelectedName;
 u8 deviceID = 8;
@@ -378,9 +378,9 @@ void InitialiseHardware()
 
 void InitialiseRTC()
 {
-	if (options.I2CRtcModel() == RTC_DS1307)
+	if (options.I2CRtcModel())
 	{
-		RTC = new DS1307RTC(options.I2CBusMaster(), options.I2CRtcAddress(), options.I2CRtcModel() );
+		RTC = new DallasRTC(options.I2CBusMaster(), options.I2CRtcAddress(), options.I2CRtcModel() );
 		ClockTime = RTC->get();
 	}
 }

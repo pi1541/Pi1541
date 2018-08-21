@@ -16,13 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Pi1541. If not, see <http://www.gnu.org/licenses/>.
 
-#include "DS1307RTC.h"
+#include "DallasRTC.h"
 #include "debug.h"
 #include <string.h>
 
 
 /*
- * DS1307RTC.h - library for DS1307 RTC
+ * DallasRTC.h - library for DS1307 style RTC
   
   Copyright (c) Michael Margolis 2009
   This library is intended to be uses with Arduino Time library functions
@@ -46,12 +46,12 @@
  */
 
 
-#include "DS1307RTC.h"
+#include "DallasRTC.h"
 
 #define DS1307_CTRL_ID 0x68 
 
 
-DS1307RTC::DS1307RTC(int BSCMaster, u8 address, RTC_MODEL type)
+DallasRTC::DallasRTC(int BSCMaster, u8 address, RTC_MODEL type)
 	: BSCMaster(BSCMaster)
 	, address(address)
 	, type(type)
@@ -62,14 +62,14 @@ DS1307RTC::DS1307RTC(int BSCMaster, u8 address, RTC_MODEL type)
 
  
 // PUBLIC FUNCTIONS
-time_t DS1307RTC::get()   // Aquire data from buffer and convert to time_t
+time_t DallasRTC::get()   // Aquire data from buffer and convert to time_t
 {
   tmElements_t tm;
   if (read(tm) == false) return 42;
   return(makeTime(tm));
 }
 
-bool DS1307RTC::set(time_t t)
+bool DallasRTC::set(time_t t)
 {
   tmElements_t tm;
   breakTime(t, tm);
@@ -77,7 +77,7 @@ bool DS1307RTC::set(time_t t)
 }
 
 // Aquire data from the RTC chip in BCD format
-bool DS1307RTC::read(tmElements_t &tm)
+bool DallasRTC::read(tmElements_t &tm)
 {
   uint8_t sec;
 
@@ -107,7 +107,7 @@ bool DS1307RTC::read(tmElements_t &tm)
   return true;
 }
 
-bool DS1307RTC::write(tmElements_t &tm)
+bool DallasRTC::write(tmElements_t &tm)
 {
   // To eliminate any potential race conditions,
   // stop the clock before writing the values,
@@ -140,7 +140,7 @@ bool DS1307RTC::write(tmElements_t &tm)
   return true;
 }
 
-unsigned char DS1307RTC::isRunning()
+unsigned char DallasRTC::isRunning()
 {
   WireBeginTransmission(DS1307_CTRL_ID);
 
@@ -154,7 +154,7 @@ unsigned char DS1307RTC::isRunning()
   return !(WireRead() & 0x80);
 }
 
-void DS1307RTC::setCalibration(char calValue)
+void DallasRTC::setCalibration(char calValue)
 {
   unsigned char calReg = abs(calValue) & 0x1f;
   if (calValue >= 0) calReg |= 0x20; // S bit is positive to speed up the clock
@@ -166,7 +166,7 @@ void DS1307RTC::setCalibration(char calValue)
   WireEndTransmission();  
 }
 
-char DS1307RTC::getCalibration()
+char DallasRTC::getCalibration()
 {
   WireBeginTransmission(DS1307_CTRL_ID);
   WireWrite((uint8_t)0x07); 
@@ -183,22 +183,22 @@ char DS1307RTC::getCalibration()
 // PRIVATE FUNCTIONS
 
 // Convert Decimal to Binary Coded Decimal (BCD)
-uint8_t DS1307RTC::dec2bcd(uint8_t num)
+uint8_t DallasRTC::dec2bcd(uint8_t num)
 {
   return ((num/10 * 16) + (num % 10));
 }
 
 // Convert Binary Coded Decimal (BCD) to Decimal
-uint8_t DS1307RTC::bcd2dec(uint8_t num)
+uint8_t DallasRTC::bcd2dec(uint8_t num)
 {
   return ((num/16 * 10) + (num % 16));
 }
 
-//bool DS1307RTC::exists = false;
+//bool DallasRTC::exists = false;
 
-//DS1307RTC RTC = DS1307RTC(); // create an instance for the user
+//DallasRTC RTC = DallasRTC(); // create an instance for the user
 
-void DS1307RTC::WireBeginTransmission(int new_address)
+void DallasRTC::WireBeginTransmission(int new_address)
 {
 	if (new_address)
 		address = new_address;
@@ -206,13 +206,13 @@ void DS1307RTC::WireBeginTransmission(int new_address)
 	I2Cbuffer_len = 0;
 }
 
-void DS1307RTC::WireWrite(u8 data)
+void DallasRTC::WireWrite(u8 data)
 {
 	if (I2Cbuffer_ptr < 256-1)
 		I2Cbuffer[I2Cbuffer_ptr++] = data;
 }
 
-int DS1307RTC::WireEndTransmission(void)
+int DallasRTC::WireEndTransmission(void)
 {
 	int count = RPI_I2CWrite(BSCMaster, address, I2Cbuffer, I2Cbuffer_ptr);
 	if (count)
@@ -221,7 +221,7 @@ int DS1307RTC::WireEndTransmission(void)
 		return 1;
 }
 
-int DS1307RTC::WireRequestFrom(int new_address, int num_bytes)
+int DallasRTC::WireRequestFrom(int new_address, int num_bytes)
 {
 	if (new_address)
 		address = new_address;
@@ -240,12 +240,12 @@ int DS1307RTC::WireRequestFrom(int new_address, int num_bytes)
 	}
 }
 
-int DS1307RTC::WireAvailable(void)
+int DallasRTC::WireAvailable(void)
 {
 	return (I2Cbuffer_len - I2Cbuffer_ptr);
 }
 
-u8 DS1307RTC::WireRead(void)
+u8 DallasRTC::WireRead(void)
 {
 	return I2Cbuffer[I2Cbuffer_ptr++];
 }
@@ -260,7 +260,7 @@ u8 DS1307RTC::WireRead(void)
 
 static  const uint8_t monthDays[]={31,28,31,30,31,30,31,31,30,31,30,31}; // API starts months from 1, this array starts from 0
 
-void DS1307RTC::breakTime(time_t timeInput, tmElements_t &tm){
+void DallasRTC::breakTime(time_t timeInput, tmElements_t &tm){
 // break the given time_t into time components
 // this is a more compact version of the C library localtime function
 // note that year is offset from 1970 !!!
@@ -314,7 +314,7 @@ void DS1307RTC::breakTime(time_t timeInput, tmElements_t &tm){
 }
 
 
-time_t DS1307RTC::makeTime(const tmElements_t &tm){
+time_t DallasRTC::makeTime(const tmElements_t &tm){
 // assemble time elements into time_t
 // note year argument is offset from 1970 (see macros in time.h to convert to other formats)
 // previous version used full four digit year (or digits since 2000),i.e. 2009 was 2009 or 9

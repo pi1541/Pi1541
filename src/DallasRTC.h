@@ -1,10 +1,10 @@
 /*
- * DS1307RTC.h - library for DS1307 RTC
+ * DallasRTC.h - library for DS1307 style RTC
  * This library is intended to be uses with Arduino Time library functions
  */
 
-#ifndef DS1307RTC_h
-#define DS1307RTC_h
+#ifndef DallasRTC_h
+#define DallasRTC_h
 
 #include <cmath>
 #include <sys/types.h>
@@ -36,11 +36,11 @@ typedef struct  {
 
 
 // library interface description
-class DS1307RTC
+class DallasRTC
 {
   // user-accessible "public" interface
   public:
-    DS1307RTC(int BSCMaster = 1, u8 address = 0x68, RTC_MODEL type = RTC_UNKNOWN);
+    DallasRTC(int BSCMaster = 1, u8 address = 0x68, RTC_MODEL type = RTC_UNKNOWN);
     time_t get();
     bool set(time_t t);
     bool read(tmElements_t &tm);
@@ -81,7 +81,7 @@ class DS1307RTC
 #undef RTC // workaround for Arduino Due, which defines "RTC"...
 #endif
 
-//extern DS1307RTC RTC;
+//extern DallasRTC RTC;
 
 #endif
  

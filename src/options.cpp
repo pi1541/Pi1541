@@ -258,8 +258,10 @@ void Options::Process(char* buffer)
 		}
 		else if ((strcasecmp(pOption, "RTCName") == 0))
 		{
-			if (strcasecmp(pValue, "ds1307") == 0)
-				i2cRtcModel = RTC_DS1307;
+			if (strcasecmp(pValue, "ds1337") == 0)
+				i2cRtcModel = RTC_DS1337;
+			else if (strcasecmp(pValue, "ds1338") == 0)
+				i2cRtcModel = RTC_DS1338;
 			else if (strcasecmp(pValue, "ds3231") == 0)
 				i2cRtcModel = RTC_DS3231;
 		}
