@@ -156,6 +156,7 @@ protected:
 
 	void Memory(void);
 	void User(void);
+	void TimeCommands(void);
 
 	void ProcessCommand(void);
 

@@ -1266,6 +1266,41 @@ void IEC_Commands::User(void)
 	}
 }
 
+// Implemented: T-RA
+void IEC_Commands::TimeCommands(void)
+{
+	Channel& channel = channels[15];
+	const char* text = (const char*)channel.buffer;
+
+//	if (strncasecmp ((const char*)channel.buffer, "T-RA", 4) == 0)
+	if (strncasecmp (text, "T-RA", 4) == 0)
+	{
+		struct tm* my_time;
+		my_time = gmtime ( &ClockTime );
+
+		int hourfix = (my_time->tm_hour)%12;
+		if (hourfix==0)
+			hourfix = 12;
+
+		sprintf(ErrorMessage, "%4s %02d/%02d/%02d %02d:%02d:%02d %cM\r",
+			daynames[my_time->tm_wday],
+			my_time->tm_mon+1,
+			my_time->tm_mday,
+			(my_time->tm_year+1)%100,
+			hourfix,
+			my_time->tm_min,
+			my_time->tm_sec,
+			((my_time->tm_hour < 12) ? 'A' : 'P')
+		);
+	}
+	else if (strncasecmp ((const char*)channel.buffer, "T-WA", 4) == 0)
+	{
+		Error(ERROR_31_SYNTAX_ERROR);
+	}
+	else
+		Error(ERROR_31_SYNTAX_ERROR);
+}
+
 void IEC_Commands::ProcessCommand(void)
 {
 	Error(ERROR_00_OK);
@@ -1337,34 +1372,8 @@ void IEC_Commands::ProcessCommand(void)
 				Scratch();
 			break;
 			case 'T':
-				// RTC support
-				// Implemented: T-RA
-				if (strncasecmp ((const char*)channel.buffer, "T-RA", 4) == 0)
-				{
-					struct tm* my_time;
-					my_time = gmtime ( &ClockTime );
-
-					int hourfix = (my_time->tm_hour)%12;
-					if (hourfix==0)
-						hourfix = 12;
-
-					sprintf(ErrorMessage, "%4s %02d/%02d/%02d %02d:%02d:%02d %cM\r",
-						daynames[my_time->tm_wday],
-						my_time->tm_mon+1,
-						my_time->tm_mday,
-						(my_time->tm_year+1)%100,
-						hourfix,
-						my_time->tm_min,
-						my_time->tm_sec,
-						((my_time->tm_hour < 12) ? 'A' : 'P')
-					);
-				}
-				else if (strncasecmp ((const char*)channel.buffer, "T-WA", 4) == 0)
-				{
-					Error(ERROR_31_SYNTAX_ERROR);
-				}
-				else
-					Error(ERROR_31_SYNTAX_ERROR);
+				// RTC support T-R, T-W
+				TimeCommands();
 			break;
 			case 'U':
 				User();
@@ -1693,8 +1702,10 @@ void IEC_Commands::LoadDirectory()
 		if (!channel.CanFit(DIRECTORY_ENTRY_SIZE))
 			SendBuffer(channel, false);
 
-		if (filInfo->fattrib & AM_DIR) AddDirectoryEntry(channel, fileName, 0, 6);
-		else AddDirectoryEntry(channel, fileName, filInfo->fsize / 256 + 1, 2);
+		if (filInfo->fattrib & AM_DIR)
+			AddDirectoryEntry(channel, fileName, 0, 6);
+		else
+			AddDirectoryEntry(channel, fileName, filInfo->fsize / 256 + 1, 2);
 	}
 
 
@@ -1731,6 +1742,8 @@ void IEC_Commands::LoadDirectory()
 	
 	channel.filInfo.fsize = channel.bytesSent + channel.cursor;
 	SendBuffer(channel, true);
+
+	Error(ERROR_00_OK);
 }
 
 void IEC_Commands::OpenFile()
