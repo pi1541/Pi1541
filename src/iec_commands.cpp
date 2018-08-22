@@ -35,6 +35,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <algorithm>
+#include <time.h>
 
 #define CBM_NAME_LENGTH 16
 #define CBM_NAME_LENGTH_MINUS_D64 CBM_NAME_LENGTH-4
@@ -49,6 +50,7 @@ extern unsigned versionMinor;
 
 extern "C" {
 	extern void reboot_now(void);
+	extern time_t ClockTime;
 }
 
 #define WaitWhile(checkStatus) \
@@ -112,6 +114,17 @@ static u8 blankD64DIRBAM[] =
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	//	0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+static const char *daynames[] =
+{
+	"SUN.",
+	"MON.",
+	"TUES",
+	"WED.",
+	"THUR",
+	"FRI.",
+	"SAT."
 };
 
 static char ErrorMessage[64];
@@ -1325,7 +1338,33 @@ void IEC_Commands::ProcessCommand(void)
 			break;
 			case 'T':
 				// RTC support
-				Error(ERROR_31_SYNTAX_ERROR);	// T-R and T-W not implemented yet
+				// Implemented: T-RA
+				if (strncasecmp ((const char*)channel.buffer, "T-RA", 4) == 0)
+				{
+					struct tm* my_time;
+					my_time = gmtime ( &ClockTime );
+
+					int hourfix = (my_time->tm_hour)%12;
+					if (hourfix==0)
+						hourfix = 12;
+
+					sprintf(ErrorMessage, "%4s %02d/%02d/%02d %02d:%02d:%02d %cM\r",
+						daynames[my_time->tm_wday],
+						my_time->tm_mon+1,
+						my_time->tm_mday,
+						(my_time->tm_year+1)%100,
+						hourfix,
+						my_time->tm_min,
+						my_time->tm_sec,
+						((my_time->tm_hour < 12) ? 'A' : 'P')
+					);
+				}
+				else if (strncasecmp ((const char*)channel.buffer, "T-WA", 4) == 0)
+				{
+					Error(ERROR_31_SYNTAX_ERROR);
+				}
+				else
+					Error(ERROR_31_SYNTAX_ERROR);
 			break;
 			case 'U':
 				User();
