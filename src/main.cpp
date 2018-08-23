@@ -381,7 +381,8 @@ void InitialiseRTC()
 	if (options.I2CRtcModel())
 	{
 		RTC = new DallasRTC(options.I2CBusMaster(), options.I2CRtcAddress(), options.I2CRtcModel() );
-		ClockTime = RTC->get();
+		if (RTC)
+			ClockTime = RTC->get();
 	}
 }
 

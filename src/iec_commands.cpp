@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <time.h>
+#include "DallasRTC.h"
 
 #define CBM_NAME_LENGTH 16
 #define CBM_NAME_LENGTH_MINUS_D64 CBM_NAME_LENGTH-4
@@ -52,6 +53,7 @@ extern "C" {
 	extern void reboot_now(void);
 	extern time_t ClockTime;
 }
+extern DallasRTC* RTC;
 
 #define WaitWhile(checkStatus) \
 	do\
@@ -1272,11 +1274,18 @@ void IEC_Commands::TimeCommands(void)
 	Channel& channel = channels[15];
 	const char* text = (const char*)channel.buffer;
 
-//	if (strncasecmp ((const char*)channel.buffer, "T-RA", 4) == 0)
+	struct tm* my_time;
+	my_time = gmtime ( &ClockTime );
+
+	// clearly invalid if <1980
+	if ((text[2] == 'R') && (my_time->tm_year < 80))
+	{
+		Error(ERROR_31_SYNTAX_ERROR);
+		return;
+	}
+
 	if (strncasecmp (text, "T-RA", 4) == 0)
 	{
-		struct tm* my_time;
-		my_time = gmtime ( &ClockTime );
 
 		int hourfix = (my_time->tm_hour)%12;
 		if (hourfix==0)
@@ -1286,16 +1295,50 @@ void IEC_Commands::TimeCommands(void)
 			daynames[my_time->tm_wday],
 			my_time->tm_mon+1,
 			my_time->tm_mday,
-			(my_time->tm_year+1)%100,
+			(my_time->tm_year)%100,
 			hourfix,
 			my_time->tm_min,
 			my_time->tm_sec,
 			((my_time->tm_hour < 12) ? 'A' : 'P')
 		);
 	}
-	else if (strncasecmp ((const char*)channel.buffer, "T-WA", 4) == 0)
+//cbmctrl command 8 "T-WA`date '+XXX.%m/%d/%g %I:%M:%S %P'`"
+	else if (strncasecmp (text, "T-WA", 4) == 0)
 	{
-		Error(ERROR_31_SYNTAX_ERROR);
+		char day_name[16];
+		char ampm;
+		struct tm my_time = {0};
+
+		int ret = sscanf(text+4 , "%4s %02d/%02d/%02d %02d:%02d:%02d %cM\r",
+			day_name,	// ignored
+			&my_time.tm_mon,
+			&my_time.tm_mday,
+			&my_time.tm_year,
+			&my_time.tm_hour,
+			&my_time.tm_min,
+			&my_time.tm_sec,
+			&ampm
+		);
+		if (ret == 8)
+		{
+			my_time.tm_isdst = 0;
+			my_time.tm_mon -= 1;	// 1..12 -> 0..11
+
+			if (my_time.tm_year < 80) // a year less than 80 is interpreted as 20xx
+				my_time.tm_year += 100;
+
+			my_time.tm_hour %= 12;	// 12,1...11 -> 0..11
+			if ( (ampm == 'p') || (ampm == 'p') )
+			{
+				my_time.tm_hour += 12;	// 0..11 -> 12..23
+			}
+
+			ClockTime = mktime(&my_time);
+		}
+		else
+		{
+			Error(ERROR_30_SYNTAX_ERROR);
+		}
 	}
 	else
 		Error(ERROR_31_SYNTAX_ERROR);
@@ -1373,7 +1416,11 @@ void IEC_Commands::ProcessCommand(void)
 			break;
 			case 'T':
 				// RTC support T-R, T-W
-				TimeCommands();
+				// require RTC present?
+				if ( (channel.buffer[1] == '-') && (RTC) )
+					TimeCommands();
+				else
+					Error(ERROR_30_SYNTAX_ERROR);
 			break;
 			case 'U':
 				User();
@@ -1578,6 +1625,7 @@ void IEC_Commands::SendError()
 			break;
 	}
 	while (!finalByte);
+	Error(ERROR_00_OK);
 }
 
 void IEC_Commands::AddDirectoryEntry(Channel& channel, const char* name, u16 blocks, int fileType)
@@ -1743,7 +1791,6 @@ void IEC_Commands::LoadDirectory()
 	channel.filInfo.fsize = channel.bytesSent + channel.cursor;
 	SendBuffer(channel, true);
 
-	Error(ERROR_00_OK);
 }
 
 void IEC_Commands::OpenFile()
