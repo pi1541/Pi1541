@@ -1284,7 +1284,12 @@ void IEC_Commands::TimeCommands(void)
 		return;
 	}
 
-	if (strncasecmp (text, "T-RA", 4) == 0)
+	// time diff command - return seconds drift between RTC time and Pi time
+	if (strncasecmp (text, "T-DA", 4) == 0)
+	{
+		sprintf(ErrorMessage, "%lld", RTC->get() - ClockTime);
+	}
+	else if (strncasecmp (text, "T-RA", 4) == 0)
 	{
 
 		int hourfix = (my_time->tm_hour)%12;
@@ -1333,7 +1338,8 @@ void IEC_Commands::TimeCommands(void)
 				my_time.tm_hour += 12;	// 0..11 -> 12..23
 			}
 
-			ClockTime = mktime(&my_time);
+			RTC->set(mktime(&my_time));
+			ClockTime = RTC->get();
 		}
 		else
 		{
