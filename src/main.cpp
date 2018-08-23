@@ -1373,19 +1373,12 @@ extern "C"
 		if (options.I2CScan())
 			DisplayI2CScan(y_pos+=32);
 
-		InitialiseRTC();
 
 		if (options.ShowOptions())
 		{
 			y_pos += 32;
 			y_pos = 32 + DisplayOptions(y_pos);
 
-			if (RTC)
-			{
-				snprintf(tempBuffer, tempBufferSize, "Time is %s\r\n"
-					, asctime(gmtime(&ClockTime)) );
-				screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-			}
 		}
 
 		if (!options.QuickBoot())
@@ -1410,6 +1403,12 @@ extern "C"
 		InputMappings::Instance();
 		//USPiMouseRegisterStatusHandler(MouseHandler);
 
+		InitialiseRTC();
+		if (RTC)
+		{
+			snprintf(tempBuffer, tempBufferSize, "Time is %s\r\n" , asctime(gmtime(&ClockTime)) );
+			screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		}
 
 		CheckOptions();
 

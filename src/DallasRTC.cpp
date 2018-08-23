@@ -48,9 +48,6 @@
 
 #include "DallasRTC.h"
 
-#define DS1307_CTRL_ID 0x68 
-
-
 DallasRTC::DallasRTC(int BSCMaster, u8 address, RTC_MODEL type)
 	: BSCMaster(BSCMaster)
 	, address(address)
@@ -82,7 +79,7 @@ bool DallasRTC::read(tmElements_t &tm)
 {
   uint8_t sec;
 
-  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(address);
   Wire.write((uint8_t)0x00);;
   if (Wire.endTransmission() != 0) {
     exists = false;
@@ -92,7 +89,7 @@ bool DallasRTC::read(tmElements_t &tm)
 
   // request the 7 data fields   (secs, min, hr, dow, date, mth, yr)
 #define tmNbrFields 7
-  Wire.requestFrom(DS1307_CTRL_ID, tmNbrFields);
+  Wire.requestFrom(address, (u8)tmNbrFields);
   if (Wire.available() < tmNbrFields) return false;
 
   sec = Wire.read();
@@ -113,7 +110,7 @@ bool DallasRTC::write(tmElements_t &tm)
   // To eliminate any potential race conditions,
   // stop the clock before writing the values,
   // then restart it after.
-  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(address);
   Wire.write((uint8_t)0x00); // reset register pointer  
   Wire.write((uint8_t)0x80); // Stop the clock. The seconds will be written last
   Wire.write(dec2bcd(tm.Minute));
@@ -130,7 +127,7 @@ bool DallasRTC::write(tmElements_t &tm)
   exists = true;
 
   // Now go back and set the seconds, starting the clock back up as a side effect
-  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(address);
   Wire.write((uint8_t)0x00); // reset register pointer  
   Wire.write(dec2bcd(tm.Second)); // write the seconds, with the stop bit clear to restart
   if (Wire.endTransmission() != 0) {
@@ -143,14 +140,14 @@ bool DallasRTC::write(tmElements_t &tm)
 
 unsigned char DallasRTC::isRunning()
 {
-  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(address);
 
   Wire.write((uint8_t)0x00); 
 
   Wire.endTransmission();
 
   // Just fetch the seconds register and check the top bit
-  Wire.requestFrom(DS1307_CTRL_ID, 1);
+  Wire.requestFrom(address, (u8)1);
 
   return !(Wire.read() & 0x80);
 }
@@ -159,7 +156,7 @@ void DallasRTC::setCalibration(char calValue)
 {
   unsigned char calReg = abs(calValue) & 0x1f;
   if (calValue >= 0) calReg |= 0x20; // S bit is positive to speed up the clock
-  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(address);
 
   Wire.write((uint8_t)0x07); // Point to calibration register
   Wire.write(calReg);
@@ -169,11 +166,11 @@ void DallasRTC::setCalibration(char calValue)
 
 char DallasRTC::getCalibration()
 {
-  Wire.beginTransmission(DS1307_CTRL_ID);
+  Wire.beginTransmission(address);
   Wire.write((uint8_t)0x07); 
   Wire.endTransmission();
 
-  Wire.requestFrom(DS1307_CTRL_ID, 1);
+  Wire.requestFrom(address, (u8)1);
   unsigned char calReg = Wire.read();
 
   char out = calReg & 0x1f;
