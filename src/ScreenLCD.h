@@ -41,7 +41,7 @@ public:
 
 	void SetContrast(u8 value);
 	void SetDimLevel(u8 value) { ContrastDim = value; }
-	bool GetDim() { return IsDimmed; }
+	bool GetIsDimmed() { return IsDimmed; }
 	void DimScreen();
 	void UnDimScreen();
 

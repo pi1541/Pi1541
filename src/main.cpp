@@ -639,11 +639,17 @@ void UpdateScreen()
 				snprintf(tempBuffer, tempBufferSize, "%s" , asctime(gmtime(&oldClockTime)) );
 				screen.PrintText(false, 0, y-40, tempBuffer, COLOUR_BLACK, COLOUR_WHITE);
 			}
-			if (options.I2CLcdDimTime() && (IdleTimer > options.I2CLcdDimTime()) )
+			if (screenLCD)
 			{
-				IdleTimer = 1;
-				snprintf(tempBuffer, tempBufferSize, "dimlcd" );
-				screen.PrintText(false, 200, y-40, tempBuffer, COLOUR_BLACK, COLOUR_WHITE);
+				if (options.I2CLcdDimTime() && (IdleTimer == 0) && screenLCD->GetIsDimmed())
+				{
+					screenLCD->UnDimScreen();
+				}
+				if (options.I2CLcdDimTime() && (IdleTimer >= options.I2CLcdDimTime()) && !screenLCD->GetIsDimmed())
+				{
+					IdleTimer = 1;
+					screenLCD->DimScreen();
+				}
 			}
 		}
 

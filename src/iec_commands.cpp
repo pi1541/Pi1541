@@ -1287,7 +1287,7 @@ void IEC_Commands::TimeCommands(void)
 	// time diff command - return seconds drift between RTC time and Pi time
 	if (strncasecmp (text, "T-DA", 4) == 0)
 	{
-		sprintf(ErrorMessage, "%lld", RTC->get() - ClockTime);
+		sprintf(ErrorMessage, "RTC-Pi = %lld", RTC->get() - ClockTime);
 	}
 	else if (strncasecmp (text, "T-RA", 4) == 0)
 	{
