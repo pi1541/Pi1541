@@ -71,7 +71,26 @@ void ScreenLCD::ClearInit(RGBA colour)
 
 void ScreenLCD::SetContrast(u8 value)
 {
+	ContrastOn = value;
 	ssd1306->SetContrast(value);
+}
+
+void ScreenLCD::DimScreen()
+{
+	if (!IsDimmed)
+	{
+		ssd1306->SetContrast(ContrastDim);
+		IsDimmed = true;
+	}
+}
+
+void ScreenLCD::UnDimScreen()
+{
+	if (IsDimmed)
+	{
+		ssd1306->SetContrast(ContrastOn);
+		IsDimmed = false;
+	}
 }
 
 void ScreenLCD::WriteChar(bool petscii, u32 x, u32 y, unsigned char c, RGBA colour)

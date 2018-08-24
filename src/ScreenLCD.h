@@ -40,6 +40,10 @@ public:
 	void ClearInit(RGBA colour);
 
 	void SetContrast(u8 value);
+	void SetDimLevel(u8 value) { ContrastDim = value; }
+	bool GetDim() { return IsDimmed; }
+	void DimScreen();
+	void UnDimScreen();
 
 	void ScrollArea(u32 x1, u32 y1, u32 x2, u32 y2);
 
@@ -62,6 +66,9 @@ public:
 
 private:
 	SSD1306* ssd1306 = 0;
+	int ContrastOn = 0;
+	int ContrastDim = 0;
+	int IsDimmed = false;
 };
 
 #endif

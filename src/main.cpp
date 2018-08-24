@@ -91,6 +91,7 @@ u8 s_u8Memory[0xc000];
 extern "C"
 {
 extern time_t ClockTime;
+extern time_t IdleTimer;
 }
 
 DiskCaddy diskCaddy;
@@ -381,8 +382,11 @@ void InitialiseRTC()
 	if (options.I2CRtcModel())
 	{
 		RTC = new DallasRTC(options.I2CBusMaster(), options.I2CRtcAddress(), options.I2CRtcModel() );
-		if (RTC)
-			ClockTime = RTC->get();
+		ClockTime = RTC->get();
+	}
+	else
+	{
+		RTC = 0;
 	}
 }
 
@@ -408,6 +412,7 @@ void InitialiseLCD()
 		screenLCD = new ScreenLCD();
 		screenLCD->Open(width, height, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
 		screenLCD->SetContrast(i2cLcdOnContrast);
+		screenLCD->SetDimLevel(i2cLcdDimContrast);
 		screenLCD->ClearInit(0); // sh1106 needs this
 
 		bool logo_done = false;
@@ -510,6 +515,7 @@ void UpdateScreen()
 		value = pi1541.drive.IsLEDOn();
 		if (value != oldLED)
 		{
+			IdleTimer = 0;
 //			SetACTLed(value);
 			oldLED = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
@@ -520,6 +526,7 @@ void UpdateScreen()
 		value = pi1541.drive.IsMotorOn();
 		if (value != oldMotor)
 		{
+			IdleTimer = 0;
 			oldMotor = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
 			screen.PrintText(false, 12 * 8, y, tempBuffer, textColour, bgColour);
@@ -545,6 +552,7 @@ void UpdateScreen()
 		}
 		if (value != oldATN)
 		{
+			IdleTimer = 0;
 			oldATN = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
 			screen.PrintText(false, 29 * 8, y, tempBuffer, textColour, bgColour);
@@ -567,6 +575,7 @@ void UpdateScreen()
 		}
 		if (value != oldDATA)
 		{
+			IdleTimer = 0;
 			oldDATA = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
 			screen.PrintText(false, 35 * 8, y, tempBuffer, textColour, bgColour);
@@ -589,6 +598,7 @@ void UpdateScreen()
 		}
 		if (value != oldCLOCK)
 		{
+			IdleTimer = 0;
 			oldCLOCK = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
 			screen.PrintText(false, 41 * 8, y, tempBuffer, textColour, bgColour);
@@ -603,6 +613,7 @@ void UpdateScreen()
 		u32 track = pi1541.drive.Track();
 		if (track != oldTrack)
 		{
+			IdleTimer = 0;
 			oldTrack = track;
 			snprintf(tempBuffer, tempBufferSize, "%02d.%d", (oldTrack >> 1) + 1, oldTrack & 1 ? 5 : 0);
 			screen.PrintText(false, 20 * 8, y, tempBuffer, textColour, bgColour);
@@ -627,6 +638,12 @@ void UpdateScreen()
 				oldClockTime = ClockTime;
 				snprintf(tempBuffer, tempBufferSize, "%s" , asctime(gmtime(&oldClockTime)) );
 				screen.PrintText(false, 0, y-40, tempBuffer, COLOUR_BLACK, COLOUR_WHITE);
+			}
+			if (options.I2CLcdDimTime() && (IdleTimer > options.I2CLcdDimTime()) )
+			{
+				IdleTimer = 1;
+				snprintf(tempBuffer, tempBufferSize, "dimlcd" );
+				screen.PrintText(false, 200, y-40, tempBuffer, COLOUR_BLACK, COLOUR_WHITE);
 			}
 		}
 

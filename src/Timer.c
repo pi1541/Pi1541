@@ -10,6 +10,7 @@
 
 static unsigned Ticks = 0;
 volatile time_t ClockTime = 0;
+volatile time_t IdleTimer = 0;
 
 static volatile TKernelTimer	 m_KernelTimer[KERNEL_TIMERS];	// TODO: should be linked list
 
@@ -60,6 +61,7 @@ static void TimerInterruptHandler(void* pParam)
 	if ( (Ticks % HZ == 0) && ( ClockTime > 1000) )
 	{
 		ClockTime++;
+		IdleTimer++;
 	}
 	TimerPollKernelTimers();
 }
