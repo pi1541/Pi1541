@@ -1291,6 +1291,13 @@ static void CheckOptions()
 	}
 }
 
+void Reboot_Pi()
+{
+	if (screenLCD)
+		screenLCD->ClearInit(0);
+	reboot_now();
+}
+
 extern "C"
 {
 	void kernel_main(unsigned int r0, unsigned int r1, unsigned int atags)
