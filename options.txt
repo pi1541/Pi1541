@@ -84,6 +84,8 @@ GraphIEC = 1
 //i2cLcdAddress = 60	// I2C display address in decimal and shifted. 60 == 0x78, 61 == 0x7A
 //i2cLcdFlip = 1 // Rotate i2c LCD screen 180 degrees
 //i2cLcdOnContrast = 127 // Allows you to adjust the contrast on your i2c LCD screen
+//i2cLcdDimTime = 300 // dim LCD after 300 seconds
+//i2cLcdDimContrast = 10	// Contrast when dim, if i2cLcdDimContrast is 0, screen is turned off
 //i2cScan = 1 // scan i2c bus and display addresses on screen
 
 //QuickBoot = 0		// faster startup
