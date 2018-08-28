@@ -130,6 +130,7 @@ static const char *daynames[] =
 };
 
 static char ErrorMessage[64];
+static int ErrorMessageLength;
 
 static u8* InsertNumber(u8* msg, u8 value)
 {
@@ -220,7 +221,7 @@ void Error(u8 errorCode, u8 track = 0, u8 sector = 0)
 			DEBUG_LOG("EC=%d?\r\n", errorCode);
 		break;
 	}
-	sprintf(ErrorMessage, "%02d, %s, %02d, %02d", errorCode, msg, track, sector);
+	ErrorMessageLength = sprintf(ErrorMessage, "%02d, %s, %02d, %02d", errorCode, msg, track, sector);
 }
 
 static inline bool IsDirectory(FILINFO& filInfo)
@@ -1287,7 +1288,7 @@ void IEC_Commands::TimeCommands(void)
 	// time diff command - return seconds drift between RTC time and Pi time
 	if (strncasecmp (text, "T-DA", 4) == 0)
 	{
-		sprintf(ErrorMessage, "RTC-Pi = %lld", RTC->get() - ClockTime);
+		ErrorMessageLength = sprintf(ErrorMessage, "RTC-Pi = %lld", RTC->get() - ClockTime);
 	}
 	else if (strncasecmp (text, "T-RA", 4) == 0)
 	{
@@ -1296,7 +1297,7 @@ void IEC_Commands::TimeCommands(void)
 		if (hourfix==0)
 			hourfix = 12;
 
-		sprintf(ErrorMessage, "%4s %02d/%02d/%02d %02d:%02d:%02d %cM\r",
+		ErrorMessageLength = sprintf(ErrorMessage, "%4s %02d/%02d/%02d %02d:%02d:%02d %cM\r",
 			daynames[my_time->tm_wday],
 			my_time->tm_mon+1,
 			my_time->tm_mday,
@@ -1340,6 +1341,7 @@ void IEC_Commands::TimeCommands(void)
 
 			RTC->set(mktime(&my_time));
 			ClockTime = RTC->get();
+			Error(ERROR_00_OK);
 		}
 		else
 		{
@@ -1621,12 +1623,13 @@ void IEC_Commands::SaveFile()
 
 void IEC_Commands::SendError()
 {
-	int len = strlen(ErrorMessage);
+//	int len = strlen(ErrorMessage);
 	int index = 0;
 	bool finalByte;
 	do
 	{
-		finalByte = index == len;
+//		finalByte = index == len;
+		finalByte = index == ErrorMessageLength;
 		if (WriteIECSerialPort(ErrorMessage[index++], finalByte))
 			break;
 	}
