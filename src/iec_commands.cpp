@@ -1308,6 +1308,18 @@ void IEC_Commands::TimeCommands(void)
 			((my_time->tm_hour < 12) ? 'A' : 'P')
 		);
 	}
+	else if (strncasecmp (text, "T-RI", 4) == 0)
+	{
+		ErrorMessageLength = sprintf(ErrorMessage, "%4d\-%02d\-%02dT%02d:%02d:%02d %3s\r",
+			(my_time->tm_year),
+			my_time->tm_mon+1,
+			my_time->tm_mday,
+			my_time->tm_hour,
+			my_time->tm_min,
+			my_time->tm_sec,
+			daynames[my_time->tm_wday],
+		);
+	}
 	else if (strncasecmp (text, "T-RD", 4) == 0)
 	{
 		ErrorMessageLength = 9;
@@ -1332,7 +1344,7 @@ void IEC_Commands::TimeCommands(void)
 		ErrorMessage[5] = DallasRTC::dec2bcd( my_time->tm_min );
 		ErrorMessage[6] = DallasRTC::dec2bcd( my_time->tm_sec );
 		ErrorMessage[7] = DallasRTC::dec2bcd( (my_time->tm_hour < 12) ? 0 : 1 );
-		ErrorMessage[8] = DallasRTC::dec2bcd( '\r' );
+		ErrorMessage[8] = '\r';
 	}
 	else if (strncasecmp (text, "T-WA", 4) == 0)
 	{
