@@ -1270,6 +1270,7 @@ void IEC_Commands::User(void)
 }
 
 // Implemented: T-RA
+//cbmctrl command 8 "T-WA`date '+XXX.%m/%d/%g %I:%M:%S %P'`"
 void IEC_Commands::TimeCommands(void)
 {
 	Channel& channel = channels[15];
@@ -1277,6 +1278,10 @@ void IEC_Commands::TimeCommands(void)
 
 	struct tm* my_time;
 	my_time = gmtime ( &ClockTime );
+	int hourfix = (my_time->tm_hour)%12;
+	if (hourfix==0)
+		hourfix = 12;
+
 
 	// clearly invalid if <1980
 	if ((text[2] == 'R') && (my_time->tm_year < 80))
@@ -1292,11 +1297,6 @@ void IEC_Commands::TimeCommands(void)
 	}
 	else if (strncasecmp (text, "T-RA", 4) == 0)
 	{
-
-		int hourfix = (my_time->tm_hour)%12;
-		if (hourfix==0)
-			hourfix = 12;
-
 		ErrorMessageLength = sprintf(ErrorMessage, "%4s %02d/%02d/%02d %02d:%02d:%02d %cM\r",
 			daynames[my_time->tm_wday],
 			my_time->tm_mon+1,
@@ -1308,7 +1308,32 @@ void IEC_Commands::TimeCommands(void)
 			((my_time->tm_hour < 12) ? 'A' : 'P')
 		);
 	}
-//cbmctrl command 8 "T-WA`date '+XXX.%m/%d/%g %I:%M:%S %P'`"
+	else if (strncasecmp (text, "T-RD", 4) == 0)
+	{
+		ErrorMessageLength = 9;
+		ErrorMessage[0] = my_time->tm_wday;
+		ErrorMessage[1] = (my_time->tm_year)-1900;
+		ErrorMessage[2] = my_time->tm_mon+1;
+		ErrorMessage[3] = my_time->tm_mday;
+		ErrorMessage[4] = hourfix;
+		ErrorMessage[5] = my_time->tm_min;
+		ErrorMessage[6] = my_time->tm_sec;
+		ErrorMessage[7] = (my_time->tm_hour < 12) ? 0 : 1;
+		ErrorMessage[8] = '\r';
+	}
+	else if (strncasecmp (text, "T-RB", 4) == 0)
+	{
+		ErrorMessageLength = 9;
+		ErrorMessage[0] = DallasRTC::dec2bcd(my_time->tm_wday);
+		ErrorMessage[1] = DallasRTC::dec2bcd( (my_time->tm_year)%100 );
+		ErrorMessage[2] = DallasRTC::dec2bcd( my_time->tm_mon+1 );
+		ErrorMessage[3] = DallasRTC::dec2bcd( my_time->tm_mday );
+		ErrorMessage[4] = DallasRTC::dec2bcd( hourfix );
+		ErrorMessage[5] = DallasRTC::dec2bcd( my_time->tm_min );
+		ErrorMessage[6] = DallasRTC::dec2bcd( my_time->tm_sec );
+		ErrorMessage[7] = DallasRTC::dec2bcd( (my_time->tm_hour < 12) ? 0 : 1 );
+		ErrorMessage[8] = DallasRTC::dec2bcd( '\r' );
+	}
 	else if (strncasecmp (text, "T-WA", 4) == 0)
 	{
 		char day_name[16];

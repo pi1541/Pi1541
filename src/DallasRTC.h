@@ -50,6 +50,18 @@ class DallasRTC
     void setCalibration(char calValue);
     char getCalibration();
 
+// Convert Decimal to Binary Coded Decimal (BCD)
+static uint8_t dec2bcd(uint8_t num)
+{
+  return ((num/10 * 16) + (num % 10));
+}
+
+static uint8_t bcd2dec(uint8_t num)
+{
+  return ((num/16 * 10) + (num % 16));
+}
+
+
   protected:
     int BSCMaster;
     u8 address;
@@ -57,8 +69,6 @@ class DallasRTC
 
   private:
     bool exists;
-    uint8_t dec2bcd(uint8_t num);
-    uint8_t bcd2dec(uint8_t num);
 
     time_t makeTime(const tmElements_t &tm);
     void breakTime(time_t timeInput, tmElements_t &tm);

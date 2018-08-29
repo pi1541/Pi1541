@@ -632,7 +632,9 @@ void UpdateScreen()
 		{
 			//refreshUartStatusDisplay =
 				diskCaddy.Update();
-		} else {
+		}
+		else
+		{
 			if (ClockTime != oldClockTime)
 			{
 				oldClockTime = ClockTime;

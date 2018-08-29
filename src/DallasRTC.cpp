@@ -180,21 +180,7 @@ char DallasRTC::getCalibration()
 
 // PRIVATE FUNCTIONS
 
-// Convert Decimal to Binary Coded Decimal (BCD)
-uint8_t DallasRTC::dec2bcd(uint8_t num)
-{
-  return ((num/10 * 16) + (num % 10));
-}
-
-// Convert Binary Coded Decimal (BCD) to Decimal
-uint8_t DallasRTC::bcd2dec(uint8_t num)
-{
-  return ((num/16 * 10) + (num % 16));
-}
-
 //bool DallasRTC::exists = false;
-
-//DallasRTC RTC = DallasRTC(); // create an instance for the user
 
 /*
   time.c - low level time and date functions
