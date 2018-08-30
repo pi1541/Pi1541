@@ -1278,9 +1278,9 @@ void IEC_Commands::TimeCommands(void)
 
 	struct tm* my_time;
 	my_time = gmtime ( &ClockTime );
-	int hourfix = (my_time->tm_hour)%12;
+	int hourfix = (my_time->tm_hour)%12;	// 0..23 -> 0..11
 	if (hourfix==0)
-		hourfix = 12;
+		hourfix = 12;			// 12, 1 .. 11
 
 
 	// clearly invalid if <1980
@@ -1310,21 +1310,21 @@ void IEC_Commands::TimeCommands(void)
 	}
 	else if (strncasecmp (text, "T-RI", 4) == 0)
 	{
-		ErrorMessageLength = sprintf(ErrorMessage, "%4d\-%02d\-%02dT%02d:%02d:%02d %3s\r",
-			(my_time->tm_year),
+		ErrorMessageLength = sprintf(ErrorMessage, "%4d-%02d-%02dT%02d:%02d:%02d %3.3s\r",
+			(my_time->tm_year)+1900,
 			my_time->tm_mon+1,
 			my_time->tm_mday,
 			my_time->tm_hour,
 			my_time->tm_min,
 			my_time->tm_sec,
-			daynames[my_time->tm_wday],
+			daynames[my_time->tm_wday]
 		);
 	}
 	else if (strncasecmp (text, "T-RD", 4) == 0)
 	{
 		ErrorMessageLength = 9;
 		ErrorMessage[0] = my_time->tm_wday;
-		ErrorMessage[1] = (my_time->tm_year)-1900;
+		ErrorMessage[1] = (my_time->tm_year);
 		ErrorMessage[2] = my_time->tm_mon+1;
 		ErrorMessage[3] = my_time->tm_mday;
 		ErrorMessage[4] = hourfix;
@@ -1371,10 +1371,37 @@ void IEC_Commands::TimeCommands(void)
 				my_time.tm_year += 100;
 
 			my_time.tm_hour %= 12;	// 12,1...11 -> 0..11
-			if ( (ampm == 'p') || (ampm == 'p') )
+			if ( (ampm == 'P') || (ampm == 'p') )
 			{
 				my_time.tm_hour += 12;	// 0..11 -> 12..23
 			}
+
+			RTC->set(mktime(&my_time));
+			ClockTime = RTC->get();
+			Error(ERROR_00_OK);
+		}
+		else
+		{
+			Error(ERROR_30_SYNTAX_ERROR);
+		}
+	}
+	else if (strncasecmp (text, "T-WI", 4) == 0)
+	{
+		struct tm my_time = {0};
+
+		int ret = sscanf(text+4, "%4d-%02d-%02dT%02d:%02d:%02d",
+			&my_time.tm_year,
+			&my_time.tm_mon,
+			&my_time.tm_mday,
+			&my_time.tm_hour,
+			&my_time.tm_min,
+			&my_time.tm_sec
+		);
+		if (ret == 6)
+		{
+			my_time.tm_isdst = 0;
+			my_time.tm_year -= 1900;
+			my_time.tm_mon -= 1;	// 1..12 -> 0..11
 
 			RTC->set(mktime(&my_time));
 			ClockTime = RTC->get();
@@ -1666,7 +1693,7 @@ void IEC_Commands::SendError()
 	do
 	{
 //		finalByte = index == len;
-		finalByte = index == ErrorMessageLength;
+		finalByte = (index == ErrorMessageLength-1);
 		if (WriteIECSerialPort(ErrorMessage[index++], finalByte))
 			break;
 	}
