@@ -1159,6 +1159,12 @@ bool FileBrowser::MakeLST(const char* filenameLST)
 			}
 		}
 
+		f_write(&fp
+			, roms->ROMNames[roms->currentROMIndex]
+			, strlen(roms->ROMNames[roms->currentROMIndex])
+			, &bytes);
+		f_write(&fp, "\r\n", 2, &bytes);
+
 		f_close(&fp);
 	}
 	else

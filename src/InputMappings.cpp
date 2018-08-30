@@ -23,8 +23,8 @@
 extern "C"
 {
 #include "rpi-aux.h"
-extern void reboot_now(void);
 }
+extern void Reboot_Pi(void);
 
 // If disk swaps can be done via multiple cores then directDiskSwapRequest needs to be volatile. WARNING: volatile acesses can be very expensive.
 //volatile unsigned InputMappings::directDiskSwapRequest = 0;
@@ -204,7 +204,7 @@ bool InputMappings::CheckKeyboardBrowseMode()
 	}
 
 	if (keyboard->KeyHeld(KEY_DELETE) && keyboard->KeyLCtrlAlt() )
-		reboot_now();
+		Reboot_Pi();
 
 	if (keyboard->KeyHeld(KEY_ESC))
 		SetKeyboardFlag(ESC_FLAG);
@@ -295,7 +295,7 @@ void InputMappings::CheckKeyboardEmulationMode(unsigned numberOfImages, unsigned
 		return;
 
 	if (keyboard->KeyHeld(KEY_DELETE) && keyboard->KeyLCtrlAlt() )
-		reboot_now();
+		Reboot_Pi();
 
 	if (keyboard->KeyHeld(KEY_ESC))
 		SetKeyboardFlag(ESC_FLAG);

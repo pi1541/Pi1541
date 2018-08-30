@@ -50,10 +50,10 @@ extern unsigned versionMajor;
 extern unsigned versionMinor;
 
 extern "C" {
-	extern void reboot_now(void);
 	extern time_t ClockTime;
 }
 extern DallasRTC* RTC;
+extern void Reboot_Pi();
 
 #define WaitWhile(checkStatus) \
 	do\
@@ -1248,7 +1248,7 @@ void IEC_Commands::User(void)
 		break;
 		case 202:
 			// Really hard reset - reboot Pi
-			reboot_now();
+			Reboot_Pi();
 		break;
 		case '0':
 			//OPEN1,8,15,"U0>"+CHR$(9):CLOSE1

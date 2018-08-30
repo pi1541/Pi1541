@@ -311,26 +311,9 @@ void Options::Process(char* buffer)
 unsigned Options::GetDecimal(char* pString)
 {
 	if (pString == 0 || *pString == '\0')
-		return INVALID_VALUE;
+		return 0;
 
-	unsigned nResult = 0;
-
-	char chChar = *pString++;
-	while (chChar != '\0' && chChar != 13)
-	{
-		if (!('0' <= chChar && chChar <= '9'))
-			return INVALID_VALUE;
-
-		unsigned nPrevResult = nResult;
-
-		nResult = nResult * 10 + (chChar - '0');
-		if (nResult < nPrevResult || nResult == INVALID_VALUE)
-			return INVALID_VALUE;
-
-		chChar = *pString++;
-	}
-
-	return nResult;
+	return strtol(pString, NULL, 0);
 }
 
 float Options::GetFloat(char* pString)
