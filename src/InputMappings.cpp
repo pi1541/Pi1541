@@ -248,6 +248,8 @@ bool InputMappings::CheckKeyboardBrowseMode()
 		SetKeyboardFlag(WRITEPROTECT_FLAG);
 	else if (keyboard->KeyHeld(KEY_L) && keyboard->KeyEitherAlt() )
 		SetKeyboardFlag(MAKELST_FLAG);
+	else if (keyboard->KeyHeld(KEY_D) && keyboard->KeyLCtrlAlt() )
+		SetKeyboardFlag(TOGGLEDUMP_FLAG);
 	else
 	{
 		if (keyboard->KeyNoModifiers())

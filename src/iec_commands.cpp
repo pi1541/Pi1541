@@ -55,6 +55,16 @@ extern "C" {
 extern DallasRTC* RTC;
 extern void Reboot_Pi();
 
+
+extern Screen screen;
+#define COLOUR_BLACK RGBA(0, 0, 0, 0xff)
+#define COLOUR_WHITE RGBA(0xff, 0xff, 0xff, 0xff)
+#define COLOUR_RED RGBA(0xff, 0, 0, 0xff)
+#define COLOUR_GREEN RGBA(0, 0xff, 0, 0xff)
+#define COLOUR_CYAN RGBA(0, 0xff, 0xff, 0xff)
+#define COLOUR_YELLOW RGBA(0xff, 0xff, 0x00, 0xff)
+
+
 #define WaitWhile(checkStatus) \
 	do\
 	{\
@@ -372,6 +382,10 @@ bool IEC_Commands::WriteIECSerialPort(u8 data, bool eoi)
 
 	// After the eighth bit has been sent, it's the listener's turn to acknowledge. At this moment, the Clock line is asserted and the Data line is released.
 	WaitWhile(IEC_Bus::IsDataReleased());
+
+	if (dumpEnabled)
+		DumpToScreen(data, COLOUR_GREEN, COLOUR_BLACK, eoi);
+
 	return false;
 }
 
@@ -411,7 +425,51 @@ bool IEC_Commands::ReadIECSerialPort(u8& byte)
 	}
 
 	IEC_Bus::AssertData();
+
+	if (dumpEnabled)
+	{
+		u32 fg = COLOUR_CYAN;
+		if (IEC_Bus::IsAtnAsserted())
+			fg = COLOUR_YELLOW;
+		DumpToScreen(byte, fg, COLOUR_BLACK, receivedEOI);
+	}
+
 	return false;
+}
+
+bool IEC_Commands::ToggleIECDump()
+{
+	dumpEnabled = !dumpEnabled;
+	if (dumpEnabled)
+	{
+		IECcursorX = 0;
+		IECcursorY = 20;
+		char tempBuf[128];
+		snprintf(tempBuf, 128, "IEC bus data dump enabled." );
+		screen.PrintText(false, 0, 0, tempBuf, COLOUR_RED, COLOUR_BLACK);
+	}
+
+	return dumpEnabled;
+}
+
+void IEC_Commands::DumpToScreen( u8 byte, u32 fg, u32 bg, bool eoi )
+{
+	char tempBuf[128];
+	snprintf(tempBuf, 128, "%02x    ", byte );
+	if (eoi)
+		screen.PrintText(false, IECcursorX, IECcursorY, tempBuf, bg, fg);
+	else
+		screen.PrintText(false, IECcursorX, IECcursorY, tempBuf, fg, bg);
+
+	IECcursorX+=20;	// assumes 8px wide chars + fex pixels
+
+	if (IECcursorX > screen.Width()-20)
+	{
+		IECcursorX = 0;
+		IECcursorY += 18;
+		if (IECcursorY > screen.Height()-120)
+			IECcursorY = 20;
+	}
 }
 
 void IEC_Commands::SimulateIECBegin(void)

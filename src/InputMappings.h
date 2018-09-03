@@ -47,6 +47,7 @@
 #define END_FLAG		(1 << 20)
 
 #define FUNCTION_FLAG		(1 << 21)
+#define TOGGLEDUMP_FLAG		(1 << 22)
 // dont exceed 32!!
 
 
@@ -171,6 +172,8 @@ public:
 	inline bool BrowseWriteProtect() { return KeyboardFlag(WRITEPROTECT_FLAG); }
 
 	inline bool MakeLSTFile() { return KeyboardFlag(MAKELST_FLAG); }
+
+	inline bool ToggleIECDump() { return KeyboardFlag(TOGGLEDUMP_FLAG); }
 
 	inline bool BrowseHome() { return KeyboardFlag(HOME_FLAG); }
 

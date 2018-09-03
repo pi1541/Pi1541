@@ -90,6 +90,8 @@ public:
 
 	int CreateD64(char* filenameNew, char* ID, bool automount);
 
+	bool ToggleIECDump();
+
 protected:
 	enum ATNSequence 
 	{
@@ -161,6 +163,11 @@ protected:
 	void ProcessCommand(void);
 
 	bool SendBuffer(Channel& channel, bool eoi);
+
+	u16 IECcursorX;
+	u16 IECcursorY;
+	void DumpToScreen( u8 byte, u32 fg, u32 bg, bool eoi);
+	bool dumpEnabled = false;
 
 	UpdateAction updateAction;
 	u8 commandCode;
