@@ -1100,6 +1100,11 @@ void FileBrowser::UpdateInputFolders()
 			}
 		}
 	}
+	else if (inputMappings->ToggleIECDump())
+	{
+		if ( 0 == m_IEC_Commands.ToggleIECDump() )
+			dirty = true;
+	}
 	else
 	{
 		dirty = folder.CheckBrowseNavigation();

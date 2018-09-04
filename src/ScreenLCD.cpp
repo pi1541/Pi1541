@@ -22,6 +22,12 @@
 #include <stdio.h>
 #include "debug.h"
 #include "ssd_logo.h"
+#include <time.h>
+
+extern "C"
+{
+	extern time_t IdleTimer;
+}
 
 void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int BSCMaster, int LCDAddress, int LCDFlip, LCD_MODEL LCDType)
 {
@@ -71,7 +77,33 @@ void ScreenLCD::ClearInit(RGBA colour)
 
 void ScreenLCD::SetContrast(u8 value)
 {
+	ContrastOn = value;
 	ssd1306->SetContrast(value);
+}
+
+void ScreenLCD::DimScreen()
+{
+	if (!IsDimmed)
+	{
+		if (ContrastDim)
+			ssd1306->SetContrast(ContrastDim);
+		else
+			ssd1306->DisplayOff();
+
+		IsDimmed = true;
+	}
+}
+
+void ScreenLCD::UnDimScreen()
+{
+	if (IsDimmed)
+	{
+		if (ContrastDim)
+			ssd1306->SetContrast(ContrastOn);
+		else
+			ssd1306->DisplayOn();
+		IsDimmed = false;
+	}
 }
 
 void ScreenLCD::WriteChar(bool petscii, u32 x, u32 y, unsigned char c, RGBA colour)
@@ -116,16 +148,23 @@ u32 ScreenLCD::GetFontHeight()
 
 void ScreenLCD::RefreshScreen()
 {
+	IdleTimer = 0;
+	UnDimScreen();
 	ssd1306->RefreshScreen();
 }
 
 void ScreenLCD::SwapBuffers()
 {
-	ssd1306->RefreshScreen();
+//	ssd1306->RefreshScreen();
+	RefreshScreen();
 }
 
 void ScreenLCD::RefreshRows(u32 start, u32 amountOfRows)
 {
 	if (ssd1306)
+	{
+		IdleTimer = 0;
+		UnDimScreen();
 		ssd1306->RefreshTextRows(start, amountOfRows);
+	}
 }

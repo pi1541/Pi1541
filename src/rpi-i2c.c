@@ -84,6 +84,7 @@ void RPI_I2CInit(int BSCMaster, int fast)
 int RPI_I2CRead(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count)
 {
 	int success = 0;
+	unsigned bytes_read = count;
 	if (slaveAddress < 0x80)
 	{
 		if (count > 0)
@@ -119,14 +120,10 @@ int RPI_I2CRead(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigne
 			}
 			else if ((status & STATUS_BIT_CLKT) == 0 && count == 0)
 			{
-				success = 1;
+				success = bytes_read;
 			}
 
 			write32(baseAddress + I2C_BSC_S, STATUS_BIT_DONE);
-		}
-		else
-		{
-			success = 1;
 		}
 	}
 	return success;

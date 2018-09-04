@@ -19,6 +19,7 @@
 #include "defs.h"
 #include <string.h>
 #include <strings.h>
+#include <time.h>
 #include "Timer.h"
 #include "ROMs.h"
 #include "stb_image.h"
@@ -40,6 +41,7 @@ extern "C"
 #include "Pi1541.h"
 #include "FileBrowser.h"
 #include "ScreenLCD.h"
+#include "DallasRTC.h"
 
 #include "logo.h"
 #include "sample.h"
@@ -55,6 +57,7 @@ unsigned versionMinor = 12;
 #define COLOUR_BLACK RGBA(0, 0, 0, 0xff)
 #define COLOUR_WHITE RGBA(0xff, 0xff, 0xff, 0xff)
 #define COLOUR_RED RGBA(0xff, 0, 0, 0xff)
+#define COLOUR_ORANGE RGBA(0xff, 0x80, 0x00, 0xff)
 #define COLOUR_GREEN RGBA(0, 0xff, 0, 0xff)
 #define COLOUR_CYAN RGBA(0, 0xff, 0xff, 0xff)
 #define COLOUR_YELLOW RGBA(0xff, 0xff, 0x00, 0xff)
@@ -86,11 +89,18 @@ u8 LcdLogoFile[LCD_LOGO_MAX_SIZE];
 
 u8 s_u8Memory[0xc000];
 
+extern "C"
+{
+extern time_t ClockTime;
+extern time_t IdleTimer;
+}
+
 DiskCaddy diskCaddy;
 Pi1541 pi1541;
 CEMMCDevice	m_EMMC;
 Screen screen;
 ScreenLCD* screenLCD = 0;
+DallasRTC* RTC = 0;
 Options options;
 const char* fileBrowserSelectedName;
 u8 deviceID = 8;
@@ -188,7 +198,27 @@ extern "C"
 }
 
 // Hooks for FatFs
-DWORD get_fattime() { return 0; }	// If you have hardware RTC return a correct value here. THis can then be reflected in file modification times/dates.
+// If you have hardware RTC return a correct value here. 
+// This can then be reflected in file modification times/dates.
+
+DWORD get_fattime () {
+	struct tm* my_time;
+	my_time = gmtime ( &ClockTime );
+
+	if (my_time->tm_year < 80)
+		return 0;	// clearly invalid if <1980
+	else
+		my_time->tm_year -= 80;
+
+	DWORD fattime =   (DWORD)(my_time->tm_year) << 25
+			| (DWORD)(my_time->tm_mon + 1) << 21
+			| (DWORD)(my_time->tm_mday) << 16
+			| (DWORD)(my_time->tm_hour) << 11
+			| (DWORD)(my_time->tm_min) << 5
+			| (DWORD)(my_time->tm_sec/2);
+
+	return fattime;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // 6502 Address bus functions.
@@ -348,6 +378,19 @@ void InitialiseHardware()
 	RPI_PropertyProcess();
 }
 
+void InitialiseRTC()
+{
+	if (options.I2CRtcModel())
+	{
+		RTC = new DallasRTC(options.I2CBusMaster(), options.I2CRtcAddress(), options.I2CRtcModel() );
+		ClockTime = RTC->get();
+	}
+	else
+	{
+		RTC = 0;
+	}
+}
+
 void InitialiseLCD()
 {
 
@@ -370,6 +413,7 @@ void InitialiseLCD()
 		screenLCD = new ScreenLCD();
 		screenLCD->Open(width, height, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
 		screenLCD->SetContrast(i2cLcdOnContrast);
+		screenLCD->SetDimLevel(i2cLcdDimContrast);
 		screenLCD->ClearInit(0); // sh1106 needs this
 
 		bool logo_done = false;
@@ -438,6 +482,7 @@ void UpdateScreen()
 	bool oldCLOCK = false;
 
 	u32 oldTrack = 0;
+	time_t oldClockTime = 0;
 	u32 textColour = COLOUR_BLACK;
 	u32 bgColour = COLOUR_WHITE;
 
@@ -471,6 +516,7 @@ void UpdateScreen()
 		value = pi1541.drive.IsLEDOn();
 		if (value != oldLED)
 		{
+			IdleTimer = 0;
 //			SetACTLed(value);
 			oldLED = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
@@ -481,6 +527,7 @@ void UpdateScreen()
 		value = pi1541.drive.IsMotorOn();
 		if (value != oldMotor)
 		{
+			IdleTimer = 0;
 			oldMotor = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
 			screen.PrintText(false, 12 * 8, y, tempBuffer, textColour, bgColour);
@@ -506,6 +553,7 @@ void UpdateScreen()
 		}
 		if (value != oldATN)
 		{
+			IdleTimer = 0;
 			oldATN = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
 			screen.PrintText(false, 29 * 8, y, tempBuffer, textColour, bgColour);
@@ -528,6 +576,7 @@ void UpdateScreen()
 		}
 		if (value != oldDATA)
 		{
+			IdleTimer = 0;
 			oldDATA = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
 			screen.PrintText(false, 35 * 8, y, tempBuffer, textColour, bgColour);
@@ -550,6 +599,7 @@ void UpdateScreen()
 		}
 		if (value != oldCLOCK)
 		{
+			IdleTimer = 0;
 			oldCLOCK = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
 			screen.PrintText(false, 41 * 8, y, tempBuffer, textColour, bgColour);
@@ -564,6 +614,7 @@ void UpdateScreen()
 		u32 track = pi1541.drive.Track();
 		if (track != oldTrack)
 		{
+			IdleTimer = 0;
 			oldTrack = track;
 			snprintf(tempBuffer, tempBufferSize, "%02d.%d", (oldTrack >> 1) + 1, oldTrack & 1 ? 5 : 0);
 			screen.PrintText(false, 20 * 8, y, tempBuffer, textColour, bgColour);
@@ -582,6 +633,30 @@ void UpdateScreen()
 		{
 			//refreshUartStatusDisplay =
 				diskCaddy.Update();
+		}
+		else
+		{
+			if (ClockTime != oldClockTime)
+			{
+				oldClockTime = ClockTime;
+				int time_width = snprintf(tempBuffer, tempBufferSize, "%s" , asctime(gmtime(&oldClockTime)) );
+				time_width *= 8; // 8 px wide chars
+				screen.PrintText(false, screen.Width()-time_width, 0, tempBuffer
+					, FileBrowser::Colour(VIC2_COLOUR_INDEX_BLACK)
+					, FileBrowser::Colour(VIC2_COLOUR_INDEX_GREY) );
+			}
+			if (screenLCD)
+			{
+				if (options.I2CLcdDimTime() && (IdleTimer == 0) && screenLCD->GetIsDimmed())
+				{
+					screenLCD->UnDimScreen();
+				}
+				if (options.I2CLcdDimTime() && (IdleTimer >= options.I2CLcdDimTime()) && !screenLCD->GetIsDimmed())
+				{
+					IdleTimer = 1;
+					screenLCD->DimScreen();
+				}
+			}
 		}
 
 		//if (options.GetSupportUARTInput())
@@ -1111,7 +1186,7 @@ static void DisplayLogo()
 	screen.PrintText(false, 20, 180, tempBuffer, FileBrowser::Colour(VIC2_COLOUR_INDEX_BLUE));
 }
 
-static void LoadOptions()
+static bool LoadOptions()
 {
 	FIL fp;
 	FRESULT res;
@@ -1129,14 +1204,18 @@ static void LoadOptions()
 
 		screenWidth = options.ScreenWidth();
 		screenHeight = options.ScreenHeight();
+		return true;
 	}
+
+	return false;
 }
 
-void DisplayOptions(int y_pos)
+int DisplayOptions(int y_pos)
 {
 	// print confirmation of parsed options
 	snprintf(tempBuffer, tempBufferSize, "ignoreReset = %d\r\n", options.IgnoreReset());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+
 	snprintf(tempBuffer, tempBufferSize, "RAMBOard = %d\r\n", options.GetRAMBOard());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "splitIECLines = %d\r\n", options.SplitIECLines());
@@ -1145,16 +1224,16 @@ void DisplayOptions(int y_pos)
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", options.InvertIECOutputs());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	snprintf(tempBuffer, tempBufferSize, "i2cLcdAddress = %d\r\n", options.I2CLcdAddress());
+
+	snprintf(tempBuffer, tempBufferSize, "i2cLcdAddress = %d model %d\r\n"
+		, options.I2CLcdAddress(), options.I2CLcdModel());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	snprintf(tempBuffer, tempBufferSize, "i2cLcdFlip = %d\r\n", options.I2CLcdFlip());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	snprintf(tempBuffer, tempBufferSize, "LCDName = %s\r\n", options.GetLCDName());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	snprintf(tempBuffer, tempBufferSize, "LcdLogoName = %s\r\n", options.GetLcdLogoName());
+	snprintf(tempBuffer, tempBufferSize, "i2cRtcAddress = %d model %d\r\n"
+		, options.I2CRtcAddress(), options.I2CRtcModel());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "AutoBaseName = %s\r\n", options.GetAutoBaseName());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	return (y_pos);
 }
 
 void DisplayI2CScan(int y_pos)
@@ -1310,7 +1389,7 @@ extern "C"
 
 		RPI_AuxMiniUartInit(115200, 8);
 
-		LoadOptions();
+		bool gotOptions = LoadOptions();
 
 		InitialiseHardware();
 		enable_MMU_and_IDCaches();
@@ -1330,11 +1409,35 @@ extern "C"
 		snprintf(tempBuffer, tempBufferSize, "This is free software, and you are welcome to redistribute it.");
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 
+		if (!gotOptions)
+		{
+			y_pos += 32;
+			snprintf(tempBuffer, tempBufferSize, "WARNING: Can't open options.txt");
+			for (int i=0; i<10; i++)
+			{
+				screen.PrintText(false, 0, y_pos, tempBuffer, COLOUR_ORANGE, COLOUR_BLACK);
+				IEC_Bus::WaitMicroSeconds(0.25 * 1000000);
+				screen.PrintText(false, 0, y_pos, tempBuffer, COLOUR_BLACK, COLOUR_ORANGE);
+				IEC_Bus::WaitMicroSeconds(0.25 * 1000000);
+			}
+			y_pos += 16;
+		}
+
 		if (options.I2CScan())
 			DisplayI2CScan(y_pos+=32);
 
 		if (options.ShowOptions())
-			DisplayOptions(y_pos+=32);
+		{
+			y_pos += 32;
+			y_pos = 32 + DisplayOptions(y_pos);
+		}
+
+		InitialiseRTC();
+		if (RTC)
+		{
+			int time_width = snprintf(tempBuffer, tempBufferSize, "Time is %s" , asctime(gmtime(&ClockTime)) );
+			screen.PrintText(false, screen.Width()-time_width*8, 0, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		}
 
 		if (!options.QuickBoot())
 			IEC_Bus::WaitMicroSeconds(3 * 1000000);
@@ -1357,7 +1460,6 @@ extern "C"
 		Keyboard::Instance();
 		InputMappings::Instance();
 		//USPiMouseRegisterStatusHandler(MouseHandler);
-
 
 		CheckOptions();
 

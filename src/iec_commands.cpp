@@ -35,6 +35,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <algorithm>
+#include <time.h>
+#include "DallasRTC.h"
 
 #define CBM_NAME_LENGTH 16
 #define CBM_NAME_LENGTH_MINUS_D64 CBM_NAME_LENGTH-4
@@ -47,7 +49,21 @@
 extern unsigned versionMajor;
 extern unsigned versionMinor;
 
+extern "C" {
+	extern time_t ClockTime;
+}
+extern DallasRTC* RTC;
 extern void Reboot_Pi();
+
+
+extern Screen screen;
+#define COLOUR_BLACK RGBA(0, 0, 0, 0xff)
+#define COLOUR_WHITE RGBA(0xff, 0xff, 0xff, 0xff)
+#define COLOUR_RED RGBA(0xff, 0, 0, 0xff)
+#define COLOUR_GREEN RGBA(0, 0xff, 0, 0xff)
+#define COLOUR_CYAN RGBA(0, 0xff, 0xff, 0xff)
+#define COLOUR_YELLOW RGBA(0xff, 0xff, 0x00, 0xff)
+
 
 #define WaitWhile(checkStatus) \
 	do\
@@ -112,7 +128,21 @@ static u8 blankD64DIRBAM[] =
 	//	0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static char ErrorMessage[64];
+static const char *daynames[] =
+{
+	"SUN.",
+	"MON.",
+	"TUES",
+	"WED.",
+	"THUR",
+	"FRI.",
+	"SAT."
+};
+
+#define ErrorMessageMAX 64
+static char ErrorMessage[ErrorMessageMAX];
+static int ErrorMessageLength;
+static int ErrorMessageReadPtr;
 
 static u8* InsertNumber(u8* msg, u8 value)
 {
@@ -203,7 +233,8 @@ void Error(u8 errorCode, u8 track = 0, u8 sector = 0)
 			DEBUG_LOG("EC=%d?\r\n", errorCode);
 		break;
 	}
-	sprintf(ErrorMessage, "%02d, %s, %02d, %02d", errorCode, msg, track, sector);
+	ErrorMessageLength = snprintf(ErrorMessage, ErrorMessageMAX, "%02d, %s, %02d, %02d", errorCode, msg, track, sector);
+	ErrorMessageReadPtr = 0;
 }
 
 static inline bool IsDirectory(FILINFO& filInfo)
@@ -354,6 +385,10 @@ bool IEC_Commands::WriteIECSerialPort(u8 data, bool eoi)
 
 	// After the eighth bit has been sent, it's the listener's turn to acknowledge. At this moment, the Clock line is asserted and the Data line is released.
 	WaitWhile(IEC_Bus::IsDataReleased());
+
+	if (dumpEnabled)
+		DumpToScreen(data, COLOUR_GREEN, COLOUR_BLACK, eoi);
+
 	return false;
 }
 
@@ -393,7 +428,51 @@ bool IEC_Commands::ReadIECSerialPort(u8& byte)
 	}
 
 	IEC_Bus::AssertData();
+
+	if (dumpEnabled)
+	{
+		u32 fg = COLOUR_CYAN;
+		if (IEC_Bus::IsAtnAsserted())
+			fg = COLOUR_YELLOW;
+		DumpToScreen(byte, fg, COLOUR_BLACK, receivedEOI);
+	}
+
 	return false;
+}
+
+bool IEC_Commands::ToggleIECDump()
+{
+	dumpEnabled = !dumpEnabled;
+	if (dumpEnabled)
+	{
+		IECcursorX = 0;
+		IECcursorY = 20;
+		char tempBuf[128];
+		snprintf(tempBuf, 128, "IEC bus data dump enabled." );
+		screen.PrintText(false, 0, 0, tempBuf, COLOUR_RED, COLOUR_BLACK);
+	}
+
+	return dumpEnabled;
+}
+
+void IEC_Commands::DumpToScreen( u8 byte, u32 fg, u32 bg, bool eoi )
+{
+	char tempBuf[128];
+	snprintf(tempBuf, 128, "%02x    ", byte );
+	if (eoi)
+		screen.PrintText(false, IECcursorX, IECcursorY, tempBuf, bg, fg);
+	else
+		screen.PrintText(false, IECcursorX, IECcursorY, tempBuf, fg, bg);
+
+	IECcursorX+=20;	// assumes 8px wide chars + fex pixels
+
+	if (IECcursorX > screen.Width()-20)
+	{
+		IECcursorX = 0;
+		IECcursorY += 18;
+		if (IECcursorY > screen.Height()-120)
+			IECcursorY = 20;
+	}
 }
 
 void IEC_Commands::SimulateIECBegin(void)
@@ -603,6 +682,10 @@ IEC_Commands::UpdateAction IEC_Commands::SimulateIECUpdate(void)
 			atnSequence = ATN_SEQUENCE_IDLE;
 		break;
 	}
+
+	// suppress screen refresh is IEC dump to screen is enabled
+	if (dumpEnabled) updateAction = NONE;
+
 	return updateAction;
 }
 
@@ -1251,6 +1334,158 @@ void IEC_Commands::User(void)
 	}
 }
 
+// Implemented: T-RA
+//cbmctrl command 8 "T-WA`date '+XXX.%m/%d/%g %I:%M:%S %P'`"
+void IEC_Commands::TimeCommands(void)
+{
+	Channel& channel = channels[15];
+	const char* text = (const char*)channel.buffer;
+
+	struct tm* my_time;
+	my_time = gmtime ( &ClockTime );
+	int hourfix = (my_time->tm_hour)%12;	// 0..23 -> 0..11
+	if (hourfix==0)
+		hourfix = 12;			// 12, 1 .. 11
+
+
+	// clearly invalid if <1980
+	if ((text[2] == 'R') && (my_time->tm_year < 80))
+	{
+		Error(ERROR_31_SYNTAX_ERROR);
+		return;
+	}
+
+	// time diff command - return seconds drift between RTC time and Pi time
+	if (strncasecmp (text, "T-DA", 4) == 0)
+	{
+		ErrorMessageReadPtr = 0;
+		ErrorMessageLength = snprintf(ErrorMessage, ErrorMessageMAX, "RTC-Pi = %lld", RTC->get() - ClockTime);
+	}
+	else if (strncasecmp (text, "T-RA", 4) == 0)
+	{
+		ErrorMessageReadPtr = 0;
+		ErrorMessageLength = snprintf(ErrorMessage, ErrorMessageMAX, "%4s %02d/%02d/%02d %02d:%02d:%02d %cM\r",
+			daynames[my_time->tm_wday],
+			my_time->tm_mon+1,
+			my_time->tm_mday,
+			(my_time->tm_year)%100,
+			hourfix,
+			my_time->tm_min,
+			my_time->tm_sec,
+			((my_time->tm_hour < 12) ? 'A' : 'P')
+		);
+	}
+	else if (strncasecmp (text, "T-RI", 4) == 0)
+	{
+		ErrorMessageReadPtr = 0;
+		ErrorMessageLength = snprintf(ErrorMessage, ErrorMessageMAX, "%4d-%02d-%02dT%02d:%02d:%02d %3.3s\r",
+			(my_time->tm_year)+1900,
+			my_time->tm_mon+1,
+			my_time->tm_mday,
+			my_time->tm_hour,
+			my_time->tm_min,
+			my_time->tm_sec,
+			daynames[my_time->tm_wday]
+		);
+	}
+	else if (strncasecmp (text, "T-RD", 4) == 0)
+	{
+		ErrorMessageReadPtr = 0;
+		ErrorMessageLength = 9;
+		ErrorMessage[0] = my_time->tm_wday;
+		ErrorMessage[1] = (my_time->tm_year);
+		ErrorMessage[2] = my_time->tm_mon+1;
+		ErrorMessage[3] = my_time->tm_mday;
+		ErrorMessage[4] = hourfix;
+		ErrorMessage[5] = my_time->tm_min;
+		ErrorMessage[6] = my_time->tm_sec;
+		ErrorMessage[7] = (my_time->tm_hour < 12) ? 0 : 1;
+		ErrorMessage[8] = '\r';
+	}
+	else if (strncasecmp (text, "T-RB", 4) == 0)
+	{
+		ErrorMessageReadPtr = 0;
+		ErrorMessageLength = 9;
+		ErrorMessage[0] = DallasRTC::dec2bcd(my_time->tm_wday);
+		ErrorMessage[1] = DallasRTC::dec2bcd( (my_time->tm_year)%100 );
+		ErrorMessage[2] = DallasRTC::dec2bcd( my_time->tm_mon+1 );
+		ErrorMessage[3] = DallasRTC::dec2bcd( my_time->tm_mday );
+		ErrorMessage[4] = DallasRTC::dec2bcd( hourfix );
+		ErrorMessage[5] = DallasRTC::dec2bcd( my_time->tm_min );
+		ErrorMessage[6] = DallasRTC::dec2bcd( my_time->tm_sec );
+		ErrorMessage[7] = DallasRTC::dec2bcd( (my_time->tm_hour < 12) ? 0 : 1 );
+		ErrorMessage[8] = '\r';
+	}
+	else if (strncasecmp (text, "T-WA", 4) == 0)
+	{
+		char day_name[16];
+		char ampm;
+		struct tm my_time = {0};
+
+		int ret = sscanf(text+4 , "%4s %02d/%02d/%02d %02d:%02d:%02d %cM\r",
+			day_name,	// ignored
+			&my_time.tm_mon,
+			&my_time.tm_mday,
+			&my_time.tm_year,
+			&my_time.tm_hour,
+			&my_time.tm_min,
+			&my_time.tm_sec,
+			&ampm
+		);
+		if (ret == 8)
+		{
+			my_time.tm_isdst = 0;
+			my_time.tm_mon -= 1;	// 1..12 -> 0..11
+
+			if (my_time.tm_year < 80) // a year less than 80 is interpreted as 20xx
+				my_time.tm_year += 100;
+
+			my_time.tm_hour %= 12;	// 12,1...11 -> 0..11
+			if ( (ampm == 'P') || (ampm == 'p') )
+			{
+				my_time.tm_hour += 12;	// 0..11 -> 12..23
+			}
+
+			RTC->set(mktime(&my_time));
+			ClockTime = RTC->get();
+			Error(ERROR_00_OK);
+		}
+		else
+		{
+			Error(ERROR_30_SYNTAX_ERROR);
+		}
+	}
+	else if (strncasecmp (text, "T-WI", 4) == 0)
+	{
+		struct tm my_time = {0};
+
+		int ret = sscanf(text+4, "%4d-%02d-%02dT%02d:%02d:%02d",
+			&my_time.tm_year,
+			&my_time.tm_mon,
+			&my_time.tm_mday,
+			&my_time.tm_hour,
+			&my_time.tm_min,
+			&my_time.tm_sec
+		);
+		if (ret == 6)
+		{
+			my_time.tm_isdst = 0;
+			my_time.tm_year -= 1900;
+			my_time.tm_mon -= 1;	// 1..12 -> 0..11
+
+			RTC->set(mktime(&my_time));
+			ClockTime = RTC->get();
+			Error(ERROR_00_OK);
+		}
+		else
+		{
+			Error(ERROR_30_SYNTAX_ERROR);
+		}
+	}
+	else
+		Error(ERROR_31_SYNTAX_ERROR);
+}
+
 void IEC_Commands::ProcessCommand(void)
 {
 	Error(ERROR_00_OK);
@@ -1322,8 +1557,12 @@ void IEC_Commands::ProcessCommand(void)
 				Scratch();
 			break;
 			case 'T':
-				// RTC support
-				Error(ERROR_31_SYNTAX_ERROR);	// T-R and T-W not implemented yet
+				// RTC support T-R, T-W
+				// require RTC present?
+				if ( (channel.buffer[1] == '-') && (RTC) )
+					TimeCommands();
+				else
+					Error(ERROR_30_SYNTAX_ERROR);
 			break;
 			case 'U':
 				User();
@@ -1377,6 +1616,7 @@ void IEC_Commands::Listen()
 	}
 	else
 	{
+		updateAction = REFRESH;
 		OpenFile();
 		SaveFile();
 	}
@@ -1518,16 +1758,19 @@ void IEC_Commands::SaveFile()
 
 void IEC_Commands::SendError()
 {
-	int len = strlen(ErrorMessage);
 	int index = 0;
 	bool finalByte;
 	do
 	{
-		finalByte = index == len;
-		if (WriteIECSerialPort(ErrorMessage[index++], finalByte))
+		finalByte = (ErrorMessageReadPtr == ErrorMessageLength-1);
+		if (WriteIECSerialPort(ErrorMessage[ErrorMessageReadPtr], finalByte))
 			break;
+		else
+			ErrorMessageReadPtr++;
 	}
-	while (!finalByte);
+	while ( (!finalByte) && (ErrorMessageReadPtr < ErrorMessageMAX) );
+	if (finalByte)
+		Error(ERROR_00_OK);
 }
 
 void IEC_Commands::AddDirectoryEntry(Channel& channel, const char* name, u16 blocks, int fileType)
@@ -1652,8 +1895,10 @@ void IEC_Commands::LoadDirectory()
 		if (!channel.CanFit(DIRECTORY_ENTRY_SIZE))
 			SendBuffer(channel, false);
 
-		if (filInfo->fattrib & AM_DIR) AddDirectoryEntry(channel, fileName, 0, 6);
-		else AddDirectoryEntry(channel, fileName, filInfo->fsize / 256 + 1, 2);
+		if (filInfo->fattrib & AM_DIR)
+			AddDirectoryEntry(channel, fileName, 0, 6);
+		else
+			AddDirectoryEntry(channel, fileName, filInfo->fsize / 256 + 1, 2);
 	}
 
 
@@ -1690,6 +1935,7 @@ void IEC_Commands::LoadDirectory()
 	
 	channel.filInfo.fsize = channel.bytesSent + channel.cursor;
 	SendBuffer(channel, true);
+
 }
 
 void IEC_Commands::OpenFile()
