@@ -139,8 +139,10 @@ static const char *daynames[] =
 	"SAT."
 };
 
-static char ErrorMessage[64];
+#define ErrorMessageMAX 64
+static char ErrorMessage[ErrorMessageMAX];
 static int ErrorMessageLength;
+static int ErrorMessageReadPtr;
 
 static u8* InsertNumber(u8* msg, u8 value)
 {
@@ -231,7 +233,8 @@ void Error(u8 errorCode, u8 track = 0, u8 sector = 0)
 			DEBUG_LOG("EC=%d?\r\n", errorCode);
 		break;
 	}
-	ErrorMessageLength = sprintf(ErrorMessage, "%02d, %s, %02d, %02d", errorCode, msg, track, sector);
+	ErrorMessageLength = snprintf(ErrorMessage, ErrorMessageMAX, "%02d, %s, %02d, %02d", errorCode, msg, track, sector);
+	ErrorMessageReadPtr = 0;
 }
 
 static inline bool IsDirectory(FILINFO& filInfo)
@@ -1351,11 +1354,13 @@ void IEC_Commands::TimeCommands(void)
 	// time diff command - return seconds drift between RTC time and Pi time
 	if (strncasecmp (text, "T-DA", 4) == 0)
 	{
-		ErrorMessageLength = sprintf(ErrorMessage, "RTC-Pi = %lld", RTC->get() - ClockTime);
+		ErrorMessageReadPtr = 0;
+		ErrorMessageLength = snprintf(ErrorMessage, ErrorMessageMAX, "RTC-Pi = %lld", RTC->get() - ClockTime);
 	}
 	else if (strncasecmp (text, "T-RA", 4) == 0)
 	{
-		ErrorMessageLength = sprintf(ErrorMessage, "%4s %02d/%02d/%02d %02d:%02d:%02d %cM\r",
+		ErrorMessageReadPtr = 0;
+		ErrorMessageLength = snprintf(ErrorMessage, ErrorMessageMAX, "%4s %02d/%02d/%02d %02d:%02d:%02d %cM\r",
 			daynames[my_time->tm_wday],
 			my_time->tm_mon+1,
 			my_time->tm_mday,
@@ -1368,7 +1373,8 @@ void IEC_Commands::TimeCommands(void)
 	}
 	else if (strncasecmp (text, "T-RI", 4) == 0)
 	{
-		ErrorMessageLength = sprintf(ErrorMessage, "%4d-%02d-%02dT%02d:%02d:%02d %3.3s\r",
+		ErrorMessageReadPtr = 0;
+		ErrorMessageLength = snprintf(ErrorMessage, ErrorMessageMAX, "%4d-%02d-%02dT%02d:%02d:%02d %3.3s\r",
 			(my_time->tm_year)+1900,
 			my_time->tm_mon+1,
 			my_time->tm_mday,
@@ -1380,6 +1386,7 @@ void IEC_Commands::TimeCommands(void)
 	}
 	else if (strncasecmp (text, "T-RD", 4) == 0)
 	{
+		ErrorMessageReadPtr = 0;
 		ErrorMessageLength = 9;
 		ErrorMessage[0] = my_time->tm_wday;
 		ErrorMessage[1] = (my_time->tm_year);
@@ -1393,6 +1400,7 @@ void IEC_Commands::TimeCommands(void)
 	}
 	else if (strncasecmp (text, "T-RB", 4) == 0)
 	{
+		ErrorMessageReadPtr = 0;
 		ErrorMessageLength = 9;
 		ErrorMessage[0] = DallasRTC::dec2bcd(my_time->tm_wday);
 		ErrorMessage[1] = DallasRTC::dec2bcd( (my_time->tm_year)%100 );
@@ -1745,18 +1753,19 @@ void IEC_Commands::SaveFile()
 
 void IEC_Commands::SendError()
 {
-//	int len = strlen(ErrorMessage);
 	int index = 0;
 	bool finalByte;
 	do
 	{
-//		finalByte = index == len;
-		finalByte = (index == ErrorMessageLength-1);
-		if (WriteIECSerialPort(ErrorMessage[index++], finalByte))
+		finalByte = (ErrorMessageReadPtr == ErrorMessageLength-1);
+		if (WriteIECSerialPort(ErrorMessage[ErrorMessageReadPtr], finalByte))
 			break;
+		else
+			ErrorMessageReadPtr++;
 	}
-	while (!finalByte);
-	Error(ERROR_00_OK);
+	while ( (!finalByte) && (ErrorMessageReadPtr < ErrorMessageMAX) );
+	if (finalByte)
+		Error(ERROR_00_OK);
 }
 
 void IEC_Commands::AddDirectoryEntry(Channel& channel, const char* name, u16 blocks, int fileType)
