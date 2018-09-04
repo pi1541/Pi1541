@@ -682,6 +682,10 @@ IEC_Commands::UpdateAction IEC_Commands::SimulateIECUpdate(void)
 			atnSequence = ATN_SEQUENCE_IDLE;
 		break;
 	}
+
+	// suppress screen refresh is IEC dump to screen is enabled
+	if (dumpEnabled) updateAction = NONE;
+
 	return updateAction;
 }
 
@@ -1612,6 +1616,7 @@ void IEC_Commands::Listen()
 	}
 	else
 	{
+		updateAction = REFRESH;
 		OpenFile();
 		SaveFile();
 	}
