@@ -57,6 +57,7 @@ unsigned versionMinor = 12;
 #define COLOUR_BLACK RGBA(0, 0, 0, 0xff)
 #define COLOUR_WHITE RGBA(0xff, 0xff, 0xff, 0xff)
 #define COLOUR_RED RGBA(0xff, 0, 0, 0xff)
+#define COLOUR_ORANGE RGBA(0xff, 0x80, 0x00, 0xff)
 #define COLOUR_GREEN RGBA(0, 0xff, 0, 0xff)
 #define COLOUR_CYAN RGBA(0, 0xff, 0xff, 0xff)
 #define COLOUR_YELLOW RGBA(0xff, 0xff, 0x00, 0xff)
@@ -638,8 +639,11 @@ void UpdateScreen()
 			if (ClockTime != oldClockTime)
 			{
 				oldClockTime = ClockTime;
-				snprintf(tempBuffer, tempBufferSize, "%s" , asctime(gmtime(&oldClockTime)) );
-				screen.PrintText(false, 0, y-40, tempBuffer, COLOUR_BLACK, COLOUR_WHITE);
+				int time_width = snprintf(tempBuffer, tempBufferSize, "%s" , asctime(gmtime(&oldClockTime)) );
+				time_width *= 8; // 8 px wide chars
+				screen.PrintText(false, screen.Width()-time_width, 0, tempBuffer
+					, FileBrowser::Colour(VIC2_COLOUR_INDEX_BLACK)
+					, FileBrowser::Colour(VIC2_COLOUR_INDEX_GREY) );
 			}
 			if (screenLCD)
 			{
@@ -1182,7 +1186,7 @@ static void DisplayLogo()
 	screen.PrintText(false, 20, 180, tempBuffer, FileBrowser::Colour(VIC2_COLOUR_INDEX_BLUE));
 }
 
-static void LoadOptions()
+static bool LoadOptions()
 {
 	FIL fp;
 	FRESULT res;
@@ -1200,7 +1204,10 @@ static void LoadOptions()
 
 		screenWidth = options.ScreenWidth();
 		screenHeight = options.ScreenHeight();
+		return true;
 	}
+
+	return false;
 }
 
 int DisplayOptions(int y_pos)
@@ -1382,7 +1389,7 @@ extern "C"
 
 		RPI_AuxMiniUartInit(115200, 8);
 
-		LoadOptions();
+		bool gotOptions = LoadOptions();
 
 		InitialiseHardware();
 		enable_MMU_and_IDCaches();
@@ -1402,15 +1409,34 @@ extern "C"
 		snprintf(tempBuffer, tempBufferSize, "This is free software, and you are welcome to redistribute it.");
 		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 
+		if (!gotOptions)
+		{
+			y_pos += 32;
+			snprintf(tempBuffer, tempBufferSize, "WARNING: Can't open options.txt");
+			for (int i=0; i<10; i++)
+			{
+				screen.PrintText(false, 0, y_pos, tempBuffer, COLOUR_ORANGE, COLOUR_BLACK);
+				IEC_Bus::WaitMicroSeconds(0.25 * 1000000);
+				screen.PrintText(false, 0, y_pos, tempBuffer, COLOUR_BLACK, COLOUR_ORANGE);
+				IEC_Bus::WaitMicroSeconds(0.25 * 1000000);
+			}
+			y_pos += 16;
+		}
+
 		if (options.I2CScan())
 			DisplayI2CScan(y_pos+=32);
-
 
 		if (options.ShowOptions())
 		{
 			y_pos += 32;
 			y_pos = 32 + DisplayOptions(y_pos);
+		}
 
+		InitialiseRTC();
+		if (RTC)
+		{
+			int time_width = snprintf(tempBuffer, tempBufferSize, "Time is %s" , asctime(gmtime(&ClockTime)) );
+			screen.PrintText(false, screen.Width()-time_width*8, 0, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		}
 
 		if (!options.QuickBoot())
@@ -1434,13 +1460,6 @@ extern "C"
 		Keyboard::Instance();
 		InputMappings::Instance();
 		//USPiMouseRegisterStatusHandler(MouseHandler);
-
-		InitialiseRTC();
-		if (RTC)
-		{
-			snprintf(tempBuffer, tempBufferSize, "Time is %s\r\n" , asctime(gmtime(&ClockTime)) );
-			screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-		}
 
 		CheckOptions();
 
