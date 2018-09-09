@@ -2,7 +2,7 @@
 
 
 
-// If you would like to change the dirve number then spcity it here (8 is the default)
+// If you would like to change the drive number then specify it here (8 is the default)
 //deviceID = 9
 
 // If you are using the split line hardware option (ie Option B) then you need to specify this option
@@ -17,8 +17,8 @@
 //ScreenHeight = 384
 
 // You can specify additional ROMS here (up to 10)
-// You can then use the number keys on the keyboard to change which on you would like to use (only in browse more and not in emulation mode)
-// .LST files can also specify one of these ROMS that will automatically selected when the LST file is loaded.
+// You can then use the number keys on the keyboard to change which one you would like to use (only in browse mode and not in emulation mode)
+// .LST files can also specify one of these ROMS that will automatically be selected when the LST file is loaded.
 //ROM2 = Jiffy.bin
 //ROM3 = d1541II
 
@@ -33,17 +33,17 @@ scrollHighlightRate = 0.07
 // If using CBMFileBrowser then it is best to specify this option. When the computer resets the Pi will always revert back to the root folder ready to load CBMFileBrowser again.
 OnResetChangeToStartingFolder = 1
 
-// If you use FB64 (CBMFileBrowser) and want to use a fast loader cartridge (AR6, EFL, FC3) to load it then use this option to autmatically mount it. 
+// If you use FB64 (CBMFileBrowser) and want to use a fast loader cartridge (AR6, EFL, FC3) to load it then use this option to automatically mount it. 
 //AutoMountImage = fb.d64 // You MUST have a disk image in \1541 with this filename
 
 // If you are using a FB128 in 128 mode you can get FB128 to auto boot using this option
 //AutoBootFB128 = 1
 
-// If you are using a 128 you can  auto boot anything using this option
+// If you are using a 128 you can auto boot anything using this option
 // This over-rides AutoBootFB128
 //128BootSectorName = bootsect.128
 
-// If you would ever like to disable browse mode completely ypu can do so here
+// If you would ever like to disable browse mode completely you can do so here
 //DisableSD2IECCommands = 1
 
 // This option displays the IEC bus activity on the bottom of the Pi's screen
@@ -60,7 +60,7 @@ GraphIEC = 1
 // If you would like to specify what file will be loaded by LOAD"*" in browse mode then specify it here
 //StarFileName = somefile
 
-// Alt-N creates a new diskimage.
+// Alt-N creates a new disk image.
 // Names are formed automatically as autoname001.d64, autoname002.d64 etc...
 // change the base of the filename here
 //AutoBaseName = autoname
