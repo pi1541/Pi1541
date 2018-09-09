@@ -149,6 +149,12 @@ Options::Options(void)
 	, i2cLcdModel(LCD_UNKNOWN)
 	, scrollHighlightRate(0.125f)
 	, keyboardBrowseLCDScreen(0)
+        , buttonEnter(0)
+        , buttonUp(1)
+        , buttonDown(2)
+        , buttonBack(3)
+        , buttonInsert(4)
+
 {
 	autoMountImageName[0] = 0;
 	strcpy(ROMFontName, "chargen");
@@ -228,6 +234,11 @@ void Options::Process(char* buffer)
 		ELSE_CHECK_DECIMAL_OPTION(i2cLcdDimTime)
 		ELSE_CHECK_FLOAT_OPTION(scrollHighlightRate)
 		ELSE_CHECK_DECIMAL_OPTION(keyboardBrowseLCDScreen)
+		ELSE_CHECK_DECIMAL_OPTION(buttonEnter)
+		ELSE_CHECK_DECIMAL_OPTION(buttonUp)
+		ELSE_CHECK_DECIMAL_OPTION(buttonDown)
+		ELSE_CHECK_DECIMAL_OPTION(buttonBack)
+		ELSE_CHECK_DECIMAL_OPTION(buttonInsert)
 		else if ((strcasecmp(pOption, "AutoBaseName") == 0))
 		{
 			strncpy(autoBaseName, pValue, 255);

@@ -99,12 +99,12 @@ bool InputMappings::CheckButtonsBrowseMode()
 		SetButtonFlag(BACK_FLAG);
 
 // edge detection
-	insertButtonPressed = !IEC_Bus::GetInputButtonReleased(4);
+	insertButtonPressed = !IEC_Bus::GetInputButtonReleased(INPUT_BUTTON_INSERT);
 	if (insertButtonPressedPrev && !insertButtonPressed)
 		SetButtonFlag(INSERT_FLAG);
 	insertButtonPressedPrev = insertButtonPressed;
 
-	enterButtonPressed = !IEC_Bus::GetInputButtonReleased(0);
+	enterButtonPressed = !IEC_Bus::GetInputButtonReleased(INPUT_BUTTON_ENTER);
 	if (enterButtonPressedPrev && !enterButtonPressed)
 		SetButtonFlag(ENTER_FLAG);
 	enterButtonPressedPrev = enterButtonPressed;

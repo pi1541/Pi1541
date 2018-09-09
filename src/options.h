@@ -88,6 +88,12 @@ public:
 
 	inline float ScrollHighlightRate() const { return scrollHighlightRate; }
 
+	inline unsigned int GetButtonEnter() const { return buttonEnter; }
+	inline unsigned int GetButtonUp() const { return buttonUp; }
+	inline unsigned int GetButtonDown() const { return buttonDown; }
+	inline unsigned int GetButtonBack() const { return buttonBack; }
+	inline unsigned int GetButtonInsert() const { return buttonInsert; }
+
 	// Page up and down will jump a different amount based on the maximum number rows displayed.
 	// Perhaps we should use some keyboard modifier to the the other screen?
 	inline unsigned int KeyboardBrowseLCDScreen() const { return keyboardBrowseLCDScreen; }
@@ -134,6 +140,12 @@ private:
 	float scrollHighlightRate;
 
 	unsigned int keyboardBrowseLCDScreen;
+
+        u8 buttonEnter;
+        u8 buttonUp;
+        u8 buttonDown;
+        u8 buttonBack;
+        u8 buttonInsert;
 
 	char starFileName[256];
 	char C128BootSectorName[256];
