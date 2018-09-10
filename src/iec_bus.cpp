@@ -47,7 +47,8 @@ bool IEC_Bus::Resetting = false;
 bool IEC_Bus::splitIECLines = false;
 bool IEC_Bus::invertIECInputs = false;
 bool IEC_Bus::invertIECOutputs = true;
-bool IEC_Bus::ignoreReset = false;
+bool IEC_Bus::ignoreResetEmulator = false;
+bool IEC_Bus::ignoreResetBrowser = false;
 
 u32 IEC_Bus::myOutsGPFSEL1 = 0;
 u32 IEC_Bus::myOutsGPFSEL0 = 0;
@@ -108,7 +109,7 @@ void IEC_Bus::ReadBrowseMode(void)
 		PI_Clock = true;
 	}
 
-	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+	Resetting = !ignoreResetBrowser && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 }
 
 void IEC_Bus::ReadEmulationMode(void)
@@ -180,5 +181,5 @@ void IEC_Bus::ReadEmulationMode(void)
 		portB->SetInput(VIAPORTPINS_CLOCKIN, true); // simulate the read in software
 	}
 
-	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+	Resetting = !ignoreResetEmulator && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 }

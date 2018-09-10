@@ -646,35 +646,379 @@ void GlobalSetDeviceID(u8 id)
 	pi1541.VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, id & 2);
 }
 
-void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
+void CheckAutoMountImage(FileBrowser* fileBrowser)
 {
 	const char* autoMountImageName = options.GetAutoMountImageName();
 	if (autoMountImageName[0] != 0)
-	{
-		switch (reset_reason)
+		fileBrowser->SelectAutoMountImage(autoMountImageName);
+}
+
+void setupSimulation( FileBrowser* fileBrowser, InputMappings* inputMappings)
+{
+	IEC_Bus::VIA = 0;
+
+	IEC_Bus::Reset();
+// workaround for occasional oled curruption
+	if (screenLCD)
+		screenLCD->ClearInit(0);
+
+	roms.ResetCurrentROMIndex();
+	fileBrowser->ClearScreen();
+
+	fileBrowserSelectedName = 0;
+	fileBrowser->ClearSelections();
+
+	fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
+
+	inputMappings->Reset();
+	inputMappings->SetKeyboardBrowseLCDScreen(screenLCD && options.KeyboardBrowseLCDScreen());
+
+	fileBrowser->ShowDeviceAndROM();
+}
+
+void superviseSD2IEC( FileBrowser* fileBrowser)
+{
+	m_IEC_Commands.SimulateIECBegin();
+
+	if ( (exitReason == EXIT_FIRSTRUN) && (options.GetOnResetBrowser() == RESET_AUTOLOAD) )
+		CheckAutoMountImage(fileBrowser);
+
+	if (exitReason == EXIT_AUTOLOAD)
+		CheckAutoMountImage(fileBrowser);
+
+	if (exitReason == EXIT_RESET)
+		switch (options.GetOnResetEmulator())
 		{
-			case EXIT_UNKNOWN:
-			case EXIT_AUTOLOAD:
-			case EXIT_RESET:
-				fileBrowser->SelectAutoMountImage(autoMountImageName);
-			break;
-			case EXIT_CD:
-			case EXIT_KEYBOARD:
-			break;
+			case RESET_CD1541:
+				fileBrowser->DisplayRoot();
+				break;
+			case RESET_AUTOLOAD:
+				CheckAutoMountImage(fileBrowser);
+				break;
+			case RESET_IGNORE:	// should never happen
+			case RESET_CPU:		// should never happen
+			case RESET_EXIT:
 			default:
-			break;
+				break;
+		}
+
+	while (!emulating)
+	{
+		IEC_Commands::UpdateAction updateAction = m_IEC_Commands.SimulateIECUpdate();
+
+		switch (updateAction)
+		{
+			case IEC_Commands::RESET:
+				IEC_Bus::Reset();
+				m_IEC_Commands.SimulateIECBegin();
+				switch (options.GetOnResetBrowser())
+				{
+					case RESET_CD1541:
+						fileBrowser->DisplayRoot();
+						break;
+					case RESET_AUTOLOAD:
+						CheckAutoMountImage(fileBrowser);
+						break;
+					case RESET_IGNORE:
+					case RESET_CPU:
+					default:
+						break;
+				}
+				break;
+			case IEC_Commands::NONE:
+				fileBrowser->Update();
+
+				// Check selections made via FileBrowser
+				if (fileBrowser->SelectionsMade())
+					emulating = BeginEmulating(fileBrowser, fileBrowser->LastSelectionName());
+				break;
+			case IEC_Commands::IMAGE_SELECTED:
+				// Check selections made via IEC commands (like fb64)
+
+				fileBrowserSelectedName = m_IEC_Commands.GetNameOfImageSelected();
+
+				if (DiskImage::IsLSTExtention(fileBrowserSelectedName))
+				{
+					if (fileBrowser->SelectLST(fileBrowserSelectedName))
+					{
+						emulating = BeginEmulating(fileBrowser, fileBrowserSelectedName);
+					}
+					else
+					{
+						m_IEC_Commands.Reset();
+						fileBrowserSelectedName = 0;
+					}
+				}
+				else if (DiskImage::IsDiskImageExtention(fileBrowserSelectedName))
+				{
+					const FILINFO* filInfoSelected = m_IEC_Commands.GetImageSelected();
+					DEBUG_LOG("IEC mounting %s\r\n", filInfoSelected->fname);
+					bool readOnly = (filInfoSelected->fattrib & AM_RDO) != 0;
+
+					if (diskCaddy.Insert(filInfoSelected, readOnly))
+						emulating = BeginEmulating(fileBrowser, filInfoSelected->fname);
+					else
+						fileBrowserSelectedName = 0;
+				}
+				else
+				{
+					fileBrowserSelectedName = 0;
+				}
+
+				if (fileBrowserSelectedName == 0)
+					m_IEC_Commands.Reset();
+				break;
+
+			case IEC_Commands::DIR_PUSHED:
+				fileBrowser->FolderChanged();
+				break;
+			case IEC_Commands::POP_DIR:
+				fileBrowser->PopFolder();
+				fileBrowser->RefeshDisplay();
+				break;
+			case IEC_Commands::POP_TO_ROOT:
+				fileBrowser->DisplayRoot();
+				break;
+			case IEC_Commands::REFRESH:
+				fileBrowser->FolderChanged();
+				break;
+			case IEC_Commands::DEVICEID_CHANGED:
+				GlobalSetDeviceID( m_IEC_Commands.GetDeviceId() );
+				fileBrowser->ShowDeviceAndROM();
+				break;
+			default:
+				break;
+		}
+		usDelay(1);
+	}
+}
+
+void superviseEmulator( FileBrowser* fileBrowser, InputMappings* inputMappings)
+{
+	int cycleCount = 0;
+	unsigned caddyIndex;
+	int headSoundCounter = 0;
+	int headSoundFreqCounter = 0;
+	const int headSoundFreq = 1000000 / options.SoundOnGPIOFreq();	// 1200Hz = 1/1200 * 10^6;
+	unsigned char oldHeadDir;
+	int resetCount = 0;
+	unsigned ctBefore = 0;
+	unsigned ctAfter = 0;
+
+	bool oldLED = false;
+
+	unsigned numberOfImages = diskCaddy.GetNumberOfImages();
+	unsigned numberOfImagesMax = numberOfImages;
+	if (numberOfImagesMax > 10)
+		numberOfImagesMax = 10;
+
+	diskCaddy.Display();
+
+	inputMappings->directDiskSwapRequest = 0;
+	// Force an update on all the buttons now before we start emulation mode. 
+	IEC_Bus::ReadBrowseMode();
+
+	bool extraRAM = options.GetExtraRAM();
+	DataBusReadFn dataBusRead = extraRAM ? read6502ExtraRAM : read6502;
+	DataBusWriteFn dataBusWrite = extraRAM ? write6502ExtraRAM : write6502;
+	pi1541.m6502.SetBusFunctions(dataBusRead, dataBusWrite);
+
+	IEC_Bus::VIA = &pi1541.VIA[0];
+	pi1541.Reset();	// will call IEC_Bus::Reset();
+
+	ctBefore = read32(ARM_SYSTIMER_CLO);
+
+	bool exitEmulationInput = false;
+	bool exitDoAutoLoad = false;
+	bool exitIECReset = false;
+
+	while (1)
+	{
+		IEC_Bus::ReadEmulationMode();
+
+		if (pi1541.m6502.SYNC())	// About to start a new instruction.
+		{
+			u16 pc = pi1541.m6502.GetPC();
+			// See if the emulated cpu is executing CD:_ (ie back out of emulated image)
+			if (snoopIndex == 0 && (pc == SNOOP_CD_CBM || pc == SNOOP_CD_JIFFY_BOTH || pc == SNOOP_CD_JIFFY_DRIVEONLY)) snoopPC = pc;
+
+			if (pc == snoopPC)
+			{
+				u8 a = pi1541.m6502.GetA();
+				if (a == snoopBackCommand[snoopIndex])
+				{
+					snoopIndex++;
+					if (snoopIndex == sizeof(snoopBackCommand))
+					{
+						// Exit full emulation back to IEC commands level simulation.
+						snoopIndex = 0;
+						emulating = false;
+						exitReason = EXIT_CD;
+					}
+				}
+				else
+				{
+					snoopIndex = 0;
+					snoopPC = 0;
+				}
+			}
+		}
+
+		pi1541.m6502.Step();	// If the CPU reads or writes to the VIA then clk and data can change
+
+		if (cycleCount >= FAST_BOOT_CYCLES)	// cycleCount is used so we can quickly get through 1541's self test code. This will make the emulated 1541 responsive to commands asap. During this time we don't need to set outputs.
+		{
+			//To artificialy delay the outputs later into the phi2's cycle (do this on future Pis that will be faster and perhaps too fast)
+			//read32(ARM_SYSTIMER_CLO);	//Each one of these is > 100ns
+			//read32(ARM_SYSTIMER_CLO);
+			//read32(ARM_SYSTIMER_CLO);
+
+			IEC_Bus::OutputLED = pi1541.drive.IsLEDOn();
+			if (IEC_Bus::OutputLED ^ oldLED)
+			{
+				SetACTLed(IEC_Bus::OutputLED);
+				oldLED = IEC_Bus::OutputLED;
+			}
+
+			// Do head moving sound
+			unsigned char headDir = pi1541.drive.GetLastHeadDirection();
+			if (headDir ^ oldHeadDir)	// Need to start a new sound?
+			{
+				oldHeadDir = headDir;
+				if (options.SoundOnGPIO())
+				{
+					headSoundCounter = 1000 * options.SoundOnGPIODuration();
+					headSoundFreqCounter = headSoundFreq;
+				}
+				else
+				{
+					PlaySoundDMA();
+				}
+			}
+
+			if (options.SoundOnGPIO() && headSoundCounter > 0)
+			{
+				headSoundFreqCounter--;		// Continue updating a GPIO non DMA sound.
+				if (headSoundFreqCounter <= 0)
+				{
+					headSoundFreqCounter = headSoundFreq;
+					headSoundCounter -= headSoundFreq * 8;
+					IEC_Bus::OutputSound = !IEC_Bus::OutputSound;
+				}
+			}
+
+			IEC_Bus::RefreshOuts();	// Now output all outputs.
+		}
+
+		// Other core will check the uart (as it is slow) (could enable uart irqs - will they execute on this core?)
+		inputMappings->CheckKeyboardEmulationMode(numberOfImages, numberOfImagesMax);
+		inputMappings->CheckButtonsEmulationMode();
+
+		exitEmulationInput = inputMappings->Exit();
+		exitDoAutoLoad = inputMappings->AutoLoad();
+
+		// We have now output so HERE is where the next phi2 cycle starts.
+		pi1541.Update();
+
+
+		bool reset = IEC_Bus::IsReset();
+		if (reset)
+			resetCount++;
+		else
+			resetCount = 0;
+
+		if (resetCount > 10)
+		{
+			if (options.GetOnResetEmulator() == RESET_CPU)
+				pi1541.m6502.Reset();
+			else
+				exitIECReset = true;
+		}
+
+		if (!emulating || exitIECReset || exitEmulationInput || exitDoAutoLoad)
+		{
+			// Clearing the caddy now
+			//	- will write back all changed/dirty/written to disk images now
+			//		- TDOO: need to display the image names as they write back
+			//	- pass in a call back function?
+			if (diskCaddy.Empty())
+				IEC_Bus::WaitMicroSeconds(2 * 1000000);
+
+// workaround for occasional oled curruption
+//			if (screenLCD)
+//				screenLCD->ClearInit(0);
+
+			fileBrowser->ClearSelections();
+			fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
+
+			IEC_Bus::WaitUntilReset();
+			//DEBUG_LOG("6502 resetting\r\n");
+			emulating = false;
+
+			if (exitIECReset)
+				exitReason = EXIT_RESET;
+			if (exitEmulationInput)
+				exitReason = EXIT_KEYBOARD;
+			if (exitDoAutoLoad)
+				exitReason = EXIT_AUTOLOAD;
+			break;	// from the big while loop
+		}
+
+		if (cycleCount < FAST_BOOT_CYCLES)	// cycleCount is used so we can quickly get through 1541's self test code. This will make the emulated 1541 responsive to commands asap.
+		{
+			cycleCount++;
+			ctAfter = read32(ARM_SYSTIMER_CLO);
+		}
+		else
+		{
+			do	// Sync to the 1MHz clock
+			{
+				ctAfter = read32(ARM_SYSTIMER_CLO);
+				unsigned ct = ctAfter - ctBefore;
+				if (ct > 1)
+				{
+					// If this ever occurs then we have taken too long (ie >1us) and lost a cycle.
+					// Cycle accuracy is now in jeopardy. If this occurs during critical communication loops then emulation can fail!
+					//DEBUG_LOG("!");
+				}
+			}
+			while (ctAfter == ctBefore);
+		}
+		ctBefore = ctAfter;
+
+		if (numberOfImages > 1)
+		{
+			bool nextDisk = inputMappings->NextDisk();
+			bool prevDisk = inputMappings->PrevDisk();
+			if (nextDisk)
+				pi1541.drive.Insert(diskCaddy.PrevDisk());
+
+			else if (prevDisk)
+				pi1541.drive.Insert(diskCaddy.NextDisk());
+
+			else if (inputMappings->directDiskSwapRequest != 0)
+			{
+				for (caddyIndex = 0; caddyIndex < numberOfImagesMax; ++caddyIndex)
+				{
+					if (inputMappings->directDiskSwapRequest & (1 << caddyIndex))
+					{
+						DiskImage* diskImage = diskCaddy.SelectImage(caddyIndex);
+						if (diskImage && diskImage != pi1541.drive.GetDiskImage())
+						{
+							pi1541.drive.Insert(diskImage);
+							break;	// the caddyIndex loop
+						}
+					}
+				}
+				inputMappings->directDiskSwapRequest = 0;
+			}
 		}
 	}
 }
 
 void emulator()
 {
-	bool oldLED = false;
-	unsigned ctBefore = 0;
-	unsigned ctAfter = 0;
 	Keyboard* keyboard = Keyboard::Instance();
-	bool resetWhileEmulating = false;
-	bool selectedViaIECCommands = false;
 	InputMappings* inputMappings = InputMappings::Instance();
 	FileBrowser* fileBrowser;
 
@@ -689,126 +1033,18 @@ void emulator()
 	m_IEC_Commands.Set128BootSectorName(options.Get128BootSectorName());
 
 	emulating = false;
+	exitReason = EXIT_FIRSTRUN;	// not really an exit
 
 	while (1)
 	{
 		if (!emulating)
 		{
-			IEC_Bus::VIA = 0;
-
-			IEC_Bus::Reset();
-// workaround for occasional oled curruption
-			if (screenLCD)
-				screenLCD->ClearInit(0);
-
-			roms.ResetCurrentROMIndex();
-			fileBrowser->ClearScreen();
-
-			fileBrowserSelectedName = 0;
-			fileBrowser->ClearSelections();
-
-			// Go back to the root folder so you can load fb* again?
-//			if ((resetWhileEmulating && options.GetOnResetChangeToStartingFolder()) || selectedViaIECCommands)
-//				fileBrowser->DisplayRoot(); // Go back to the root folder and display it.
-//			else
-				fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
-
-			resetWhileEmulating = false;
-			selectedViaIECCommands = false;
-
-			inputMappings->Reset();
-			inputMappings->SetKeyboardBrowseLCDScreen(screenLCD && options.KeyboardBrowseLCDScreen());
-
-			fileBrowser->ShowDeviceAndROM();
+			setupSimulation(fileBrowser, inputMappings);
 
 			if (!options.GetDisableSD2IECCommands())
-			{
-				m_IEC_Commands.SimulateIECBegin();
-
-				CheckAutoMountImage(exitReason, fileBrowser);
-
-				while (!emulating)
-				{
-					IEC_Commands::UpdateAction updateAction = m_IEC_Commands.SimulateIECUpdate();
-
-					switch (updateAction)
-					{
-						case IEC_Commands::RESET:
-							if (options.GetOnResetChangeToStartingFolder())
-								fileBrowser->DisplayRoot();
-							IEC_Bus::Reset();
-							m_IEC_Commands.SimulateIECBegin();
-							CheckAutoMountImage(EXIT_UNKNOWN, fileBrowser);
-							break;
-						case IEC_Commands::NONE:
-							fileBrowser->Update();
-
-							// Check selections made via FileBrowser
-							if (fileBrowser->SelectionsMade())
-								emulating = BeginEmulating(fileBrowser, fileBrowser->LastSelectionName());
-							break;
-						case IEC_Commands::IMAGE_SELECTED:
-							// Check selections made via IEC commands (like fb64)
-
-							fileBrowserSelectedName = m_IEC_Commands.GetNameOfImageSelected();
-
-							if (DiskImage::IsLSTExtention(fileBrowserSelectedName))
-							{
-								if (fileBrowser->SelectLST(fileBrowserSelectedName))
-								{
-									emulating = BeginEmulating(fileBrowser, fileBrowserSelectedName);
-								}
-								else
-								{
-									m_IEC_Commands.Reset();
-									fileBrowserSelectedName = 0;
-								}
-							}
-							else if (DiskImage::IsDiskImageExtention(fileBrowserSelectedName))
-							{
-								const FILINFO* filInfoSelected = m_IEC_Commands.GetImageSelected();
-								DEBUG_LOG("IEC mounting %s\r\n", filInfoSelected->fname);
-								bool readOnly = (filInfoSelected->fattrib & AM_RDO) != 0;
-
-								if (diskCaddy.Insert(filInfoSelected, readOnly))
-									emulating = BeginEmulating(fileBrowser, filInfoSelected->fname);
-								else
-									fileBrowserSelectedName = 0;
-							}
-							else
-							{
-								fileBrowserSelectedName = 0;
-							}
-
-							if (fileBrowserSelectedName == 0)
-								m_IEC_Commands.Reset();
-
-							selectedViaIECCommands = true;
-							break;
-						case IEC_Commands::DIR_PUSHED:
-							fileBrowser->FolderChanged();
-							break;
-						case IEC_Commands::POP_DIR:
-							fileBrowser->PopFolder();
-							fileBrowser->RefeshDisplay();
-							break;
-						case IEC_Commands::POP_TO_ROOT:
-							fileBrowser->DisplayRoot();
-							break;
-						case IEC_Commands::REFRESH:
-							fileBrowser->FolderChanged();
-							break;
-						case IEC_Commands::DEVICEID_CHANGED:
-							GlobalSetDeviceID( m_IEC_Commands.GetDeviceId() );
-							fileBrowser->ShowDeviceAndROM();
-							break;
-						default:
-							break;
-					}
-					usDelay(1);
-				}
-			}
-			else
+				superviseSD2IEC(fileBrowser);
+			
+			else	// just look at keyboard (and buttons??)
 			{
 				while (!emulating)
 				{
@@ -823,219 +1059,9 @@ void emulator()
 			}
 		}
 		else
-		{
-			int cycleCount = 0;
-			unsigned caddyIndex;
-			int headSoundCounter = 0;
-			int headSoundFreqCounter = 0;
-//			const int headSoundFreq = 833;	// 1200Hz = 1/1200 * 10^6;
-			const int headSoundFreq = 1000000 / options.SoundOnGPIOFreq();	// 1200Hz = 1/1200 * 10^6;
-			unsigned char oldHeadDir;
-			int resetCount = 0;
-
-			unsigned numberOfImages = diskCaddy.GetNumberOfImages();
-			unsigned numberOfImagesMax = numberOfImages;
-			if (numberOfImagesMax > 10)
-				numberOfImagesMax = 10;
-
-			diskCaddy.Display();
-
-			inputMappings->directDiskSwapRequest = 0;
-			// Force an update on all the buttons now before we start emulation mode. 
-			IEC_Bus::ReadBrowseMode();
-
-			bool extraRAM = options.GetExtraRAM();
-			DataBusReadFn dataBusRead = extraRAM ? read6502ExtraRAM : read6502;
-			DataBusWriteFn dataBusWrite = extraRAM ? write6502ExtraRAM : write6502;
-			pi1541.m6502.SetBusFunctions(dataBusRead, dataBusWrite);
-
-			IEC_Bus::VIA = &pi1541.VIA[0];
-			pi1541.Reset();	// will call IEC_Bus::Reset();
-
-			ctBefore = read32(ARM_SYSTIMER_CLO);
-
-			while (1)
-			{
-				IEC_Bus::ReadEmulationMode();
-
-				if (pi1541.m6502.SYNC())	// About to start a new instruction.
-				{
-					u16 pc = pi1541.m6502.GetPC();
-					// See if the emulated cpu is executing CD:_ (ie back out of emulated image)
-					if (snoopIndex == 0 && (pc == SNOOP_CD_CBM || pc == SNOOP_CD_JIFFY_BOTH || pc == SNOOP_CD_JIFFY_DRIVEONLY)) snoopPC = pc;
-
-					if (pc == snoopPC)
-					{
-						u8 a = pi1541.m6502.GetA();
-						if (a == snoopBackCommand[snoopIndex])
-						{
-							snoopIndex++;
-							if (snoopIndex == sizeof(snoopBackCommand))
-							{
-								// Exit full emulation back to IEC commands level simulation.
-								snoopIndex = 0;
-								emulating = false;
-								exitReason = EXIT_CD;
-							}
-						}
-						else
-						{
-							snoopIndex = 0;
-							snoopPC = 0;
-						}
-					}
-				}
-
-				pi1541.m6502.Step();	// If the CPU reads or writes to the VIA then clk and data can change
-
-				if (cycleCount >= FAST_BOOT_CYCLES)	// cycleCount is used so we can quickly get through 1541's self test code. This will make the emulated 1541 responsive to commands asap. During this time we don't need to set outputs.
-				{
-					//To artificialy delay the outputs later into the phi2's cycle (do this on future Pis that will be faster and perhaps too fast)
-					//read32(ARM_SYSTIMER_CLO);	//Each one of these is > 100ns
-					//read32(ARM_SYSTIMER_CLO);
-					//read32(ARM_SYSTIMER_CLO);
-
-					IEC_Bus::OutputLED = pi1541.drive.IsLEDOn();
-					if (IEC_Bus::OutputLED ^ oldLED)
-					{
-						SetACTLed(IEC_Bus::OutputLED);
-						oldLED = IEC_Bus::OutputLED;
-					}
-
-					// Do head moving sound
-					unsigned char headDir = pi1541.drive.GetLastHeadDirection();
-					if (headDir ^ oldHeadDir)	// Need to start a new sound?
-					{
-						oldHeadDir = headDir;
-						if (options.SoundOnGPIO())
-						{
-							headSoundCounter = 1000 * options.SoundOnGPIODuration();
-							headSoundFreqCounter = headSoundFreq;
-						}
-						else
-						{
-							PlaySoundDMA();
-						}
-					}
-
-					if (options.SoundOnGPIO() && headSoundCounter > 0)
-					{
-						headSoundFreqCounter--;		// Continue updating a GPIO non DMA sound.
-						if (headSoundFreqCounter <= 0)
-						{
-							headSoundFreqCounter = headSoundFreq;
-							headSoundCounter -= headSoundFreq * 8;
-							IEC_Bus::OutputSound = !IEC_Bus::OutputSound;
-						}
-					}
-
-					IEC_Bus::RefreshOuts();	// Now output all outputs.
-				}
-
-				// Other core will check the uart (as it is slow) (could enable uart irqs - will they execute on this core?)
-				inputMappings->CheckKeyboardEmulationMode(numberOfImages, numberOfImagesMax);
-				inputMappings->CheckButtonsEmulationMode();
-
-				bool exitEmulation = inputMappings->Exit();
-				bool exitDoAutoLoad = inputMappings->AutoLoad();
-
-				// We have now output so HERE is where the next phi2 cycle starts.
-				pi1541.Update();
-
-
-				bool reset = IEC_Bus::IsReset();
-				if (reset)
-					resetCount++;
-				else
-					resetCount = 0;
-
-				if (!emulating || (resetCount > 10) || exitEmulation || exitDoAutoLoad)
-				{
-					// Clearing the caddy now
-					//	- will write back all changed/dirty/written to disk images now
-					//		- TDOO: need to display the image names as they write back
-					//	- pass in a call back function?
-					if (diskCaddy.Empty())
-						IEC_Bus::WaitMicroSeconds(2 * 1000000);
-
-// workaround for occasional oled curruption
-//					if (screenLCD)
-//						screenLCD->ClearInit(0);
-
-					fileBrowser->ClearSelections();
-					fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
-
-					IEC_Bus::WaitUntilReset();
-					//DEBUG_LOG("6502 resetting\r\n");
-					emulating = false;
-					resetWhileEmulating = true;
-					if (reset)
-					{
-						exitReason = EXIT_RESET;
-						if (options.GetOnResetChangeToStartingFolder() || selectedViaIECCommands)
-							fileBrowser->DisplayRoot(); // TO CHECK
-					}
-					if (exitEmulation)
-						exitReason = EXIT_KEYBOARD;
-					if (exitDoAutoLoad)
-						exitReason = EXIT_AUTOLOAD;
-					break;
-				}
-
-				if (cycleCount < FAST_BOOT_CYCLES)	// cycleCount is used so we can quickly get through 1541's self test code. This will make the emulated 1541 responsive to commands asap.
-				{
-					cycleCount++;
-					ctAfter = read32(ARM_SYSTIMER_CLO);
-				}
-				else
-				{
-					do	// Sync to the 1MHz clock
-					{
-						ctAfter = read32(ARM_SYSTIMER_CLO);
-						unsigned ct = ctAfter - ctBefore;
-						if (ct > 1)
-						{
-							// If this ever occurs then we have taken too long (ie >1us) and lost a cycle.
-							// Cycle accuracy is now in jeopardy. If this occurs during critical communication loops then emulation can fail!
-							//DEBUG_LOG("!");
-						}
-					}
-					while (ctAfter == ctBefore);
-				}
-				ctBefore = ctAfter;
-
-				if (numberOfImages > 1)
-				{
-					bool nextDisk = inputMappings->NextDisk();
-					bool prevDisk = inputMappings->PrevDisk();
-					if (nextDisk)
-					{
-						pi1541.drive.Insert(diskCaddy.PrevDisk());
-					}
-					else if (prevDisk)
-					{
-						pi1541.drive.Insert(diskCaddy.NextDisk());
-					}
-					else if (inputMappings->directDiskSwapRequest != 0)
-					{
-						for (caddyIndex = 0; caddyIndex < numberOfImagesMax; ++caddyIndex)
-						{
-							if (inputMappings->directDiskSwapRequest & (1 << caddyIndex))
-							{
-								DiskImage* diskImage = diskCaddy.SelectImage(caddyIndex);
-								if (diskImage && diskImage != pi1541.drive.GetDiskImage())
-								{
-									pi1541.drive.Insert(diskImage);
-									break;
-								}
-							}
-						}
-						inputMappings->directDiskSwapRequest = 0;
-					}
-				}
-			}
-		}
+			superviseEmulator(fileBrowser, inputMappings);
 	}
+
 	delete fileBrowser;
 }
 
@@ -1377,7 +1403,10 @@ extern "C"
 		IEC_Bus::SetSplitIECLines(options.SplitIECLines());
 		IEC_Bus::SetInvertIECInputs(options.InvertIECInputs());
 		IEC_Bus::SetInvertIECOutputs(options.InvertIECOutputs());
-		IEC_Bus::SetIgnoreReset(options.IgnoreReset());
+		IEC_Bus::SetIgnoreResetBrowser(
+			options.IgnoreReset() || (options.GetOnResetBrowser() == RESET_IGNORE) );
+		IEC_Bus::SetIgnoreResetEmulator(
+			options.IgnoreReset() || (options.GetOnResetEmulator() == RESET_IGNORE) );
 
 		if (!options.SoundOnGPIO())
 		{

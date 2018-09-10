@@ -345,7 +345,7 @@ public:
 		do
 		{
 			gplev0 = read32(ARM_GPIO_GPLEV0);
-			Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == \
+			Resetting = !ignoreResetBrowser && ((gplev0 & PIGPIO_MASK_IN_RESET) == \
 				 (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 
 			if (Resetting)
@@ -551,9 +551,14 @@ public:
 		invertIECOutputs = value;
 	}
 
-	static inline void SetIgnoreReset(bool value)
+	static inline void SetIgnoreResetBrowser(bool value)
 	{
-		ignoreReset = value;
+		ignoreResetBrowser = value;
+	}
+
+	static inline void SetIgnoreResetEmulator(bool value)
+	{
+		ignoreResetEmulator = value;
 	}
 
 	// CA1 input ATN
@@ -602,7 +607,8 @@ private:
 	static bool splitIECLines;
 	static bool invertIECInputs;
 	static bool invertIECOutputs;
-	static bool ignoreReset;
+	static bool ignoreResetBrowser;
+	static bool ignoreResetEmulator;
 
 	static u32 PIGPIO_MASK_IN_ATN;
 	static u32 PIGPIO_MASK_IN_DATA;

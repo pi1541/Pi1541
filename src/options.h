@@ -47,7 +47,6 @@ public:
 	void Process(char* buffer);
 
 	inline unsigned int GetDeviceID() const { return deviceID; }
-	inline unsigned int GetOnResetChangeToStartingFolder() const { return onResetChangeToStartingFolder; }
 	inline const char* GetAutoMountImageName() const { return autoMountImageName; }
 	inline const char* GetRomFontName() const { return ROMFontName; }
 	const char* GetRomName(int index) const;
@@ -83,6 +82,8 @@ public:
 	inline unsigned int I2CLcdDimContrast() const { return i2cLcdDimContrast; }
 	inline unsigned int I2CLcdDimTime() const { return i2cLcdDimTime; }
 	inline LCD_MODEL I2CLcdModel() const { return i2cLcdModel; }
+	inline RESET_ACTION GetOnResetEmulator() const { return OnResetEmulator; }
+	inline RESET_ACTION GetOnResetBrowser() const { return OnResetBrowser; }
 
 	inline const char* GetLcdLogoName() const { return LcdLogoName; }
 
@@ -136,7 +137,8 @@ private:
 	unsigned int i2cLcdDimContrast;
 	unsigned int i2cLcdDimTime;
 	LCD_MODEL i2cLcdModel = LCD_UNKNOWN;
-
+	RESET_ACTION OnResetEmulator = RESET_IGNORE;
+	RESET_ACTION OnResetBrowser = RESET_IGNORE;
 	float scrollHighlightRate;
 
 	unsigned int keyboardBrowseLCDScreen;
