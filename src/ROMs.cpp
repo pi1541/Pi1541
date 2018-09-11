@@ -20,6 +20,8 @@
 #include "debug.h"
 #include <strings.h>
 
+extern void Initialise6502JumpTables();
+
 void ROMs::ResetCurrentROMIndex()
 {
 	currentROMIndex = lastManualSelectedROMIndex;
@@ -40,6 +42,16 @@ void ROMs::SelectROM(const char* ROMName)
 			currentROMIndex = index;
 			break;
 		}
+	}
+	Initialise6502JumpTables();
+}
+
+void ROMs::SelectROM(unsigned index)
+{
+	if ( (index < MAX_ROMS) && (ROMValid[index]) )
+	{
+		currentROMIndex = index;
+		Initialise6502JumpTables();
 	}
 }
 

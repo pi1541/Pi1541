@@ -198,130 +198,19 @@ DWORD get_fattime() { return 0; }	// If you have hardware RTC return a correct v
 // 74LS42 Ouputs a low to the !CS based on the four inputs provided by address bits 10-13
 // 1800 !cs2 on pin 9
 // 1c00 !cs2 on pin 7
+
+#define N_MAPS 1
+#define N_JUMPS 256	// 256 entries - just use the high 8 bits
+u8 (* ReadJump[N_MAPS][N_JUMPS])(u16);
+void (* WriteJump[N_MAPS][N_JUMPS])(u16, u8);
 u8 read6502(u16 address)
 {
-	u8 value = 0;
-	if (address & 0x8000)
-	{
-		switch (address & 0xe000) // keep bits 15,14,13
-		{
-			case 0x8000: // 0x8000-0x9fff
-				if (options.GetRAMBOard()) {
-					value = s_u8Memory[address]; // 74LS42 outputs low on pin 1 or pin 2
-					break;
-				}
-			case 0xa000: // 0xa000-0xbfff
-			case 0xc000: // 0xc000-0xdfff
-			case 0xe000: // 0xe000-0xffff
-				value = roms.Read(address);
-				break;
-		}
-	}
-	else
-	{
-		// Address lines 15, 12, 11 and 10 are fed into a 74LS42 for decoding
-		u16 addressLines12_11_10 = (address & 0x1c00) >> 10;
-		switch (addressLines12_11_10)
-		{
-			case 0:
-			case 1:
-				value = s_u8Memory[address & 0x7ff]; // 74LS42 outputs low on pin 1 or pin 2
-				break;
-			case 6:
-				value = pi1541.VIA[0].Read(address);	// 74LS42 outputs low on pin 7
-				break;
-			case 7:
-				value = pi1541.VIA[1].Read(address);	// 74LS42 outputs low on pin 9
-				break;
-			default:
-				value = address >> 8;	// Empty address bus
-				break;
-		}
-	}
-	return value;
+	return (* ReadJump[0][address>>8])(address);
 }
 
-// Allows a mode where we have RAM at all addresses other than the ROM and the VIAs. (Maybe useful to someone?)
-u8 read6502ExtraRAM(u16 address)
+void write6502(u16 address, u8 data)
 {
-	if (address & 0x8000)
-	{
-		return roms.Read(address);
-	}
-	else
-	{
-		u16 addressLines11And12 = address & 0x1800;
-		if (addressLines11And12 == 0x1800) return pi1541.VIA[(address & 0x400) != 0].Read(address);	// address line 10 indicates what VIA to index
-		return s_u8Memory[address & 0x7fff];
-	}
-}
-
-// Use for debugging (Reads VIA registers without the regular VIA read side effects)
-u8 peek6502(u16 address)
-{
-	u8 value;
-	if (address & 0x8000)	// address line 15 selects the ROM
-	{
-		value = roms.Read(address);
-	}
-	else
-	{
-		// Address lines 15, 12, 11 and 10 are fed into a 74LS42 for decoding
-		u16 addressLines15_12_11_10 = (address & 0x1c00) >> 10;
-		addressLines15_12_11_10 |= (address & 0x8000) >> (15 - 3);
-		if (addressLines15_12_11_10 == 0 || addressLines15_12_11_10 == 1) value = s_u8Memory[address & 0x7ff]; // 74LS42 outputs low on pin 1 or pin 2
-		else if (addressLines15_12_11_10 == 6) value = pi1541.VIA[0].Peek(address);	// 74LS42 outputs low on pin 7
-		else if (addressLines15_12_11_10 == 7) value = pi1541.VIA[1].Peek(address);	// 74LS42 outputs low on pin 9
-		else value = address >> 8;	// Empty address bus
-	}
-	return value;
-}
-
-void write6502(u16 address, const u8 value)
-{
-	if (address & 0x8000)
-	{
-		switch (address & 0xe000) // keep bits 15,14,13
-		{
-			case 0x8000: // 0x8000-0x9fff
-				if (options.GetRAMBOard()) {
-					s_u8Memory[address] = value; // 74LS42 outputs low on pin 1 or pin 2
-					break;
-				}
-			case 0xa000: // 0xa000-0xbfff
-			case 0xc000: // 0xc000-0xdfff
-			case 0xe000: // 0xe000-0xffff
-				return;
-		}
-	}
-	else
-	{
-		// Address lines 15, 12, 11 and 10 are fed into a 74LS42 for decoding
-		u16 addressLines12_11_10 = (address & 0x1c00) >> 10;
-		switch (addressLines12_11_10)
-		{
-			case 0:
-			case 1:
-				s_u8Memory[address & 0x7ff] = value; // 74LS42 outputs low on pin 1 or pin 2
-				break;
-			case 6:
-				pi1541.VIA[0].Write(address, value);	// 74LS42 outputs low on pin 7
-				break;
-			case 7:
-				pi1541.VIA[1].Write(address, value);	// 74LS42 outputs low on pin 9
-				break;
-			default:
-				break;
-		}
-	}
-}
-
-void write6502ExtraRAM(u16 address, const u8 value)
-{
-	if (address & 0x8000) return; // address line 15 selects the ROM
-	u16 addressLines11And12 = address & 0x1800;
-	if (addressLines11And12 == 0) s_u8Memory[address & 0x7fff] = value;
-	else if (addressLines11And12 == 0x1800) pi1541.VIA[(address & 0x400) != 0].Write(address, value);	// address line 10 indicates what VIA to index
+	(* WriteJump[0][address>>8])(address, data);
 }
 
 void InitialiseHardware()
@@ -844,10 +733,7 @@ void emulator()
 			// Force an update on all the buttons now before we start emulation mode. 
 			IEC_Bus::ReadBrowseMode();
 
-			bool extraRAM = options.GetExtraRAM();
-			DataBusReadFn dataBusRead = extraRAM ? read6502ExtraRAM : read6502;
-			DataBusWriteFn dataBusWrite = extraRAM ? write6502ExtraRAM : write6502;
-			pi1541.m6502.SetBusFunctions(dataBusRead, dataBusWrite);
+			pi1541.m6502.SetBusFunctions(read6502, write6502);
 
 			IEC_Bus::VIA = &pi1541.VIA[0];
 			pi1541.Reset();	// will call IEC_Bus::Reset();
@@ -1082,12 +968,12 @@ static bool AttemptToLoadROM(char* ROMName)
 	{
 		u32 bytesRead;
 		SetACTLed(true);
-		f_read(&fp, roms.ROMImages[0], ROMs::ROM_SIZE, &bytesRead);
+		f_read(&fp, roms.ROMImages[0], ROMs::MAX_ROM_SIZE, &bytesRead);
 		strncpy(roms.ROMNames[0], ROMName, 255);
 		roms.ROMValid[0] = true;
 		SetACTLed(false);
 		f_close(&fp);
-		DEBUG_LOG("Opened ROM %s %d %d %d\r\n", ROMName, ROMs::ROM_SIZE, bytesRead, bytesRead == ROMs::ROM_SIZE);
+		DEBUG_LOG("Opened ROM %s %d %d %d\r\n", ROMName, ROMs::MAX_ROM_SIZE, bytesRead, bytesRead == ROMs::ROM_SIZE);
 		return true;
 	}
 	else
@@ -1252,22 +1138,42 @@ static void CheckOptions()
 			|| (FR_OK == f_open(&fp, ROMName2, FA_READ)) )
 		{
 			u32 bytesRead;
+			FSIZE_t filesize = f_size(&fp);
 
-			screen.Clear(COLOUR_BLACK);
-			snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
-			screen.MeasureText(false, tempBuffer, &widthText, &heightText);
-			xpos = (widthScreen - widthText) >> 1;
-			ypos = (heightScreen - heightText) >> 1;
-			screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
-
-			SetACTLed(true);
-			res = f_read(&fp, roms.ROMImages[ROMIndex], ROMs::ROM_SIZE, &bytesRead);
-			SetACTLed(false);
-			if (res == FR_OK && bytesRead == ROMs::ROM_SIZE)
+			if ( (filesize == 16384) || (filesize == 24576) || (filesize == 32768) )
 			{
-				strncpy(roms.ROMNames[ROMIndex], ROMName, 255);
-				roms.ROMValid[ROMIndex] = true;
-				roms.UpdateLongestRomNameLen( strlen(roms.ROMNames[ROMIndex]) );
+				screen.Clear(COLOUR_BLACK);
+				snprintf(tempBuffer, tempBufferSize, "Loading ROM %s %d\r\n", ROMName, (int)filesize);
+				screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+				xpos = (widthScreen - widthText) >> 1;
+				ypos = (heightScreen - heightText) >> 1;
+				screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+
+				SetACTLed(true);
+				switch (filesize) {
+				case 16384:
+					res = f_read(&fp, roms.ROMImages[ROMIndex], filesize, &bytesRead);
+					memcpy (16384+roms.ROMImages[ROMIndex], roms.ROMImages[ROMIndex], 16384);
+					break;
+				case 24576:
+					res = f_read(&fp, 8192+roms.ROMImages[ROMIndex], filesize, &bytesRead);
+					break;
+				case 32768:
+					res = f_read(&fp, roms.ROMImages[ROMIndex], filesize, &bytesRead);
+					break;
+				default:
+					res = FR_INVALID_PARAMETER;
+					break;
+				}
+
+				SetACTLed(false);
+				if (res == FR_OK && bytesRead == filesize)
+				{
+					strncpy(roms.ROMNames[ROMIndex], ROMName, 255);
+					roms.ROMSizes[ROMIndex] = filesize;
+					roms.ROMValid[ROMIndex] = true;
+					roms.UpdateLongestRomNameLen( strlen(roms.ROMNames[ROMIndex]) );
+				}
 			}
 			f_close(&fp);
 			//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
@@ -1310,6 +1216,69 @@ void Reboot_Pi()
 	if (screenLCD)
 		screenLCD->ClearInit(0);
 	reboot_now();
+}
+
+
+u8 readRam(u16 address) { return s_u8Memory[address]; }
+u8 readVIA0(u16 address) { return pi1541.VIA[0].Read(address); }
+u8 readVIA1(u16 address) { return pi1541.VIA[1].Read(address); }
+u8 readROM(u16 address) { return roms.Read(address); }
+u8 readNULL(u16 address) { return address >> 8; }
+
+void writeRam(u16 address, u8 data) { s_u8Memory[address] = data; }
+void writeVIA0(u16 address, u8 data) { pi1541.VIA[0].Write(address, data); }
+void writeVIA1(u16 address, u8 data) { pi1541.VIA[1].Write(address, data); }
+void writeNULL(u16 address, u8 data) { }
+
+
+void Initialise6502JumpTables()
+{
+	for (int i=0; i< N_JUMPS; i++)
+	{
+		// For safety, pre-init everything
+		ReadJump[0][i] = readNULL;
+		WriteJump[0][i] = writeNULL;
+
+		// start with standard address mapping entries
+		// standard RAM
+		if (i <= 0x7F)
+		{
+// 74LS42 has !A15 as an enable and A12,11,10 as decoded lines
+			switch ( (i & 0b00011100 ) >> 2)
+			{
+				case 0:
+				case 1:
+					ReadJump[0][i] = readRam;
+					WriteJump[0][i] = writeRam;
+					break;
+				case 6:
+					ReadJump[0][i] = readVIA0;
+					WriteJump[0][i] = writeVIA0;
+					break;
+				case 7:
+					ReadJump[0][i] = readVIA1;
+					WriteJump[0][i] = writeVIA1;
+					break;
+				default:
+					break;
+			}
+		}
+
+		if ( i >= 0x80 )
+		{
+			ReadJump[0][i] = readROM;
+
+			if ( options.GetRAMBOard() && (i < 0xA0) )
+			{
+				ReadJump[0][i] = readRam;
+				WriteJump[0][i] = writeRam;
+			}
+
+			// over-ride any ROMBOard setting
+			if (roms.GetCurrentROMSize() == 32768)
+				ReadJump[0][i] = readROM;
+		}
+	}
 }
 
 extern "C"
@@ -1395,6 +1364,8 @@ extern "C"
 		m_IEC_Commands.SetStarFileName(options.GetStarFileName());
 
 		GlobalSetDeviceID(deviceID);
+
+		Initialise6502JumpTables();
 
 		pi1541.drive.SetVIA(&pi1541.VIA[1]);
 		pi1541.VIA[0].GetPortB()->SetPortOut(0, IEC_Bus::PortB_OnPortOut);

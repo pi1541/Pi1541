@@ -31,14 +31,6 @@ void Pi1541::Initialise()
 	VIA[1].ConnectIRQ(&m6502.IRQ);
 }
 
-//void Pi1541::ConfigureOfExtraRAM(bool extraRAM)
-//{
-//	if (extraRAM)
-//		m6502.SetBusFunctions(this, Read6502ExtraRAM, Write6502ExtraRAM);
-//	else
-//		m6502.SetBusFunctions(this, Read6502, Write6502);
-//}
-
 void Pi1541::Update()
 {
 	if (drive.Update())
