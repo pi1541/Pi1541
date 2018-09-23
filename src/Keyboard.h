@@ -18,7 +18,6 @@
 
 #ifndef Keyboard_H
 #define Keyboard_H
-#include "Singleton.h"
 #include <stdio.h>
 
 extern "C"
@@ -284,18 +283,18 @@ extern "C"
 #define KEY_MEDIA_REFRESH 0xfa
 #define KEY_MEDIA_CALC 0xfb
 
-class Keyboard : public Singleton<Keyboard>
+class Keyboard //: public Singleton<Keyboard>
 {
 protected:
-	friend Singleton<Keyboard>;
+	//friend Singleton<Keyboard>;
 
 	u8 modifier;
-	volatile u64 keyStatus[2];
-	volatile u64 keyStatusPrev[2];
+	/*volatile*/ u64 keyStatus[2];
+	/*volatile*/ u64 keyStatusPrev[2];
 	u32 keyRepeatCount[MAX_KEYS];
 	u32 timer;
 	//volatile bool dirty;
-	volatile u32 updateCount;
+	/*volatile*/ u32 updateCount;
 	u32 updateCountLastRead;
 
 	static void KeyPressedHandlerRaw(TUSBKeyboardDevice* device, unsigned char modifiers, const unsigned char RawKeys[6]);
@@ -303,6 +302,8 @@ protected:
 
 public:
 	Keyboard();
+
+	static Keyboard* Instance() { return instance; }
 
 	//inline u32 UpdateCount() const { return updateCount; }
 
@@ -342,12 +343,16 @@ public:
 	}
 
 	inline bool KeyAnyHeld()
-	{ return (keyStatus[0] | keyStatus[1]); }
+	{
+		return (keyStatus[0] | keyStatus[1]); 
+	}
 
 	inline bool KeyEitherAlt() { return (modifier & (KEY_MOD_LALT | KEY_MOD_RALT) ); }
 
 	inline bool KeyNoModifiers() { return (!modifier ); }
 
 	inline bool KeyLCtrlAlt() { return (modifier == (KEY_MOD_LALT | KEY_MOD_LCTRL) ); }
+
+	static Keyboard* instance;
 };
 #endif

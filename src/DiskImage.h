@@ -21,8 +21,9 @@
 #include "types.h"
 #include "ff.h"
 
-#define READBUFFER_SIZE 1024 * 512
+#define READBUFFER_SIZE 1024 * 512 * 2 // Now need over 800K for D81s
 
+#define MAX_TRACK_LENGTH 0x2000
 #define NIB_TRACK_LENGTH 0x2000
 
 #define BAM_OFFSET 4
@@ -35,6 +36,8 @@
 #define DIR_ENTRY_NAME_LENGTH 18-2
 
 static const unsigned char HALF_TRACK_COUNT = 84;
+static const unsigned char D71_HALF_TRACK_COUNT = 70;
+static const unsigned char D81_TRACK_COUNT = 80;
 static const unsigned short GCR_SYNC_LENGTH = 5;
 static const unsigned short GCR_HEADER_LENGTH = 10;
 static const unsigned short GCR_HEADER_GAP_LENGTH = 8;
@@ -43,6 +46,8 @@ static const unsigned short GCR_SECTOR_GAP_LENGTH = 8;
 static const unsigned short GCR_SECTOR_LENGTH = GCR_SYNC_LENGTH + GCR_HEADER_LENGTH + GCR_HEADER_GAP_LENGTH + GCR_SYNC_LENGTH + GCR_SECTOR_DATA_LENGTH + GCR_SECTOR_GAP_LENGTH;	//361
 
 static const unsigned short G64_MAX_TRACK_LENGTH = 7928;
+
+static const unsigned short D81_SECTOR_LENGTH = 512;
 
 class DiskImage
 {
@@ -55,6 +60,8 @@ public:
 		NIB,
 		NBZ,
 		LST,
+		D71,
+		D81,
 		RAW
 	};
 
@@ -64,15 +71,17 @@ public:
 	bool OpenG64(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size);
 	bool OpenNIB(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size);
 	bool OpenNBZ(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size);
-	
+	bool OpenD71(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size);
+	bool OpenD81(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size);
+
 	void Close();
 
 	bool GetDecodedSector(u32 track, u32 sector, u8* buffer);
 
 	inline bool GetNextBit(u32 track, u32 byte, u32 bit)
 	{
-		if (attachedImageSize == 0)
-			return 0;
+		//if (attachedImageSize == 0)
+		//	return 0;
 
 		return ((tracks[track][byte] >> bit) & 1) != 0;
 	}
@@ -103,9 +112,65 @@ public:
 	const char* GetName() { return fileInfo->fname; }
 
 	inline unsigned BitsInTrack(unsigned track) const { return trackLengths[track] << 3; }
+	inline unsigned TrackLength(unsigned track) const { return trackLengths[track]; }
+
+	inline bool IsD81() const { return diskType == D81; }
+	inline unsigned char GetD81Byte(unsigned track, unsigned headIndex, unsigned headPos) const { return tracksD81[track][headIndex][headPos]; }
+	inline void SetD81Byte(unsigned track, unsigned headIndex, unsigned headPos, unsigned char data)
+	{
+		//unsigned headDataOffset;
+		//if (headPos > 0)
+		//	headDataOffset = headPos - 1;
+		//else
+		//	headDataOffset = trackLengths[track] - 1;
+		//if (tracksD81[track][headIndex][headDataOffset] != data)
+		//{
+		//	tracksD81[track][headIndex][headDataOffset] = data;
+		//	trackDirty[track] = true;
+		//	trackUsed[track] = true;
+		//	dirty = true;
+		//}
+
+		if (tracksD81[track][headIndex][headPos] != data)
+		{
+			tracksD81[track][headIndex][headPos] = data;
+			trackDirty[track] = true;
+			trackUsed[track] = true;
+			dirty = true;
+		}
+
+		//unsigned headDataOffset;
+		//if (headPos < trackLengths[track])
+		//	headDataOffset = headPos + 1;
+		//else
+		//	headDataOffset =  0;
+		//if (tracksD81[track][headIndex][headDataOffset] != data)
+		//{
+		//	tracksD81[track][headIndex][headDataOffset] = data;
+		//	trackDirty[track] = true;
+		//	trackUsed[track] = true;
+		//	dirty = true;
+		//}
+
+	}
+
+	inline bool IsD81ByteASync(unsigned track, unsigned headIndex, unsigned headPos) const
+	{ 
+		return (trackD81SyncBits[track][headIndex][headPos >> 3] & (1 << (headPos & 7))) != 0;
+	}
+	inline void SetD81SyncBit(unsigned track, unsigned headIndex, unsigned headPos, bool sync)
+	{
+		if (sync)
+			trackD81SyncBits[track][headIndex][headPos >> 3] |= 1 << (headPos & 7);
+		else
+			trackD81SyncBits[track][headIndex][headPos >> 3] &= ~(1 << (headPos & 7));
+
+	}
 
 	static DiskType GetDiskImageTypeViaExtention(const char* diskImageName);
 	static bool IsDiskImageExtention(const char* diskImageName);
+	static bool IsDiskImageD81Extention(const char* diskImageName);
+	static bool IsDiskImageD71Extention(const char* diskImageName);
 	static bool IsLSTExtention(const char* diskImageName);
 
 	bool GetReadOnly() const { return readOnly; }
@@ -117,16 +182,28 @@ public:
 
 	static unsigned char readBuffer[READBUFFER_SIZE];
 
+	static void CRC(unsigned short& runningCRC, unsigned char data);
+
+	union
+	{
+		unsigned char tracks[HALF_TRACK_COUNT][MAX_TRACK_LENGTH];
+		unsigned char tracksD81[HALF_TRACK_COUNT][2][MAX_TRACK_LENGTH];
+	};
+
 private:
 	void CloseD64();
 	void CloseG64();
 	void CloseNIB();
 	void CloseNBZ();
+	void CloseD71();
+	void CloseD81();
 
 	bool WriteD64();
 	bool WriteG64();
 	bool WriteNIB();
 	bool WriteNBZ();
+	bool WriteD71();
+	bool WriteD81();
 
 	inline void TestDirty(u32 track, bool isDirty)
 	{
@@ -144,17 +221,26 @@ private:
 	int FindSectorHeader(unsigned track, unsigned sector, unsigned char* id);
 	int FindSync(unsigned track, int bitIndex, int maxBits, int* syncStartIndex = 0);
 
+	void OutputD81HeaderByte(unsigned char*& dest, unsigned char byte);
+	void OutputD81DataByte(unsigned char*& src, unsigned char*& dest);
+
 	bool readOnly;
 	bool dirty;
 	unsigned attachedImageSize;
 	DiskType diskType;
 	const FILINFO* fileInfo;
 
-	unsigned char tracks[HALF_TRACK_COUNT][NIB_TRACK_LENGTH];
 	unsigned short trackLengths[HALF_TRACK_COUNT];
-	unsigned char trackDensity[HALF_TRACK_COUNT];
+	union
+	{
+		unsigned char trackDensity[HALF_TRACK_COUNT];
+		unsigned char trackD81SyncBits[HALF_TRACK_COUNT][2][MAX_TRACK_LENGTH >> 3];
+	};
 	bool trackDirty[HALF_TRACK_COUNT];
 	bool trackUsed[HALF_TRACK_COUNT];
+
+	unsigned short crc;
+	static unsigned short CRC1021[256];
 };
 
 #endif

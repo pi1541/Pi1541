@@ -1,6 +1,6 @@
 # Pi1541
 
-Commodore 1541 emulator for the Raspberry Pi
+Commodore 1541/1581 emulator for the Raspberry Pi
 
 Pi1541 is a real-time, cycle exact, Commodore 1541 disk drive emulator that can run on a Raspberry Pi 3B (or 3B+). The software is free and I have endeavored to make the hardware as simple and inexpensive as possible.
 

@@ -159,6 +159,9 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 			case DiskImage::NBZ:
 				success = InsertNBZ(fileInfo, (unsigned char*)DiskImage::readBuffer, bytesRead, readOnly);
 				break;
+			case DiskImage::D81:
+				success = InsertD81(fileInfo, (unsigned char*)DiskImage::readBuffer, bytesRead, readOnly);
+				break;
 			default:
 				success = false;
 				break;
@@ -234,6 +237,19 @@ bool DiskCaddy::InsertNBZ(const FILINFO* fileInfo, unsigned char* diskImageData,
 	return false;
 }
 
+bool DiskCaddy::InsertD81(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly)
+{
+	DiskImage diskImage;
+	if (diskImage.OpenD81(fileInfo, diskImageData, size))
+	{
+		diskImage.SetReadOnly(readOnly);
+		disks.push_back(diskImage);
+		selectedIndex = disks.size() - 1;
+		return true;
+	}
+	return false;
+}
+
 void DiskCaddy::Display()
 {
 	unsigned numberOfImages = GetNumberOfImages();
@@ -297,7 +313,7 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 			, numberOfImages
 			, GetImage(index)->GetReadOnly() ? 'R' : ' '
 			);
-		screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
+		screenLCD->PrintText(false, x, y, buffer, 0, RGBA(0xff, 0xff, 0xff, 0xff));
 		y += LCDFONTHEIGHT;
 
 		if (numberOfImages > numberOfDisplayedImages && index > numberOfDisplayedImages-1)
@@ -321,7 +337,7 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 				memset(buffer, ' ',  screenLCD->Width()/screenLCD->GetFontWidth());
 				screenLCD->PrintText(false, x, y, buffer, BkColour, BkColour);
 				snprintf(buffer, 256, "%d %s", caddyIndex + 1, name);
-				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), caddyIndex == index ? RGBA(0xff, 0xff, 0xff, 0xff) : BkColour);
+				screenLCD->PrintText(false, x, y, buffer, 0, caddyIndex == index ? RGBA(0xff, 0xff, 0xff, 0xff) : BkColour);
 				y += LCDFONTHEIGHT;
 			}
 			if (y >= screenLCD->Height())

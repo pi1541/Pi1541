@@ -32,7 +32,7 @@ extern "C"
 
 unsigned char DiskImage::readBuffer[READBUFFER_SIZE];
 
-static unsigned char compressionBuffer[HALF_TRACK_COUNT * NIB_TRACK_LENGTH];
+static unsigned char compressionBuffer[HALF_TRACK_COUNT * MAX_TRACK_LENGTH];
 
 static const unsigned short SECTOR_LENGTH = 256;
 static const unsigned short SECTOR_LENGTH_WITH_CHECKSUM = 260;
@@ -40,6 +40,52 @@ static const unsigned char GCR_SYNC_BYTE = 0xff;
 static const unsigned char GCR_GAP_BYTE = 0x55;
 static const int SECTOR_HEADER_LENGTH = 8;
 static const unsigned MAX_D64_SIZE = 0x30000;
+static const unsigned MAX_D71_SIZE = 0x55600 + 1366;
+static const unsigned MAX_D81_SIZE = 822400;
+
+// CRC-16-CCITT
+// CRC(x) = x^16 + x^12 + x^5 + x^0
+unsigned short DiskImage::CRC1021[256] =
+{
+	0x0000,0x1021,0x2042,0x3063,0x4084,0x50a5,0x60c6,0x70e7,0x8108,0x9129,0xa14a,0xb16b,0xc18c,0xd1ad,0xe1ce,0xf1ef,
+	0x1231,0x0210,0x3273,0x2252,0x52b5,0x4294,0x72f7,0x62d6,0x9339,0x8318,0xb37b,0xa35a,0xd3bd,0xc39c,0xf3ff,0xe3de,
+	0x2462,0x3443,0x0420,0x1401,0x64e6,0x74c7,0x44a4,0x5485,0xa56a,0xb54b,0x8528,0x9509,0xe5ee,0xf5cf,0xc5ac,0xd58d,
+	0x3653,0x2672,0x1611,0x0630,0x76d7,0x66f6,0x5695,0x46b4,0xb75b,0xa77a,0x9719,0x8738,0xf7df,0xe7fe,0xd79d,0xc7bc,
+	0x48c4,0x58e5,0x6886,0x78a7,0x0840,0x1861,0x2802,0x3823,0xc9cc,0xd9ed,0xe98e,0xf9af,0x8948,0x9969,0xa90a,0xb92b,
+	0x5af5,0x4ad4,0x7ab7,0x6a96,0x1a71,0x0a50,0x3a33,0x2a12,0xdbfd,0xcbdc,0xfbbf,0xeb9e,0x9b79,0x8b58,0xbb3b,0xab1a,
+	0x6ca6,0x7c87,0x4ce4,0x5cc5,0x2c22,0x3c03,0x0c60,0x1c41,0xedae,0xfd8f,0xcdec,0xddcd,0xad2a,0xbd0b,0x8d68,0x9d49,
+	0x7e97,0x6eb6,0x5ed5,0x4ef4,0x3e13,0x2e32,0x1e51,0x0e70,0xff9f,0xefbe,0xdfdd,0xcffc,0xbf1b,0xaf3a,0x9f59,0x8f78,
+	0x9188,0x81a9,0xb1ca,0xa1eb,0xd10c,0xc12d,0xf14e,0xe16f,0x1080,0x00a1,0x30c2,0x20e3,0x5004,0x4025,0x7046,0x6067,
+	0x83b9,0x9398,0xa3fb,0xb3da,0xc33d,0xd31c,0xe37f,0xf35e,0x02b1,0x1290,0x22f3,0x32d2,0x4235,0x5214,0x6277,0x7256,
+	0xb5ea,0xa5cb,0x95a8,0x8589,0xf56e,0xe54f,0xd52c,0xc50d,0x34e2,0x24c3,0x14a0,0x0481,0x7466,0x6447,0x5424,0x4405,
+	0xa7db,0xb7fa,0x8799,0x97b8,0xe75f,0xf77e,0xc71d,0xd73c,0x26d3,0x36f2,0x0691,0x16b0,0x6657,0x7676,0x4615,0x5634,
+	0xd94c,0xc96d,0xf90e,0xe92f,0x99c8,0x89e9,0xb98a,0xa9ab,0x5844,0x4865,0x7806,0x6827,0x18c0,0x08e1,0x3882,0x28a3,
+	0xcb7d,0xdb5c,0xeb3f,0xfb1e,0x8bf9,0x9bd8,0xabbb,0xbb9a,0x4a75,0x5a54,0x6a37,0x7a16,0x0af1,0x1ad0,0x2ab3,0x3a92,
+	0xfd2e,0xed0f,0xdd6c,0xcd4d,0xbdaa,0xad8b,0x9de8,0x8dc9,0x7c26,0x6c07,0x5c64,0x4c45,0x3ca2,0x2c83,0x1ce0,0x0cc1,
+	0xef1f,0xff3e,0xcf5d,0xdf7c,0xaf9b,0xbfba,0x8fd9,0x9ff8,0x6e17,0x7e36,0x4e55,0x5e74,0x2e93,0x3eb2,0x0ed1,0x1ef0
+};
+
+void DiskImage::CRC(unsigned short& runningCRC, unsigned char data)
+{
+	runningCRC = CRC1021[(runningCRC >> 8) ^ data] ^ (runningCRC << 8);
+}
+
+void DiskImage::OutputD81HeaderByte(unsigned char*& dest, unsigned char data)
+{
+	*dest++ = data;
+	//crc = CRC1021[(crc >> 8) ^ byte] ^ (crc << 8);
+	CRC(crc, data);
+}
+
+void DiskImage::OutputD81DataByte(unsigned char*& src, unsigned char*& dest)
+{
+	unsigned char data;
+	data = *src++;
+	*dest++ = data;
+	//crc = CRC1021[(crc >> 8) ^ data] ^ (crc << 8);
+	CRC(crc, data);
+}
+
 
 #define NIB_HEADER_SIZE 0xFF
 
@@ -70,20 +116,31 @@ void DiskImage::Close()
 	{
 		case D64:
 			CloseD64();
+			memset(tracks, 0x55, sizeof(tracks));
 		break;
 		case G64:
 			CloseG64();
+			memset(tracks, 0x55, sizeof(tracks));
 		break;
 		case NIB:
 			CloseNIB();
+			memset(tracks, 0x55, sizeof(tracks));
 		break;
 		case NBZ:
 			CloseNBZ();
+			memset(tracks, 0x55, sizeof(tracks));
+		break;
+		case D71:
+			CloseD71();
+			memset(tracksD81, 0x55, sizeof(tracksD81));
+		break;
+		case D81:
+			CloseD81();
+			memset(tracksD81, 0, sizeof(tracksD81));
 		break;
 		default:
 		break;
 	}
-	memset(tracks, 0x55, sizeof(tracks));
 	memset(trackLengths, 0, sizeof(trackLengths));
 	diskType = NONE;
 	fileInfo = 0;
@@ -205,7 +262,7 @@ bool DiskImage::WriteD64()
 
 		f_close(&fp);
 
-		f_utime(fileInfo->fname, fileInfo);
+		//f_utime(fileInfo->fname, fileInfo);
 		SetACTLed(false);
 
 		DEBUG_LOG("Converted %d blocks into D64 file\r\n", blocks_to_save);
@@ -224,6 +281,441 @@ void DiskImage::CloseD64()
 	if (dirty)
 	{
 		WriteD64();
+		dirty = false;
+	}
+	attachedImageSize = 0;
+}
+
+bool DiskImage::OpenD71(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size)
+{
+	Close();
+
+	this->fileInfo = fileInfo;
+
+	unsigned offset = 0;
+
+	if (size > MAX_D71_SIZE)
+		size = MAX_D71_SIZE;
+
+	attachedImageSize = size;
+
+	for (unsigned headIndex = 0; headIndex < 2; ++headIndex)
+	{
+		for (unsigned halfTrackIndex = 0; halfTrackIndex < D71_HALF_TRACK_COUNT; ++halfTrackIndex)
+		{
+			unsigned char track = (halfTrackIndex >> 1);
+			unsigned char* dest = tracksD81[halfTrackIndex][headIndex];
+
+			trackLengths[halfTrackIndex] = SectorsPerTrack[track] * GCR_SECTOR_LENGTH;
+
+			if ((halfTrackIndex & 1) == 0)
+			{
+				if (offset < size)	// This will allow for >35 tracks.
+				{
+					trackUsed[halfTrackIndex] = true;
+					//DEBUG_LOG("Track %d used\r\n", halfTrackIndex);
+					for (unsigned sectorNo = 0; sectorNo < SectorsPerTrack[track]; ++sectorNo)
+					{
+						convert_sector_to_GCR(diskImage + offset, dest, track + 1, sectorNo, diskImage + 0x165A2, 0);
+						dest += 361;
+
+						offset += SECTOR_LENGTH;
+					}
+				}
+				else
+				{
+					trackUsed[halfTrackIndex] = false;
+					//DEBUG_LOG("Track %d not used\r\n", halfTrackIndex);
+				}
+			}
+			else
+			{
+				trackUsed[halfTrackIndex] = false;
+				//DEBUG_LOG("Track %d not used\r\n", halfTrackIndex);
+			}
+		}
+	}
+
+	diskType = D71;
+	return true;
+}
+
+bool DiskImage::WriteD71()
+{
+	if (readOnly)
+		return true;
+
+	//FIL fp;
+	//FRESULT res = f_open(&fp, fileInfo->fname, FA_CREATE_ALWAYS | FA_WRITE);
+	//if (res == FR_OK)
+	//{
+	//	u32 bytesToWrite;
+	//	u32 bytesWritten;
+
+	//	int track, sector;
+	//	BYTE id[3];
+	//	BYTE d71data[MAXBLOCKSONDISK * 256 * 2], *d71ptr;
+	//	int blocks_to_save = 0;
+
+	//	DEBUG_LOG("Writing D71 file...\r\n");
+
+	//	memset(d71data, 0, sizeof(d71data));
+
+	//	if (!GetID(34, id, tracksD81[34][0]))
+	//	{
+	//		DEBUG_LOG("Cannot find directory sector.\r\n");
+	//		return false;
+	//	}
+	//	d71ptr = d71data;
+	//	//for (track = 0; track <= 40 * 2; track += 2)
+	//	for (track = 0; track <= 35 * 2; track += 2)
+	//	{
+	//		if (trackUsed[track])
+	//		{
+	//			//printf("Track %d\n", track);
+
+	//			for (sector = 0; sector < SectorsPerTrack[track / 2]; sector++)
+	//			{
+	//				ConvertSector(track, sector, d71ptr, tracksD81[track][0]);
+	//				d71ptr += 256;
+	//				blocks_to_save++;
+	//			}
+	//		}
+	//	}
+
+	//	bytesToWrite = blocks_to_save * 256;
+	//	SetACTLed(true);
+	//	if (f_write(&fp, d71data, bytesToWrite, &bytesWritten) != FR_OK || bytesToWrite != bytesWritten)
+	//	{
+	//		SetACTLed(false);
+	//		DEBUG_LOG("Cannot write d71 data.\r\n");
+	//		f_close(&fp);
+	//		return false;
+	//	}
+
+	//	f_close(&fp);
+
+	//	//f_utime(fileInfo->fname, fileInfo);
+	//	SetACTLed(false);
+
+	//	DEBUG_LOG("Converted %d blocks into D71 file\r\n", blocks_to_save);
+
+	//	return true;
+	//}
+	//else
+	{
+		DEBUG_LOG("Failed to open %s for write\r\n", fileInfo->fname);
+		return false;
+	}
+}
+
+void DiskImage::CloseD71()
+{
+	if (dirty)
+	{
+		WriteD71();
+		dirty = false;
+	}
+	attachedImageSize = 0;
+}
+
+bool DiskImage::OpenD81(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size)
+{
+	const unsigned physicalSectors = 10;
+	unsigned char headIndex;
+	unsigned headPos;
+
+	Close();
+
+	this->fileInfo = fileInfo;
+
+	unsigned offsetSource = 0;
+
+	if (size > MAX_D81_SIZE)
+		size = MAX_D81_SIZE;
+
+	attachedImageSize = size;
+
+	unsigned char* src = diskImage;
+
+	for (unsigned trackIndex = 0; trackIndex < D81_TRACK_COUNT; ++trackIndex)
+	{
+		unsigned offsetDest = 0;
+		unsigned index;
+
+		trackUsed[trackIndex] = true;
+		memset(trackD81SyncBits[trackIndex][0], 0, MAX_TRACK_LENGTH >> 3);
+		memset(trackD81SyncBits[trackIndex][1], 0, MAX_TRACK_LENGTH >> 3);
+//32x	4e
+// For 10 sectors
+//		12x	00	// SYNC
+//		*3x	a1
+//		1x	fe	// ID
+//		1x	TrackNo (0 indexed)
+//		1x	Head (0 = 1 1 = 0)
+//		1x	sector (1 indexed)
+//		1x	02	(sector size)
+//		1x	crc high byte
+//		1x	crc low byte
+//		22x	4e	(gap2)
+//		For 2 loops (logical sectors to physical sectors)
+//			if first loop
+//				12x	00	// SYNC
+//				*3x	a1
+//				1x	fb	// Data mark
+//			endif
+//			256x	data (indexed sequentailly through D81)
+//		end for
+//		1x	crc high byte
+//		1x	crc low byte
+//		35x	4e	(gap3)
+// end for
+
+// 38/9/0 0x26(38) s9 h1 = 0x60000	27 11		- 27 16d
+// 38/10/0 0x26(38) s10 h1 = 0x60200 27 13		- 27 18d
+// 38/1/1 0x26(38) s1 h0 = 0x60400 27 15		- 27 20d
+// 38/2/2 0x26(38) s2 h0 = 0x60600 27 17		- 27 22d
+// 3, 4, 5, 6, 7, 8, 9, 10
+// 37/6/0 0x25(37) s6 h1 = 0x5d200 26 0b		- 26 10d
+// 37/7/0 0x25(37) s6 h1 = 0x5d400 26 0d		- 26 12d
+
+// sectors 0-19 H1
+// sectors 20-39 H0
+
+// 4d800 20 01
+// 4d900 20 02
+// 4da00 20 03
+// 4db00 20 04
+// 4dc00 20 05
+// 4dd00 20 06
+// 4de00 20 07
+
+// 50000 21 01
+// 50100 21 02
+// 50200 21 03
+// 50300 21 04
+// 50400 21 05
+// 50500 21 06
+// 50600 21 07
+// 50700 21 08
+// 50800 21 09
+// 50900 21 0a
+// 50a00 21 0b
+// 50b00 21 0c
+// 50c00 21 0d
+// 50d00 21 0e
+// 50e00 21 0f
+// 50f00 21 10
+// 51000 21 11
+// 51100 21 12
+// 51200 21 13
+// 51300 21 14
+// 51400 21 15
+// 51500 21 16
+// 51600 21 17
+// 51700 21 18
+// 51800 21 19
+// 51900 21 1a
+// 51a00 21 1b
+// 51b00 21 1c
+// 51c00 21 1d
+// 51d00 21 1e
+// 51e00 21 1f
+// 51f00 21 20
+// 52000 21 21
+// 52100 21 22
+// 52200 21 23
+// 52300 21 24
+// 52400 21 25
+// 52500 21 26
+// 52600 21 27
+// 52700 20 00
+// 52800 22 01
+// 52900 22 02
+// 52a00 22 03
+// 52b00 22 04
+// 52c00 22 05
+// 52d00 22 06
+// 52e00 22 07
+// 52f00 22 08
+// ..
+// 54200 22 1b
+// ..
+// 54d00 22 26
+// 54e00 22 27		- 22 38d
+// 54f00 21 00		- 22 39d
+// 55000 23 01
+
+		unsigned int physicalSectorIndex;
+
+		// (sectors 20 - 39 are on physical side 2)
+		for (headIndex = 0; headIndex < 2; ++headIndex)
+		{
+			unsigned char* dest = tracksD81[trackIndex][headIndex];
+			memset(dest, 0x4e, 32); dest += 32;
+			for (physicalSectorIndex = 0; physicalSectorIndex < physicalSectors; ++physicalSectorIndex)
+			{
+				// If a sequence of zeros followed by a sequence of three Sync Bytes is found, then the PLL(phase locked loop) and data separator are synchronized and data bytes can be read.
+
+				memset(dest, 0, 12); dest += 12;	// SYNC - This sequence provides to the DPLL enough time to adjust the frequency and center the inspection window.
+
+				headPos = dest - tracksD81[trackIndex][headIndex];
+				SetD81SyncBit(trackIndex, headIndex, headPos++, true);
+				SetD81SyncBit(trackIndex, headIndex, headPos++, true);
+				SetD81SyncBit(trackIndex, headIndex, headPos++, true);
+
+				// The CRC includes all information starting with the address mark and up to the CRC characters.
+				// The CRC Register is preset to ones.
+				crc = 0xffff;
+
+				OutputD81HeaderByte(dest, 0xa1);	// Special bytes are encoded that violates the MFM encoding rules with a missing clock in one of the sequential zero bits.
+				OutputD81HeaderByte(dest, 0xa1);
+				OutputD81HeaderByte(dest, 0xa1);
+				OutputD81HeaderByte(dest, 0xfe);	// Header ID
+				OutputD81HeaderByte(dest, (unsigned char)trackIndex);	// 0 indexed
+				OutputD81HeaderByte(dest, headIndex);
+				OutputD81HeaderByte(dest, (unsigned char)physicalSectorIndex + 1);	// 1 indexed
+				OutputD81HeaderByte(dest, 2);		// sector length code (0=128, 1=256, 2=512, 3=1024)
+				*dest++ = (unsigned char)(crc >> 8);
+				*dest++ = (unsigned char)(crc & 0xff);
+				memset(dest, 0x4e, 22); dest += 22;
+
+				memset(dest, 0, 12); dest += 12;	// SYNC
+
+				headPos = dest - tracksD81[trackIndex][headIndex];
+				SetD81SyncBit(trackIndex, headIndex, headPos++, true);
+				SetD81SyncBit(trackIndex, headIndex, headPos++, true);
+				SetD81SyncBit(trackIndex, headIndex, headPos++, true);
+
+				// The CRC Register is preset to ones.
+				crc = 0xffff;
+				OutputD81HeaderByte(dest, 0xa1);
+				OutputD81HeaderByte(dest, 0xa1);
+				OutputD81HeaderByte(dest, 0xa1);
+				OutputD81HeaderByte(dest, 0xfb);		// Data ID
+
+				for (index = 0; index < D81_SECTOR_LENGTH; ++index)
+				{
+					OutputD81DataByte(src, dest);
+				}
+
+				*dest++ = (unsigned char)(crc >> 8);
+				*dest++ = (unsigned char)(crc & 0xff);
+
+				memset(dest, 0x4e, 35); dest += 35;
+			}
+
+			trackLengths[trackIndex] = dest - tracksD81[trackIndex][headIndex];
+		}
+	}
+
+	diskType = D81;
+	return true;
+}
+
+bool DiskImage::WriteD81()
+{
+	const unsigned physicalSectors = 10;
+
+	if (readOnly)
+		return true;
+
+	FIL fp;
+	FRESULT res = f_open(&fp, fileInfo->fname, FA_CREATE_ALWAYS | FA_WRITE);
+	if (res == FR_OK)
+	{
+		u32 bytesToWrite;
+		u32 bytesWritten;
+
+		for (unsigned trackIndex = 0; trackIndex < D81_TRACK_COUNT; ++trackIndex)
+		{
+			unsigned offsetDest = 0;
+			unsigned index;
+
+			if (trackLengths[trackIndex] != 0 && trackUsed[trackIndex])
+			{
+				unsigned int physicalSectorIndex;
+
+				// (sectors 20 - 39 are on physical side 2)
+				for (unsigned headIndex = 0; headIndex < 2; ++headIndex)
+				{
+					unsigned char* src = tracksD81[trackIndex][headIndex];
+					src += 32;
+					for (physicalSectorIndex = 0; physicalSectorIndex < physicalSectors; ++physicalSectorIndex)
+					{
+						// If a sequence of zeros followed by a sequence of three Sync Bytes is found, then the PLL(phase locked loop) and data separator are synchronized and data bytes can be read.
+
+						src += 12;	// 12x00 SYNC - This sequence provides to the DPLL enough time to adjust the frequency and center the inspection window.
+						src += 3;	// 3xA1
+						src += 1;	// 1xFE	header ID
+						src += 1;	// 1x track index
+						src += 1;	// 1x head index
+						src += 1;	// 1x physical sector index
+						src += 1;	// 1x sector length code
+						src += 1;	// 1x crc high
+						src += 1;	// 1x crc low
+						src += 22;	// 22x4e
+
+						src += 12;	// 12x00 SYNC
+						src += 3;	// 3xA1
+						src += 1;	// 1xFB	header ID
+
+						SetACTLed(true);
+						bytesToWrite = D81_SECTOR_LENGTH;
+						if (f_write(&fp, src, bytesToWrite, &bytesWritten) != FR_OK || bytesToWrite != bytesWritten)
+						{
+							SetACTLed(false);
+							f_close(&fp);
+							return false;
+						}
+						src += D81_SECTOR_LENGTH;
+						SetACTLed(false);
+
+						src += 1;	// 1x crc high
+						src += 1;	// 1x crc low
+						src += 35;	// 35x4e
+					}
+				}
+			}
+			else
+			{
+				const unsigned trackLength = physicalSectors * 2 * D81_SECTOR_LENGTH;
+
+				SetACTLed(true);
+				for (index = 0; index < trackLength; ++index)
+				{
+					unsigned char zero = 0;
+					bytesToWrite = 1;
+					if (f_write(&fp, &zero, bytesToWrite, &bytesWritten) != FR_OK || bytesToWrite != bytesWritten)
+					{
+						SetACTLed(false);
+						f_close(&fp);
+						return false;
+					}
+				}
+				SetACTLed(false);
+			}
+		}
+
+		f_close(&fp);
+
+		//f_utime(fileInfo->fname, fileInfo);
+		SetACTLed(false);
+
+		return true;
+	}
+	else
+	{
+		DEBUG_LOG("Failed to open %s for write\r\n", fileInfo->fname);
+		return false;
+	}
+}
+
+void DiskImage::CloseD81()
+{
+	if (dirty)
+	{
+		WriteD81();
 		dirty = false;
 	}
 	attachedImageSize = 0;
@@ -314,10 +806,10 @@ bool DiskImage::WriteG64()
 		BYTE header[12];
 		DWORD gcr_track_p[MAX_HALFTRACKS_1541] = { 0 };
 		DWORD gcr_speed_p[MAX_HALFTRACKS_1541] = { 0 };
-		BYTE gcr_track[NIB_TRACK_LENGTH + 2];
+		BYTE gcr_track[MAX_TRACK_LENGTH + 2];
 		size_t track_len;
 		int index = 0, track;
-		BYTE buffer[NIB_TRACK_LENGTH], tempfillbyte;
+		BYTE buffer[MAX_TRACK_LENGTH], tempfillbyte;
 
 		DEBUG_LOG("Writing G64 file...\r\n");
 		//DEBUG_LOG("G64 Track Length = %d", G64_TRACK_MAXLEN);
@@ -499,7 +991,7 @@ bool DiskImage::WriteNIB()
 		else
 		{
 			bytesToWrite = NIB_TRACK_LENGTH;
-			for (track = 0; track < (MAX_TRACKS_1541 * 2); ++track)
+			for (track = 0; track < HALF_TRACK_COUNT; ++track)
 			{
 				if (trackUsed[track])
 				{
@@ -635,6 +1127,8 @@ DiskImage::DiskType DiskImage::GetDiskImageTypeViaExtention(const char* diskImag
 			return D64;
 		else if (toupper((char)ext[1]) == 'L' && toupper((char)ext[2]) == 'S' && toupper((char)ext[3]) == 'T')
 			return LST;
+		else if (toupper((char)ext[1]) == 'D' && ext[2] == '8' && ext[3] == '1')
+			return D81;
 	}
 	return NONE;
 }
@@ -642,6 +1136,30 @@ DiskImage::DiskType DiskImage::GetDiskImageTypeViaExtention(const char* diskImag
 bool DiskImage::IsDiskImageExtention(const char* diskImageName)
 {
 	return GetDiskImageTypeViaExtention(diskImageName) != NONE;
+}
+
+bool DiskImage::IsDiskImageD81Extention(const char* diskImageName)
+{
+	char* ext = strrchr((char*)diskImageName, '.');
+
+	if (ext)
+	{
+		if (toupper((char)ext[1]) == 'D' && ext[2] == '8' && ext[3] == '1')
+			return true;
+	}
+	return false;
+}
+
+bool DiskImage::IsDiskImageD71Extention(const char* diskImageName)
+{
+	char* ext = strrchr((char*)diskImageName, '.');
+
+	if (ext)
+	{
+		if (toupper((char)ext[1]) == 'D' && ext[2] == '7' && ext[3] == '1')
+			return true;
+	}
+	return false;
 }
 
 bool DiskImage::IsLSTExtention(const char* diskImageName)
@@ -751,7 +1269,7 @@ int DiskImage::FindSync(unsigned track, int bitIndex, int maxBits, int* syncStar
 		else
 		{
 			bitIndex++;
-			if (bitIndex >= NIB_TRACK_LENGTH * 8)
+			if (bitIndex >= MAX_TRACK_LENGTH * 8)
 				bitIndex = 0;
 			byte = tracks[track][bitIndex >> 3];
 		}

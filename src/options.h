@@ -51,6 +51,7 @@ public:
 	inline const char* GetAutoMountImageName() const { return autoMountImageName; }
 	inline const char* GetRomFontName() const { return ROMFontName; }
 	const char* GetRomName(int index) const;
+	const char* GetRomName1581() const;
 	inline const char* GetStarFileName() const { return starFileName; }
 	inline unsigned int GetExtraRAM() const { return extraRAM; }
 	inline unsigned int GetRAMBOard() const { return RAMBOard; }
@@ -163,5 +164,6 @@ private:
 	char ROMNameSlot6[256];
 	char ROMNameSlot7[256];
 	char ROMNameSlot8[256];
+	char ROMName1581[256];
 };
 #endif

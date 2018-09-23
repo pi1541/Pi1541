@@ -254,7 +254,6 @@ void FileBrowser::BrowsableListView::RefreshHighlightScroll()
 
 bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
 {
-	InputMappings* inputMappings = InputMappings::Instance();
 	bool dirty = false;
 	u32 numberOfEntriesMinus1 = list->entries.size() - 1;
 
@@ -334,7 +333,8 @@ bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
 }
 
 FileBrowser::BrowsableList::BrowsableList()
-	: current(0)
+	: inputMappings(0)
+	, current(0)
 	, currentIndex(0)
 	, currentHighlightTime(0)
 	, scrollHighlightRate(0)
@@ -375,7 +375,6 @@ void FileBrowser::BrowsableList::RefreshViewsHighlightScroll()
 
 bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 {
-	InputMappings* inputMappings = InputMappings::Instance();
 	u32 numberOfEntriesMinus1 = entries.size() - 1;
 
 	bool dirty = false;
@@ -488,8 +487,9 @@ FileBrowser::BrowsableList::Entry* FileBrowser::BrowsableList::FindEntry(const c
 	return 0;
 }
 
-FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate)
-	: state(State_Folders)
+FileBrowser::FileBrowser(InputMappings* inputMappings, DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate)
+	: inputMappings(inputMappings)
+	, state(State_Folders)
 	, diskCaddy(diskCaddy)
 	, selectionsMade(false)
 	, roms(roms)
@@ -508,11 +508,11 @@ FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool di
 		rows = 1;
 
 	folder.scrollHighlightRate = scrollHighlightRate;
-	folder.AddView(screenMain, columns, rows, positionX, positionY, false);
+	folder.AddView(screenMain, inputMappings, columns, rows, positionX, positionY, false);
 
 	positionX = screenMain->ScaleX(1024 - 320);
 	columns = screenMain->ScaleX(40);
-	caddySelections.AddView(screenMain, columns, rows, positionX, positionY, false);
+	caddySelections.AddView(screenMain, inputMappings, columns, rows, positionX, positionY, false);
 
 
 
@@ -523,7 +523,7 @@ FileBrowser::FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool di
 		positionX = 0;
 		positionY = 0;
 
-		folder.AddView(screenLCD, columns, rows, positionX, positionY, true);
+		folder.AddView(screenLCD, inputMappings, columns, rows, positionX, positionY, true);
 	}
 }
 
@@ -894,8 +894,6 @@ void FileBrowser::UpdateCurrentHighlight()
 
 void FileBrowser::Update()
 {
-	InputMappings* inputMappings = InputMappings::Instance();
-
 	if ( inputMappings->CheckKeyboardBrowseMode() || inputMappings->CheckButtonsBrowseMode() || (folder.searchPrefixIndex != 0) )
 		UpdateInputFolders();
 
@@ -977,7 +975,6 @@ bool FileBrowser::AddImageToCaddy(FileBrowser::BrowsableList::Entry* current)
 
 void FileBrowser::UpdateInputFolders()
 {
-	InputMappings* inputMappings = InputMappings::Instance();
 	bool dirty = false;
 
 	if (inputMappings->BrowseFunction())

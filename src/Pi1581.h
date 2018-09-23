@@ -16,18 +16,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Pi1541. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef PI1541_H
-#define PI1541_H
+#ifndef PI1581_H
+#define PI1581_H
 
 #include "Drive.h"
 #include "m6502.h"
 #include "iec_bus.h"
+#include "wd177x.h"
+#include "m8520.h"
 
-class Pi1541
+class Pi1581
 {
 
 public:
-	Pi1541();
+	Pi1581();
 
 	void Initialise();
 
@@ -35,26 +37,25 @@ public:
 
 	void Reset();
 
-	//void ConfigureOfExtraRAM(bool extraRAM);
+	void SetDeviceID(u8 id);
 
-	Drive drive;
-	m6522 VIA[2];
+	void Insert(DiskImage* diskImage);
+
+	inline bool IsLEDOn() const { return LED; }
+	inline bool IsMotorOn() const { return wd177x.IsExternalMotorAsserted(); }
+	inline void SetLED(bool value) { LED = value; }
+	//Drive drive;
+	WD177x wd177x;
+	m8520 CIA;
 
 	M6502 m6502;
 
-	enum PortPins
-	{
-		VIAPORTPINS_DEVSEL0 = 0x20,	//pb5
-		VIAPORTPINS_DEVSEL1 = 0x40,	//pb6
-	};
-
-	inline void SetDeviceID(u8 id)
-	{
-		VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL0, id & 1);
-		VIA[0].GetPortB()->SetInput(VIAPORTPINS_DEVSEL1, id & 2);
-	}
+	unsigned fastSerialDirection;
+	unsigned int RDYDelayCount;
 
 private:
+	bool LED;
+
 	//u8 Memory[0xc000];
 
 	//static u8 Read6502(u16 address, void* data);

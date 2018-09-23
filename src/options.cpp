@@ -170,6 +170,7 @@ Options::Options(void)
 	ROMNameSlot6[0] = 0;
 	ROMNameSlot7[0] = 0;
 	ROMNameSlot8[0] = 0;
+	ROMName1581[0] = 0;
 }
 
 #define ELSE_CHECK_DECIMAL_OPTION(Name) \
@@ -265,6 +266,10 @@ void Options::Process(char* buffer)
 			else if (strcasecmp(pValue, "sh1106_128x64") == 0)
 				i2cLcdModel = LCD_1106_128x64;
 		}
+		else if ((strcasecmp(pOption, "ROM1581") == 0))
+		{
+			strncpy(ROMName1581, pValue, 255);
+		}
 		else if ((strcasecmp(pOption, "ROM") == 0) || (strcasecmp(pOption, "ROM1") == 0))
 		{
 			strncpy(ROMName, pValue, 255);
@@ -344,3 +349,9 @@ const char* Options::GetRomName(int index) const
 	}
 	return ROMName;
 }
+
+const char* Options::GetRomName1581() const
+{
+	return ROMName1581;
+}
+

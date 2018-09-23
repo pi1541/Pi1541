@@ -26,6 +26,7 @@
 #include "DiskCaddy.h"
 #include "ROMs.h"
 #include "ScreenBase.h"
+#include "InputMappings.h"
 
 #define VIC2_COLOUR_INDEX_BLACK		0
 #define VIC2_COLOUR_INDEX_WHITE		1
@@ -59,8 +60,9 @@ public:
 	class BrowsableListView
 	{
 	public:
-		BrowsableListView(BrowsableList* list, ScreenBase* screen, u32 columns, u32 rows, u32 positionX, u32 positionY, bool lcdPgUpDown)
+		BrowsableListView(BrowsableList* list, InputMappings* inputMappings, ScreenBase* screen, u32 columns, u32 rows, u32 positionX, u32 positionY, bool lcdPgUpDown)
 			: list(list)
+			, inputMappings(inputMappings)
 			, screen(screen)
 			, columns(columns)
 			, rows(rows)
@@ -81,6 +83,7 @@ public:
 
 		BrowsableList* list;
 		u32 offset;
+		InputMappings* inputMappings;
 
 		ScreenBase* screen;
 		u32 columns;
@@ -111,9 +114,10 @@ public:
 			}
 		}
 
-		void AddView(ScreenBase* screen, u32 columns, u32 rows, u32 positionX, u32 positionY, bool lcdPgUpDown)
+		void AddView(ScreenBase* screen, InputMappings* inputMappings, u32 columns, u32 rows, u32 positionX, u32 positionY, bool lcdPgUpDown)
 		{
-			BrowsableListView view(this, screen, columns, rows, positionX, positionY, lcdPgUpDown);
+			this->inputMappings = inputMappings;
+			BrowsableListView view(this, inputMappings, screen, columns, rows, positionX, positionY, lcdPgUpDown);
 			views.push_back(view);
 		}
 
@@ -153,6 +157,7 @@ public:
 		void RefreshViewsHighlightScroll();
 		bool CheckBrowseNavigation();
 
+		InputMappings* inputMappings;
 		std::vector<Entry> entries;
 		Entry* current;
 		u32 currentIndex;
@@ -166,7 +171,7 @@ public:
 		std::vector<BrowsableListView> views;
 	};
 
-	FileBrowser(DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate);
+	FileBrowser(InputMappings* inputMappings, DiskCaddy* diskCaddy, ROMs* roms, u8* deviceID, bool displayPNGIcons, ScreenBase* screenMain, ScreenBase* screenLCD, float scrollHighlightRate);
 
 	void SelectAutoMountImage(const char* image);
 	void DisplayRoot();
@@ -218,6 +223,8 @@ private:
 	void DisplayPNG();
 
 	bool SelectROMOrDevice(u32 index);
+
+	InputMappings* inputMappings;
 
 	enum State
 	{

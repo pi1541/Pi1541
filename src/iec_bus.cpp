@@ -29,6 +29,7 @@ u32 IEC_Bus::PIGPIO_MASK_IN_RESET = 1 << PIGPIO_RESET;
 bool IEC_Bus::PI_Atn = false;
 bool IEC_Bus::PI_Data = false;
 bool IEC_Bus::PI_Clock = false;
+bool IEC_Bus::PI_SRQ = false;
 bool IEC_Bus::PI_Reset = false;
 
 bool IEC_Bus::VIA_Atna = false;
@@ -38,6 +39,11 @@ bool IEC_Bus::VIA_Clock = false;
 bool IEC_Bus::DataSetToOut = false;
 bool IEC_Bus::AtnaDataSetToOut = false;
 bool IEC_Bus::ClockSetToOut = false;
+bool IEC_Bus::SRQSetToOut = false;
+
+m6522* IEC_Bus::VIA = 0;
+m8520* IEC_Bus::CIA = 0;
+IOPort* IEC_Bus::port = 0;
 
 bool IEC_Bus::OutputLED = false;
 bool IEC_Bus::OutputSound = false;
@@ -58,7 +64,6 @@ u32 IEC_Bus::inputRepeatThreshold[5];
 u32 IEC_Bus::inputRepeat[5] = { 0 };
 u32 IEC_Bus::inputRepeatPrev[5] = { 0 };
 
-m6522* IEC_Bus::VIA = 0;
 
 u32 IEC_Bus::emulationModeCheckButtonIndex = 0;
 
@@ -111,7 +116,7 @@ void IEC_Bus::ReadBrowseMode(void)
 	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 }
 
-void IEC_Bus::ReadEmulationMode(void)
+void IEC_Bus::ReadEmulationMode1541(void)
 {
 	IOPort* portB = 0;
 	unsigned gplev0 = read32(ARM_GPIO_GPLEV0);
@@ -126,14 +131,15 @@ void IEC_Bus::ReadEmulationMode(void)
 	//emulationModeCheckButtonIndex++;
 	//emulationModeCheckButtonIndex %= buttonCount;
 
-	portB = VIA->GetPortB();
+	portB = port;
 
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
 	if (PI_Atn != ATNIn)
 	{
 		PI_Atn = ATNIn;
 
-		//if (VIA)
+		//DEBUG_LOG("A%d\r\n", PI_Atn);
+		//if (port)
 		{
 			if ((portB->GetDirection() & 0x10) != 0)
 			{
@@ -182,3 +188,90 @@ void IEC_Bus::ReadEmulationMode(void)
 
 	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 }
+
+void IEC_Bus::ReadEmulationMode1581(void)
+{
+	IOPort* portB = 0;
+	unsigned gplev0 = read32(ARM_GPIO_GPLEV0);
+
+	int buttonIndex;
+	for (buttonIndex = 0; buttonIndex < 3; ++buttonIndex)
+	{
+		UpdateButton(buttonIndex, gplev0);
+	}
+	// Doing it this way screws with the debounce counters.
+	//UpdateButton(emulationModeCheckButtonIndex, gplev0);
+	//emulationModeCheckButtonIndex++;
+	//emulationModeCheckButtonIndex %= buttonCount;
+
+	portB = port;
+
+	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
+	if (PI_Atn != ATNIn)
+	{
+		PI_Atn = ATNIn;
+
+		//DEBUG_LOG("A%d\r\n", PI_Atn);
+		//if (port)
+		{
+			if ((portB->GetDirection() & 0x10) != 0)
+			{
+				// Emulate the XOR gate UD3
+				// We only need to do this when fully emulating, iec commands do this internally
+				AtnaDataSetToOut = (VIA_Atna & PI_Atn);
+			}
+
+			portB->SetInput(VIAPORTPINS_ATNIN, ATNIn);	//is inverted and then connected to pb7 and ca1
+			CIA->SetPinFLAG(!ATNIn);
+		}
+	}
+
+	if (portB && (portB->GetDirection() & 0x10) == 0)
+		AtnaDataSetToOut = false; // If the ATNA PB4 gets set to an input then we can't be pulling data low. (Maniac Mansion does this)
+
+	if (!AtnaDataSetToOut && !DataSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
+	{
+		bool DATAIn = (gplev0 & PIGPIO_MASK_IN_DATA) == (invertIECInputs ? PIGPIO_MASK_IN_DATA : 0);
+		if (PI_Data != DATAIn)
+		{
+			PI_Data = DATAIn;
+			portB->SetInput(VIAPORTPINS_DATAIN, DATAIn);	// VIA DATAin pb0 output from inverted DIN 5 DATA
+		}
+	}
+	else
+	{
+		PI_Data = true;
+		portB->SetInput(VIAPORTPINS_DATAIN, true);	// simulate the read in software
+	}
+
+	if (!ClockSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
+	{
+		bool CLOCKIn = (gplev0 & PIGPIO_MASK_IN_CLOCK) == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK : 0);
+		if (PI_Clock != CLOCKIn)
+		{
+			PI_Clock = CLOCKIn;
+			portB->SetInput(VIAPORTPINS_CLOCKIN, CLOCKIn); // VIA CLKin pb2 output from inverted DIN 4 CLK
+		}
+	}
+	else
+	{
+		PI_Clock = true;
+		portB->SetInput(VIAPORTPINS_CLOCKIN, true); // simulate the read in software
+	}
+
+	if (!SRQSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
+	{
+		bool SRQIn = (gplev0 & PIGPIO_MASK_IN_SRQ) == (invertIECInputs ? PIGPIO_MASK_IN_SRQ : 0);
+		if (PI_SRQ != SRQIn)
+		{
+			PI_SRQ = SRQIn;
+		}
+	}
+	else
+	{
+		PI_SRQ = false;
+	}
+
+	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+}
+

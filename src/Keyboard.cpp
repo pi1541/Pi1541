@@ -29,6 +29,8 @@ extern "C"
 #define REPEAT_RATE		8
 #define REPEAT_DELAY	3
 
+Keyboard* Keyboard::instance;
+
 void Keyboard::KeyPressedHandlerRaw(TUSBKeyboardDevice* device, unsigned char modifiers, const unsigned char RawKeys[6])
 {
 	// byte 0 - modifires
@@ -147,6 +149,7 @@ Keyboard::Keyboard()
 	, updateCount(0)
 	, updateCountLastRead(-1)
 {
+	instance = this;
 	keyStatus[0] = 0;
 	keyStatus[1] = 0;
 

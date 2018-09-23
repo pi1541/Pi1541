@@ -30,13 +30,20 @@ public:
 	{
 		return ROMImages[currentROMIndex][address & 0x3fff];
 	}
+	inline u8 Read1581(u16 address)
+	{
+		return ROMImage1581[address & 0x7fff];
+	}
 
 	void ResetCurrentROMIndex();
 
 	static const int ROM_SIZE = 16384;
+	static const int ROM1581_SIZE = 16384 * 2;
 	static const int MAX_ROMS = 7;
 
 	unsigned char ROMImages[MAX_ROMS][ROM_SIZE];
+	unsigned char ROMImage1581[ROM1581_SIZE];
+	char ROMName1581[256];
 	char ROMNames[MAX_ROMS][256];
 	bool ROMValid[MAX_ROMS];
 

@@ -18,7 +18,6 @@
 
 #ifndef InputMappings_H
 #define InputMappings_H
-#include "Singleton.h"
 #include "Keyboard.h"
 
 #define ESC_FLAG		(1 << 0)
@@ -50,10 +49,10 @@
 // dont exceed 32!!
 
 
-class InputMappings : public Singleton<InputMappings>
+class InputMappings //: public Singleton<InputMappings>
 {
 protected:
-	friend Singleton<InputMappings>;
+//	friend Singleton<InputMappings>;
 
 	unsigned keyboardFlags;
 	unsigned buttonFlags;

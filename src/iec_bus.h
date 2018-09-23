@@ -21,6 +21,7 @@
 
 #include "debug.h"
 #include "m6522.h"
+#include "m8520.h"
 
 #include "rpi-gpio.h"
 #include "rpiHardware.h"
@@ -66,6 +67,11 @@
 // Therefore in the same vein if PB7 is set to output it could cause the input of the XOR to be pulled low
 //
 
+// NOTE ABOUT SRQ
+// SRQ is a little bit different.
+// The 1581 does not pull it high. Only the 128 pulls it high.
+// 
+
 enum PIGPIO
 {
 	// Original Non-split lines
@@ -83,7 +89,8 @@ enum PIGPIO
 	// 3 I2C_CLK		//5
 	PIGPIO_IN_BUTTON4 = 4,	// 07 Common
 	PIGPIO_IN_BUTTON5 = 5,	// 29 Common
-	PIGPIO_OUT_RESET = 6,	// 31 
+	//PIGPIO_OUT_RESET = 6,	// 31 
+	PIGPIO_OUT_SPI0_RS = 6,	// 31 
 	// 7 SPI0_CS1		//26
 	// 8 SPI0_CS0		//24
 	// 9 SPI0_MISO		//21
@@ -218,8 +225,6 @@ enum VIAPortPins
 	VIAPORTPINS_CLOCKIN = 0x04,	//pb2
 	VIAPORTPINS_CLOCKOUT = 0x08,//pb3
 	VIAPORTPINS_ATNAOUT = 0x10,	//pb4
-	VIAPORTPINS_DEVSEL0 = 0x20,	//pb5
-	VIAPORTPINS_DEVSEL1 = 0x40,	//pb5
 	VIAPORTPINS_ATNIN = 0x80	//bp7
 };
 
@@ -260,7 +265,9 @@ public:
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_IN_BUTTON1, FS_INPUT);
 
 
-			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_RESET, FS_OUTPUT);
+			//RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_RESET, FS_OUTPUT);
+			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_SPI0_RS, FS_OUTPUT);
+			
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_ATN, FS_OUTPUT);
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_SOUND, FS_OUTPUT);
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_LED, FS_OUTPUT);
@@ -337,7 +344,8 @@ public:
 	}
 
 	static void ReadBrowseMode(void);
-	static void ReadEmulationMode(void);
+	static void ReadEmulationMode1541(void);
+	static void ReadEmulationMode1581(void);
 
 	static void WaitUntilReset(void)
 	{
@@ -365,21 +373,28 @@ public:
 		VIA_Data = (status & (unsigned char)VIAPORTPINS_DATAOUT) != 0;		// VIA DATAout PB1 inverted and then connected to DIN DATA
 		VIA_Clock = (status & (unsigned char)VIAPORTPINS_CLOCKOUT) != 0;	// VIA CLKout PB3 inverted and then connected to DIN CLK
 
-		// Emulate the XOR gate UD3
-		AtnaDataSetToOut = (VIA_Atna != PI_Atn);
+		if (VIA)
+		{
+			// Emulate the XOR gate UD3
+			AtnaDataSetToOut = (VIA_Atna != PI_Atn);
+		}
+		else
+		{
+			AtnaDataSetToOut = (VIA_Atna & PI_Atn);
+		}
 
 		if (AtnaDataSetToOut)
 		{
 			// if the output of the XOR gate is high (ie VIA_Atna != PI_Atn) then this is inverted and pulls DATA low (activating it)
 			PI_Data = true;
-			if (VIA) VIA->GetPortB()->SetInput(VIAPORTPINS_DATAIN, true);	// simulate the read in software
+			if (port) port->SetInput(VIAPORTPINS_DATAIN, true);	// simulate the read in software
 		}
 
-		if (VIA)
+		if (VIA && port)
 		{
 			// If the VIA's data and clock outputs ever get set to inputs the real hardware reads these lines as asserted.
-			bool PB1SetToInput = (VIA->GetPortB()->GetDirection() & 2) == 0;
-			bool PB3SetToInput = (VIA->GetPortB()->GetDirection() & 8) == 0;
+			bool PB1SetToInput = (port->GetDirection() & 2) == 0;
+			bool PB3SetToInput = (port->GetDirection() & 8) == 0;
 			if (PB1SetToInput) VIA_Data = true;
 			if (PB3SetToInput) VIA_Clock = true;
 		}
@@ -390,18 +405,18 @@ public:
 		if (!oldDataSetToOut && DataSetToOut)
 		{
 			PI_Data = true;
-			if (VIA) VIA->GetPortB()->SetInput(VIAPORTPINS_DATAOUT, true); // simulate the read in software
+			if (port) port->SetInput(VIAPORTPINS_DATAOUT, true); // simulate the read in software
 		}
 
 		if (!oldClockSetToOut && ClockSetToOut)
 		{
 			PI_Clock = true;
-			if (VIA) VIA->GetPortB()->SetInput(VIAPORTPINS_CLOCKIN, true); // simulate the read in software
+			if (port) port->SetInput(VIAPORTPINS_CLOCKIN, true); // simulate the read in software
 		}
 
 	}
 
-	static inline void RefreshOuts(void)
+	static inline void RefreshOuts1541(void)
 	{
 		unsigned set = 0;
 		unsigned clear = 0;
@@ -419,13 +434,56 @@ public:
 		}
 		else
 		{
-			clear |= 1 << PIGPIO_OUT_ATN;
-
 			if (AtnaDataSetToOut || DataSetToOut) set |= 1 << PIGPIO_OUT_DATA;
 			else clear |= 1 << PIGPIO_OUT_DATA;
 
 			if (ClockSetToOut) set |= 1 << PIGPIO_OUT_CLOCK;
 			else clear |= 1 << PIGPIO_OUT_CLOCK;
+
+			if (!invertIECOutputs) {
+				tmp = set;
+				set = clear;
+				clear = tmp;
+			}
+		}
+
+		if (OutputLED) set |= 1 << PIGPIO_OUT_LED;
+		else clear |= 1 << PIGPIO_OUT_LED;
+
+		if (OutputSound) set |= 1 << PIGPIO_OUT_SOUND;
+		else clear |= 1 << PIGPIO_OUT_SOUND;
+
+		write32(ARM_GPIO_GPSET0, set);
+		write32(ARM_GPIO_GPCLR0, clear);
+	}
+
+	static inline void RefreshOuts1581(void)
+	{
+		unsigned set = 0;
+		unsigned clear = 0;
+		unsigned tmp;
+
+		if (!splitIECLines)
+		{
+			unsigned outputs = 0;
+
+			if (AtnaDataSetToOut || DataSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_DATA - 10) * 3));
+			if (ClockSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_CLOCK - 10) * 3));
+			//if (SRQSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_SRQ - 10) * 3));			// For Option A hardware we should not support pulling more than 2 lines low at any one time!
+
+			unsigned nValue = (myOutsGPFSEL1 & PI_OUTPUT_MASK_GPFSEL1) | outputs;
+			write32(ARM_GPIO_GPFSEL1, nValue);
+		}
+		else
+		{
+			if (AtnaDataSetToOut || DataSetToOut) set |= 1 << PIGPIO_OUT_DATA;
+			else clear |= 1 << PIGPIO_OUT_DATA;
+
+			if (ClockSetToOut) set |= 1 << PIGPIO_OUT_CLOCK;
+			else clear |= 1 << PIGPIO_OUT_CLOCK;
+
+			if (!SRQSetToOut) set |= 1 << PIGPIO_OUT_SRQ;	// fast clock is pulled high but we have an inverter in our hardware so to compensate we invert in software now
+			else clear |= 1 << PIGPIO_OUT_SRQ;
 
 			if (!invertIECOutputs) {
 				tmp = set;
@@ -462,13 +520,24 @@ public:
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
+	// 1581 Fast Serial
+	static inline void SetFastSerialData(bool value)
+	{
+		DataSetToOut = value;
+	}
+	static inline void SetFastSerialSRQ(bool value)
+	{
+		SRQSetToOut = value;
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	// Manual methods used by IEC_Commands
 	static inline void AssertData()
 	{
 		if (!DataSetToOut)
 		{
 			DataSetToOut = true;
-			RefreshOuts();
+			RefreshOuts1541();
 		}
 	}
 	static inline void ReleaseData()
@@ -476,7 +545,7 @@ public:
 		if (DataSetToOut)
 		{
 			DataSetToOut = false;
-			RefreshOuts();
+			RefreshOuts1541();
 		}
 	}
 
@@ -485,7 +554,7 @@ public:
 		if (!ClockSetToOut)
 		{
 			ClockSetToOut = true;
-			RefreshOuts();
+			RefreshOuts1541();
 		}
 	}
 	static inline void ReleaseClock()
@@ -493,10 +562,11 @@ public:
 		if (ClockSetToOut)
 		{
 			ClockSetToOut = false;
-			RefreshOuts();
+			RefreshOuts1541();
 		}
 	}
 
+	static inline bool GetPI_SRQ() { return PI_SRQ; }
 	static inline bool GetPI_Atn() { return PI_Atn; }
 	static inline bool IsAtnAsserted() { return PI_Atn; }
 	static inline bool IsAtnReleased() { return !PI_Atn; }
@@ -542,6 +612,7 @@ public:
 			PI_Atn = !PI_Atn;
 			PI_Data = !PI_Data;
 			PI_Clock = !PI_Clock;
+			PI_SRQ = !PI_SRQ;
 			PI_Reset = !PI_Reset;
 		}
 	}
@@ -562,6 +633,8 @@ public:
 	// CA2, CB1 and CB2 are not connected
 	//	- check if pulled high or low
 	static m6522* VIA;
+	static m8520* CIA;
+	static IOPort* port;
 
 	static inline void Reset(void)
 	{
@@ -578,15 +651,21 @@ public:
 
 		DataSetToOut = false;
 		ClockSetToOut = false;
+		SRQSetToOut = false;
 
 		PI_Atn = false;
 		PI_Data = false;
 		PI_Clock = false;
+		PI_SRQ = false;
 
-		AtnaDataSetToOut = (VIA_Atna != PI_Atn);
+		if (VIA)
+			AtnaDataSetToOut = (VIA_Atna != PI_Atn);
+		else
+			AtnaDataSetToOut = (VIA_Atna & PI_Atn);
+
 		if (AtnaDataSetToOut) PI_Data = true;
 
-		RefreshOuts();
+		RefreshOuts1581();
 	}
 
 	static bool GetInputButtonPressed(int buttonIndex) { return InputButton[buttonIndex] && !InputButtonPrev[buttonIndex]; }
@@ -615,6 +694,7 @@ private:
 	static bool PI_Atn;
 	static bool PI_Data;
 	static bool PI_Clock;
+	static bool PI_SRQ;
 	static bool PI_Reset;
 
 	static bool VIA_Atna;
@@ -624,6 +704,7 @@ private:
 	static bool DataSetToOut;
 	static bool AtnaDataSetToOut;
 	static bool ClockSetToOut;
+	static bool SRQSetToOut;
 	static bool Resetting;
 
 	static u32 myOutsGPFSEL0;
