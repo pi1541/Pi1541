@@ -89,11 +89,11 @@ public:
 
 	inline float ScrollHighlightRate() const { return scrollHighlightRate; }
 
-	inline unsigned int GetButtonEnter() const { return buttonEnter; }
-	inline unsigned int GetButtonUp() const { return buttonUp; }
-	inline unsigned int GetButtonDown() const { return buttonDown; }
-	inline unsigned int GetButtonBack() const { return buttonBack; }
-	inline unsigned int GetButtonInsert() const { return buttonInsert; }
+	inline unsigned int GetButtonEnter() const { return buttonEnter - 1; }
+	inline unsigned int GetButtonUp() const { return buttonUp - 1; }
+	inline unsigned int GetButtonDown() const { return buttonDown - 1; }
+	inline unsigned int GetButtonBack() const { return buttonBack - 1; }
+	inline unsigned int GetButtonInsert() const { return buttonInsert - 1; }
 
 	// Page up and down will jump a different amount based on the maximum number rows displayed.
 	// Perhaps we should use some keyboard modifier to the the other screen?

@@ -149,11 +149,11 @@ Options::Options(void)
 	, i2cLcdModel(LCD_UNKNOWN)
 	, scrollHighlightRate(0.125f)
 	, keyboardBrowseLCDScreen(0)
-        , buttonEnter(0)
-        , buttonUp(1)
-        , buttonDown(2)
-        , buttonBack(3)
-        , buttonInsert(4)
+        , buttonEnter(1)
+        , buttonUp(2)
+        , buttonDown(3)
+        , buttonBack(4)
+        , buttonInsert(5)
 
 {
 	autoMountImageName[0] = 0;
