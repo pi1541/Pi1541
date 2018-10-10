@@ -653,7 +653,7 @@ static const char* ParseName(const char* text, char* name, bool convert, bool in
 	const char* ptr = text;
 	*name = 0;
 
-	if (isspace(*ptr) || *ptr == ',' || *ptr == '=' || *ptr == ':')
+	if (isspace(*ptr & 0x7f) || *ptr == ',' || *ptr == '=' || *ptr == ':')
 	{
 		ptr++;
 	}
@@ -661,7 +661,7 @@ static const char* ParseName(const char* text, char* name, bool convert, bool in
 	// TODO: Should not do this - should use command length to test for the end of a command (use indicies instead of pointers?)
 	while (*ptr != '\0')
 	{
-		if (!isspace(*ptr))
+		if (!isspace(*ptr & 0x7f))
 			break;
 		ptr++;
 	}
@@ -669,7 +669,7 @@ static const char* ParseName(const char* text, char* name, bool convert, bool in
 	{
 		while (*ptr != '\0')
 		{
-			if ((!includeSpace && isspace(*ptr)) || *ptr == ',' || *ptr == '=' || *ptr == ':')
+			if ((!includeSpace && isspace(*ptr & 0x7f)) || *ptr == ',' || *ptr == '=' || *ptr == ':')
 				break;
 			if (convert) *ptrOut++ = petscii2ascii(*ptr++);
 			else *ptrOut++ = *ptr++;
@@ -737,10 +737,9 @@ static int ParsePartition(char** buf)
 {
 	int part = 0;
 
-	// Capital letters coming from sidplay64-sd2iec have the high bit set. Was confusing isdigit!
-	while ((isdigit(**buf) && !(**buf & 0x80)) || **buf == ' ' || **buf == '@')
+	while ((isdigit(**buf & 0x7f)) || **buf == ' ' || **buf == '@')
 	{
-		if (isdigit(**buf))	part = part * 10 + (**buf - '0');
+		if (isdigit(**buf & 0x7f))	part = part * 10 + (**buf - '0');
 		(*buf)++;
 	}
 	return 0;
