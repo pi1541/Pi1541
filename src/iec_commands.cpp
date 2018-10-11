@@ -1821,6 +1821,8 @@ void IEC_Commands::OpenFile()
 			}
 			if (*in == ':')
 				in++;
+			else
+				in = (char*)channel.command;
 
 			text = ParseName((char*)in, filename, true, true);
 			if (text)
