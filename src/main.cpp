@@ -1117,12 +1117,9 @@ void emulator()
 			{
 				while (emulating == IEC_COMMANDS)
 				{
-					if (keyboard->CheckChanged())
-					{
-						fileBrowser->Update();
-						if (fileBrowser->SelectionsMade())
-							emulating = BeginEmulating(fileBrowser, fileBrowser->LastSelectionName());
-					}
+					fileBrowser->Update();
+					if (fileBrowser->SelectionsMade())
+						emulating = BeginEmulating(fileBrowser, fileBrowser->LastSelectionName());
 					usDelay(1);
 				}
 			}
