@@ -16,8 +16,13 @@
 //ScreenWidth = 512
 //ScreenHeight = 384
 
-// You can specify additional ROMS here (up to 10)
-// You can then use the number keys on the keyboard to change which one you would like to use (only in browse mode and not in emulation mode)
+// By default Pi1541 will search the root of the SD card for a ROM file and use this for ROM1.
+// The first file found with either of the following names will be used; d1541.rom, dos1541, d1541II, Jiffy.bin
+// You can override the default ROM1 by specifying it here
+//ROM1 = YourDefaultRom
+// You can specify additional ROMS here (up to 7)
+// You can then use the function keys (F1-F7) on the keyboard to change which one you would like to use (only in browse mode and not in emulation mode)
+// You can also use the buttons to swap ROMs by holding down button 1 and pressing one other buttons 2-5
 // .LST files can also specify one of these ROMS that will automatically be selected when the LST file is loaded.
 //ROM2 = Jiffy.bin
 //ROM3 = d1541II
