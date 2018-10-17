@@ -208,14 +208,14 @@ bool InputMappings::CheckKeyboardBrowseMode()
 
 	if (keyboard->KeyHeld(KEY_ESC))
 		SetKeyboardFlag(ESC_FLAG);
+	else if (keyboard->KeyHeld(KEY_INSERT) || (keyboard->KeyHeld(KEY_ENTER) && keyboard->KeyEitherAlt()))
+		SetKeyboardFlag(INSERT_FLAG);
 	else if (keyboard->KeyHeld(KEY_ENTER))
 		SetKeyboardFlag(ENTER_FLAG);
 	else if (keyboard->KeyHeld(KEY_BACKSPACE))
 		SetKeyboardFlag(BACK_FLAG);
 	else if (keyboard->KeyHeld(KEY_SPACE))
 		SetKeyboardFlag(SPACE_FLAG);
-	else if (keyboard->KeyHeld(KEY_INSERT))
-		SetKeyboardFlag(INSERT_FLAG);
 	else if (keyboard->KeyHeld(KEY_UP))
 		SetKeyboardFlag(UP_FLAG);
 	else if (keyboard->KeyHeld(KEY_PAGEUP) || keyboard->KeyHeld(KEY_LEFT))
