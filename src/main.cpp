@@ -660,6 +660,8 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	IEC_Bus::port = pi1541.VIA[0].GetPortB();
 	pi1541.Reset();	// will call IEC_Bus::Reset();
 
+	IEC_Bus::LetSRQBePulledHigh();
+
 	ctBefore = read32(ARM_SYSTIMER_CLO);
 
 	//resetWhileEmulating = false;
@@ -1002,6 +1004,9 @@ void emulator()
 			IEC_Bus::port = 0;
 
 			IEC_Bus::Reset();
+
+			IEC_Bus::LetSRQBePulledHigh();
+
 // workaround for occasional oled curruption
 			if (screenLCD)
 				screenLCD->ClearInit(0);

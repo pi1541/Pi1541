@@ -310,6 +310,12 @@ public:
 		RPI_GpioBase->GPPUDCLK0 = 0;
 	}
 
+	static inline void LetSRQBePulledHigh()
+	{
+		SRQSetToOut = IEC_Bus::invertIECInputs;
+		RefreshOuts1581();
+	}
+
 	static inline void UpdateButton(int index, unsigned gplev0)
 	{
 		bool inputcurrent = (gplev0 & ButtonPinFlags[index]) == 0;
