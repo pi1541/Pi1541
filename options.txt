@@ -27,6 +27,10 @@
 //ROM2 = Jiffy.bin
 //ROM3 = d1541II
 
+// Reference you 1581 ROM here
+//ROM1581 = 1581-rom.318045-02.bin
+//ROM1581 = JiffyDOS_1581.bin
+
 // The rate (in seconds) a long selection is scrolled
 scrollHighlightRate = 0.07
 
