@@ -189,7 +189,6 @@ public:
 		if (!(ICRData & flag))
 		{
 			ICRData |= flag;
-			//DEBUG_LOG("Setting IRQ %02x\r\n", flag);
 			OutputIRQ();
 		}
 	}
@@ -199,7 +198,6 @@ public:
 		if (ICRData & flag)
 		{
 			ICRData &= ~flag;
-			//DEBUG_LOG("Clearing IRQ %02x %02x\r\n", flag, ICRData);
 			OutputIRQ();
 		}
 	}
