@@ -56,7 +56,7 @@
 /  (0:Disable or 1:Enable) Also _FS_READONLY needs to be 0 to enable this option. */
 
 
-#define _USE_LABEL		0
+#define _USE_LABEL		1
 /* This option switches volume label functions, f_getlabel() and f_setlabel().
 /  (0:Disable or 1:Enable) */
 
@@ -147,12 +147,13 @@
 / Drive/Volume Configurations
 /---------------------------------------------------------------------------*/
 
-#define _VOLUMES	1
+#define _VOLUMES	17
 /* Number of volumes (logical drives) to be used. */
 
 
-#define _STR_VOLUME_ID	0
-#define _VOLUME_STRS	"RAM","NAND","CF","SD","SD2","USB","USB2","USB3"
+#define _STR_VOLUME_ID	1
+//#define _VOLUME_STRS	"RAM","NAND","CF","SD","SD2","USB","USB2","USB3"
+#define _VOLUME_STRS	"SD","USB01","USB02","USB03","USB04","USB05","USB06","USB07","USB08","USB09","USB10","USB11","USB12","USB13","USB14","USB15","USB16"
 /* _STR_VOLUME_ID switches string support of volume ID.
 /  When _STR_VOLUME_ID is set to 1, also pre-defined strings can be used as drive
 /  number in the path name. _VOLUME_STRS defines the drive ID strings for each

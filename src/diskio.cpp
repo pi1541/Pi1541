@@ -8,18 +8,31 @@
 /*-----------------------------------------------------------------------*/
 
 #include "diskio.h"		/* FatFs lower layer API */
+#include "debug.h"
+extern "C"
+{
+#include <uspi.h>
+#include <uspi/usbmassdevice.h>
+}
 
 /* Definitions of physical drive number for each drive */
 #define DEV_MMC		0	/* Example: Map MMC/SD card to physical drive 0 */
+#define DEV_USB		1
 
 //static struct emmc_block_dev *emmc_dev;
 static CEMMCDevice* pEMMC;
+static int USBDeviceIndex = -1;
 
 #define SD_BLOCK_SIZE		512
 
 void disk_setEMM(CEMMCDevice* pEMMCDevice)
 {
 	pEMMC = pEMMCDevice;
+}
+
+void disk_setUSB(unsigned deviceIndex)
+{
+	USBDeviceIndex = (int)deviceIndex;
 }
 
 int sd_card_init(struct block_device **dev)
@@ -30,7 +43,6 @@ int sd_card_init(struct block_device **dev)
 size_t sd_read(uint8_t *buf, size_t buf_size, uint32_t block_no)
 {
 //	g_pLogger->Write("", LogNotice, "sd_read %d", block_no);
-
 	return pEMMC->DoRead(buf, buf_size, block_no);
 }
 
@@ -130,46 +142,27 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read */
 )
 {
-	//DRESULT res;
-	//int result;
-
-//	g_pLogger->Write("", LogNotice, "disk_read pdrv = %d", pdrv);
-
-	switch (pdrv) {
-	//case DEV_RAM :
-	//	// translate the arguments here
-
-	//	result = RAM_disk_read(buff, sector, count);
-
-	//	// translate the reslut code here
-
-	//	return res;
-
-	case DEV_MMC :
-		// translate the arguments here
-
-		//result = MMC_disk_read(buff, sector, count);
-
-//		g_pLogger->Write("", LogNotice, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!disk_read %d %d buf_size = 0x%x", sector, count, buf_size);
-
+	//DEBUG_LOG("r pdrv = %d\r\n", pdrv);
+	if (pdrv == 0)
+	{
 		for (UINT s = 0; s < count; ++s)
 		{
-			if (sd_read(buff, SD_BLOCK_SIZE, sector+s) < SD_BLOCK_SIZE)
+			if (sd_read(buff, SD_BLOCK_SIZE, sector + s) < SD_BLOCK_SIZE)
 			{
 				return RES_ERROR;
 			}
 			buff += SD_BLOCK_SIZE;
 		}
 		return RES_OK;
+	}
+	else
+	{
+		unsigned bytes = (unsigned)USPiMassStorageDeviceRead(sector << UMSD_BLOCK_SHIFT, buff, count << UMSD_BLOCK_SHIFT, pdrv - 1);
 
-	//case DEV_USB :
-	//	// translate the arguments here
+		if (bytes != (count << UMSD_BLOCK_SHIFT))
+			return RES_ERROR;
 
-	//	result = USB_disk_read(buff, sector, count);
-
-	//	// translate the reslut code here
-
-	//	return res;
+		return RES_OK;
 	}
 
 	return RES_PARERR;
@@ -188,29 +181,9 @@ DRESULT disk_write (
 	UINT count			/* Number of sectors to write */
 )
 {
-	//DRESULT res;
-	//int result;
-
-	switch (pdrv) {
-	//case DEV_RAM :
-	//	// translate the arguments here
-
-	//	result = RAM_disk_write(buff, sector, count);
-
-	//	// translate the reslut code here
-
-	//	return res;
-
-	case DEV_MMC :
-		// translate the arguments here
-
-		//result = MMC_disk_write(buff, sector, count);
-		//size_t buf_size = count * SD_BLOCK_SIZE;
-		//if (sd_write((uint8_t *)buff, buf_size, sector) < buf_size)
-		//{
-		//	return RES_ERROR;
-		//}
-
+	//DEBUG_LOG("w pdrv = %d\r\n", pdrv);
+	if (pdrv == 0)
+	{
 		for (UINT s = 0; s < count; ++s)
 		{
 			if (sd_write((uint8_t *)buff, SD_BLOCK_SIZE, sector+s) < SD_BLOCK_SIZE)
@@ -219,17 +192,17 @@ DRESULT disk_write (
 			}
 			buff += SD_BLOCK_SIZE;
 		}
+		return RES_OK;
+	}
+	else
+	{
+		unsigned bytes = (unsigned)USPiMassStorageDeviceWrite(sector << UMSD_BLOCK_SHIFT, buff, count << UMSD_BLOCK_SHIFT, pdrv - 1);
+
+		//DEBUG_LOG("USB disk_write %d %d\r\n", (int)sector, (int)count);
+		if (bytes != (count << UMSD_BLOCK_SHIFT))
+			return RES_ERROR;
 
 		return RES_OK;
-
-	//case DEV_USB :
-	//	// translate the arguments here
-
-	//	result = USB_disk_write(buff, sector, count);
-
-	//	// translate the reslut code here
-
-	//	return res;
 	}
 
 	return RES_PARERR;

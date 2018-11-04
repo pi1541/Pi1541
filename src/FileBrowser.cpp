@@ -42,6 +42,9 @@ extern Options options;
 extern void GlobalSetDeviceID(u8 id);
 extern void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser);
 
+extern void SwitchDrive(const char* drive);
+extern int numberOfUSBMassStorageDevices;
+
 unsigned char FileBrowser::LSTBuffer[FileBrowser::LSTBuffer_size];
 
 static const u32 palette[] = 
@@ -498,6 +501,7 @@ FileBrowser::FileBrowser(InputMappings* inputMappings, DiskCaddy* diskCaddy, ROM
 	, screenMain(screenMain)
 	, screenLCD(screenLCD)
 	, scrollHighlightRate(scrollHighlightRate)
+	, displayingDevices(false)
 {
 	u32 columns = screenMain->ScaleX(80);
 	u32 rows = (int)(38.0f * screenMain->GetScaleY());
@@ -557,58 +561,90 @@ void FileBrowser::RefreshFolderEntries()
 	char* ext;
 
 	folder.Clear();
-	res = f_opendir(&dir, ".");
-	if (res == FR_OK)
+	if (displayingDevices)
 	{
-		do 
-		{
-			res = f_readdir(&dir, &entry.filImage);
-			ext = strrchr(entry.filImage.fname, '.');
-			if (res == FR_OK && entry.filImage.fname[0] != 0 && !(ext && strcasecmp(ext, ".png") == 0))
-				folder.entries.push_back(entry);
-		}
-		while (res == FR_OK && entry.filImage.fname[0] != 0);
-		f_closedir(&dir);
+		char label[1024];
+		DWORD vsn;
+		f_getlabel("SD:", label, &vsn);
 
-		// Now check for icons
+		if (strlen(label) > 0)
+			sprintf(entry.filImage.fname, "SD: %s", label);
+		else
+			sprintf(entry.filImage.fname, "SD:");
+		entry.filImage.fattrib |= AM_DIR;
+		entry.filIcon.fname[0] = 0;
+		folder.entries.push_back(entry);
+
+		for (int USBDriveIndex = 0; USBDriveIndex < numberOfUSBMassStorageDevices; ++USBDriveIndex)
+		{
+			char USBDriveId[16];
+			sprintf(USBDriveId, "USB%02d:", USBDriveIndex + 1);
+
+			f_getlabel(USBDriveId, label, &vsn);
+
+			if (strlen(label) > 0)
+				sprintf(entry.filImage.fname, "%s %s", USBDriveId, label);
+			else
+				strcpy(entry.filImage.fname, USBDriveId);
+
+			entry.filImage.fattrib |= AM_DIR;
+			entry.filIcon.fname[0] = 0;
+			folder.entries.push_back(entry);
+		}
+	}
+	else
+	{
 		res = f_opendir(&dir, ".");
 		if (res == FR_OK)
 		{
 			do
 			{
-				res = f_readdir(&dir, &entry.filIcon);
-				ext = strrchr(entry.filIcon.fname, '.');
-				if (ext)
+				res = f_readdir(&dir, &entry.filImage);
+				ext = strrchr(entry.filImage.fname, '.');
+				if (res == FR_OK && entry.filImage.fname[0] != 0 && !(ext && strcasecmp(ext, ".png") == 0))
+					folder.entries.push_back(entry);
+			} while (res == FR_OK && entry.filImage.fname[0] != 0);
+			f_closedir(&dir);
+
+			// Now check for icons
+			res = f_opendir(&dir, ".");
+			if (res == FR_OK)
+			{
+				do
 				{
-					int length = ext - entry.filIcon.fname;
-					if (res == FR_OK && entry.filIcon.fname[0] != 0 && strcasecmp(ext, ".png") == 0)
+					res = f_readdir(&dir, &entry.filIcon);
+					ext = strrchr(entry.filIcon.fname, '.');
+					if (ext)
 					{
-						for (unsigned index = 0; index < folder.entries.size(); ++index)
+						int length = ext - entry.filIcon.fname;
+						if (res == FR_OK && entry.filIcon.fname[0] != 0 && strcasecmp(ext, ".png") == 0)
 						{
-							FileBrowser::BrowsableList::Entry* entryAtIndex = &folder.entries[index];
-							if (strncasecmp(entry.filIcon.fname, entryAtIndex->filImage.fname, length) == 0)
-								entryAtIndex->filIcon = entry.filIcon;
+							for (unsigned index = 0; index < folder.entries.size(); ++index)
+							{
+								FileBrowser::BrowsableList::Entry* entryAtIndex = &folder.entries[index];
+								if (strncasecmp(entry.filIcon.fname, entryAtIndex->filImage.fname, length) == 0)
+									entryAtIndex->filIcon = entry.filIcon;
+							}
 						}
 					}
-				}
+				} while (res == FR_OK && entry.filIcon.fname[0] != 0);
 			}
-			while (res == FR_OK && entry.filIcon.fname[0] != 0);
+			f_closedir(&dir);
+
+			strcpy(entry.filImage.fname, "..");
+			entry.filImage.fattrib |= AM_DIR;
+			entry.filIcon.fname[0] = 0;
+			folder.entries.push_back(entry);
+
+			std::sort(folder.entries.begin(), folder.entries.end(), greater());
+
+			folder.currentIndex = 0;
+			folder.SetCurrent();
 		}
-		f_closedir(&dir);
-
-		strcpy(entry.filImage.fname, "..");
-		entry.filImage.fattrib |= AM_DIR;
-		entry.filIcon.fname[0] = 0;
-		folder.entries.push_back(entry);
-
-		std::sort(folder.entries.begin(), folder.entries.end(), greater());
-
-		folder.currentIndex = 0;
-		folder.SetCurrent();
-	}
-	else
-	{
-		//DEBUG_LOG("Cannot open dir");
+		else
+		{
+			//DEBUG_LOG("Cannot open dir");
+		}
 	}
 
 	// incase they deleted something selected in the caddy
@@ -807,42 +843,69 @@ void FileBrowser::DisplayPNG()
 	}
 }
 
+int FileBrowser::IsAtRootOfDevice()
+{
+	char buffer[1024];
+	if (f_getcwd(buffer, 1024) == FR_OK)
+	{
+		if (strcmp("SD:/", buffer) == 0)
+			return 0;
+		for (int USBDriveIndex = 0; USBDriveIndex < numberOfUSBMassStorageDevices; ++USBDriveIndex)
+		{
+			char USBDriveId[16];
+			sprintf(USBDriveId, "USB%02d:/", USBDriveIndex + 1);
+			if (strcmp(USBDriveId, buffer) == 0)
+				return USBDriveIndex + 1;
+		}
+	}
+	return -1;
+}
+
 void FileBrowser::PopFolder()
 {
 	char buffer[1024];
 	if (f_getcwd(buffer, 1024) == FR_OK)
 	{
-		// find the last '/' of the current dir
-		char *last_ptr = 0;
-		char *ptr = strtok(buffer, "/");
-		while (ptr != NULL)
+		int deviceRoot = IsAtRootOfDevice();
+		if (deviceRoot >= 0)
 		{
-			last_ptr = ptr;
-			ptr = strtok(NULL, "/");
+			displayingDevices = true;
+			RefreshFolderEntries();
+			folder.currentIndex = deviceRoot;
+			folder.SetCurrent();
 		}
-
-		f_chdir("..");
-		RefreshFolderEntries();
-		caddySelections.Clear();
-
-		unsigned found=0;
-		if (last_ptr)
+		else
 		{
-			u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
-			for (unsigned i=0; i <= numberOfEntriesMinus1 ; i++)
+			// find the last '/' of the current dir
+			char *last_ptr = 0;
+			char *ptr = strtok(buffer, "/");
+			while (ptr != NULL)
 			{
-				FileBrowser::BrowsableList::Entry* entry = &folder.entries[i];
-				if (strcmp(last_ptr, entry->filImage.fname) == 0)
+				last_ptr = ptr;
+				ptr = strtok(NULL, "/");
+			}
+			f_chdir("..");
+			RefreshFolderEntries();
+
+			unsigned found = 0;
+			if (last_ptr)
+			{
+				u32 numberOfEntriesMinus1 = folder.entries.size() - 1;
+				for (unsigned i = 0; i <= numberOfEntriesMinus1; i++)
 				{
-					found=i;
-					break;
+					FileBrowser::BrowsableList::Entry* entry = &folder.entries[i];
+					if (strcmp(last_ptr, entry->filImage.fname) == 0)
+					{
+						found = i;
+						break;
+					}
 				}
 			}
-		}
-		if (found)
-		{
-			folder.currentIndex=found;
-			folder.SetCurrent();
+			if (found)
+			{
+				folder.currentIndex = found;
+				folder.SetCurrent();
+			}
 		}
 		RefeshDisplay();
 	}
@@ -989,7 +1052,32 @@ void FileBrowser::UpdateInputFolders()
 		FileBrowser::BrowsableList::Entry* current = folder.current;
 		if (current)
 		{
-			if (current->filImage.fattrib & AM_DIR)
+			if (displayingDevices)
+			{
+				if (strncmp(current->filImage.fname, "SD", 2) == 0)
+				{
+					SwitchDrive("SD:");
+					displayingDevices = false;
+					RefreshFolderEntries();
+				}
+				else
+				{
+					for (int USBDriveIndex = 0; USBDriveIndex < numberOfUSBMassStorageDevices; ++USBDriveIndex)
+					{
+						char USBDriveId[16];
+						sprintf(USBDriveId, "USB%02d:", USBDriveIndex + 1);
+
+						if (strncmp(current->filImage.fname, USBDriveId, 5) == 0)
+						{
+							SwitchDrive(USBDriveId);
+							displayingDevices = false;
+							RefreshFolderEntries();
+						}
+					}
+				}
+				dirty = true;
+			}
+			else if (current->filImage.fattrib & AM_DIR)
 			{
 				if (strcmp(current->filImage.fname, "..") == 0)
 				{

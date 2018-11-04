@@ -519,7 +519,7 @@ typedef struct {
 /  at start-up. If not, either the linker or start-up routine being used is
 /  not compliance with C standard. */
 
-#if _VOLUMES < 1 || _VOLUMES > 9
+#if _VOLUMES < 1 || _VOLUMES > 17
 #error Wrong _VOLUMES setting
 #endif
 static FATFS *FatFs[_VOLUMES];	/* Pointer to the file system objects (logical drives) */
@@ -3863,7 +3863,9 @@ FRESULT f_getcwd (
 	TCHAR *tp;
 	FILINFO fno;
 	DEF_NAMBUF
-
+#if _STR_VOLUME_ID		/* Find string drive id */
+	static const char* const str[] = { _VOLUME_STRS };
+#endif
 
 	*buff = 0;
 	/* Get logical drive */
@@ -3902,7 +3904,16 @@ FRESULT f_getcwd (
 		tp = buff;
 		if (res == FR_OK) {
 #if _VOLUMES >= 2
+#if _STR_VOLUME_ID		/* Find string drive id */
+			const char* strptr = str[CurrVol];
+			while (*strptr != 0)
+			{
+				*tp++ = *strptr++;
+			}
+#else
+			
 			*tp++ = '0' + CurrVol;			/* Put drive number */
+#endif
 			*tp++ = ':';
 #endif
 			if (i == len) {					/* Root-directory */

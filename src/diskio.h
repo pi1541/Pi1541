@@ -31,6 +31,7 @@ typedef enum {
 
 
 void disk_setEMM(CEMMCDevice* pEMMCDevice);
+void disk_setUSB(unsigned deviceIndex);
 
 DSTATUS disk_initialize (BYTE pdrv);
 DSTATUS disk_status (BYTE pdrv);

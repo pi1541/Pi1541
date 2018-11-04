@@ -47,7 +47,7 @@ extern "C"
 #include "ssd_logo.h"
 
 unsigned versionMajor = 1;
-unsigned versionMinor = 15;
+unsigned versionMinor = 16;
 
 // When the emulated CPU starts we execute the first million odd cycles in non-real-time (ie as fast as possible so the emulated 1541 becomes responsive to CBM-Browser asap)
 // During these cycles the CPU is executing the ROM self test routines (these do not need to be cycle accurate)
@@ -97,6 +97,7 @@ u8 LcdLogoFile[LCD_LOGO_MAX_SIZE];
 
 u8 s_u8Memory[0xc000];
 
+int numberOfUSBMassStorageDevices = 0;
 DiskCaddy diskCaddy;
 Pi1541 pi1541;
 Pi1581 pi1581;
@@ -109,6 +110,7 @@ u8 deviceID = 8;
 IEC_Commands m_IEC_Commands;
 InputMappings* inputMappings;
 Keyboard* keyboard;
+bool USBKeyboardDetected = false;
 //bool resetWhileEmulating = false;
 bool selectedViaIECCommands = false;
 u16 pc;
@@ -1456,15 +1458,26 @@ void Reboot_Pi()
 	reboot_now();
 }
 
+void SwitchDrive(const char* drive)
+{
+	FRESULT res;
+
+	res = f_chdrive(drive);
+	DEBUG_LOG("chdrive %s res %d\r\n", drive, res);
+}
+
 extern "C"
 {
 	void kernel_main(unsigned int r0, unsigned int r1, unsigned int atags)
 	{
-		FATFS fileSystem;
+		FRESULT res;
+		FATFS fileSystemSD;
+		FATFS fileSystemUSB[16];
+
+		m_EMMC.Initialize();
 
 		disk_setEMM(&m_EMMC);
-		m_EMMC.Initialize();
-		f_mount(&fileSystem, "", 1);
+		f_mount(&fileSystemSD, "SD:", 1);
 
 		RPI_AuxMiniUartInit(115200, 8);
 
@@ -1502,7 +1515,13 @@ extern "C"
 
 		USPiInitialize();
 
-		if (!USPiKeyboardAvailable())
+		DEBUG_LOG("\r\n");
+
+		numberOfUSBMassStorageDevices = USPiMassStorageDeviceAvailable();
+		DEBUG_LOG("%d USB Mass Storage Devices found\r\n", numberOfUSBMassStorageDevices);
+
+		USBKeyboardDetected = USPiKeyboardAvailable();
+		if (!USBKeyboardDetected)
 			DEBUG_LOG("Keyboard not found\r\n");
 		else
 			DEBUG_LOG("Keyboard found\r\n");
@@ -1534,6 +1553,16 @@ extern "C"
 			dmaSoundCB.sourceAddress = dmaSound;
 			//PlaySoundDMA();
 		}
+
+		for (int USBDriveIndex = 0; USBDriveIndex < numberOfUSBMassStorageDevices; ++USBDriveIndex)
+		{
+			char USBDriveId[16];
+			disk_setUSB(USBDriveIndex);
+			sprintf(USBDriveId, "USB%02d:", USBDriveIndex + 1);
+			res = f_mount(&fileSystemUSB[USBDriveIndex], USBDriveId, 1);
+		}
+		if (numberOfUSBMassStorageDevices > 0)
+			SwitchDrive("USB01:");
 
 		f_chdir("/1541");
 

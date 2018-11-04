@@ -224,6 +224,9 @@ private:
 
 	bool SelectROMOrDevice(u32 index);
 
+	// returns the volume index if at the root of a volume else -1
+	int IsAtRootOfDevice();
+
 	InputMappings* inputMappings;
 
 	enum State
@@ -247,6 +250,8 @@ private:
 	ScreenBase* screenLCD;
 
 	float scrollHighlightRate;
+
+	bool displayingDevices;
 
 	char PNG[FILEBROWSER_MAX_PNG_SIZE];
 };
