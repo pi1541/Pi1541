@@ -488,7 +488,7 @@ public:
 			if (ClockSetToOut) set |= 1 << PIGPIO_OUT_CLOCK;
 			else clear |= 1 << PIGPIO_OUT_CLOCK;
 
-			if (!SRQSetToOut) set |= 1 << PIGPIO_OUT_SRQ;	// fast clock is pulled high but we have an inverter in our hardware so to compensate we invert in software now
+			if (SRQSetToOut) set |= 1 << PIGPIO_OUT_SRQ;	// fast clock is pulled high but we have an inverter in our hardware so to compensate we invert in software now
 			else clear |= 1 << PIGPIO_OUT_SRQ;
 
 			if (!invertIECOutputs) {

@@ -269,7 +269,7 @@ void IEC_Bus::ReadEmulationMode1581(void)
 	}
 	else
 	{
-		PI_SRQ = false;
+		PI_SRQ = true;
 	}
 
 	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
