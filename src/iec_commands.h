@@ -62,6 +62,7 @@ public:
 		POP_TO_ROOT,
 		REFRESH,
 		DEVICEID_CHANGED,
+		DECIVE_SWITCHED,
 		RESET
 	};
 
@@ -89,6 +90,8 @@ public:
 	void SetStarFileName(const char* fileName) { starFileName = fileName; }
 
 	int CreateD64(char* filenameNew, char* ID, bool automount);
+
+	void SetDisplayingDevices(bool displayingDevices) { this->displayingDevices = displayingDevices; }
 
 protected:
 	enum ATNSequence 
@@ -153,6 +156,7 @@ protected:
 	void New(void);
 	void Rename(void);
 	void Scratch(void);
+	void ChangeDevice(void);
 
 	void Memory(void);
 	void User(void);
@@ -182,6 +186,8 @@ protected:
 
 	const char* starFileName;
 	const char* C128BootSectorName;
+
+	bool displayingDevices;
 };
 #endif
 
