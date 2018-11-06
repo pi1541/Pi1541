@@ -49,6 +49,9 @@ extern unsigned versionMinor;
 
 extern void Reboot_Pi();
 
+extern void SwitchDrive(const char* drive);
+extern int numberOfUSBMassStorageDevices;
+
 #define WaitWhile(checkStatus) \
 	do\
 	{\
@@ -237,6 +240,7 @@ IEC_Commands::IEC_Commands()
 	Reset();
 	starFileName = 0;
 	C128BootSectorName = 0;
+	displayingDevices = false;
 }
 
 void IEC_Commands::Reset(void)
