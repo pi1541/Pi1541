@@ -198,10 +198,14 @@ public:
 
 	static u32 Colour(int index);
 
+	static void RefreshDevicesEntries(std::vector<FileBrowser::BrowsableList::Entry>& entries, bool toLower);
+
 	bool MakeLST(const char* filenameLST);
 	bool SelectLST(const char* filenameLST);
 
 	void SetScrollHighlightRate(float value) { scrollHighlightRate = value; }
+
+	void DeviceSwitched();
 
 private:
 	void DisplayPNG(FILINFO& filIcon, int x, int y);

@@ -21,6 +21,7 @@
 #include <string.h>
 #include <strings.h>
 #include <algorithm>
+#include <ctype.h>
 #include "debug.h"
 #include "options.h"
 #include "InputMappings.h"
@@ -553,6 +554,53 @@ struct greater
 	}
 };
 
+void FileBrowser::RefreshDevicesEntries(std::vector<FileBrowser::BrowsableList::Entry>& entries, bool toLower)
+{
+	FileBrowser::BrowsableList::Entry entry;
+	char label[1024];
+	DWORD vsn;
+	f_getlabel("SD:", label, &vsn);
+
+	if (strlen(label) > 0)
+		sprintf(entry.filImage.fname, "SD: %s", label);
+	else
+		sprintf(entry.filImage.fname, "SD:");
+	if (toLower)
+	{
+		for (int i = 0; entry.filImage.fname[i]; i++)
+		{
+			entry.filImage.fname[i] = tolower(entry.filImage.fname[i]);
+		}
+	}
+	entry.filImage.fattrib |= AM_DIR;
+	entry.filIcon.fname[0] = 0;
+	entries.push_back(entry);
+
+	for (int USBDriveIndex = 0; USBDriveIndex < numberOfUSBMassStorageDevices; ++USBDriveIndex)
+	{
+		char USBDriveId[16];
+		sprintf(USBDriveId, "USB%02d:", USBDriveIndex + 1);
+
+		f_getlabel(USBDriveId, label, &vsn);
+
+		if (strlen(label) > 0)
+			sprintf(entry.filImage.fname, "%s %s", USBDriveId, label);
+		else
+			strcpy(entry.filImage.fname, USBDriveId);
+
+		if (toLower)
+		{
+			for (int i = 0; entry.filImage.fname[i]; i++)
+			{
+				entry.filImage.fname[i] = tolower(entry.filImage.fname[i]);
+			}
+		}
+		entry.filImage.fattrib |= AM_DIR;
+		entry.filIcon.fname[0] = 0;
+		entries.push_back(entry);
+	}
+}
+
 void FileBrowser::RefreshFolderEntries()
 {
 	DIR dir;
@@ -563,34 +611,7 @@ void FileBrowser::RefreshFolderEntries()
 	folder.Clear();
 	if (displayingDevices)
 	{
-		char label[1024];
-		DWORD vsn;
-		f_getlabel("SD:", label, &vsn);
-
-		if (strlen(label) > 0)
-			sprintf(entry.filImage.fname, "SD: %s", label);
-		else
-			sprintf(entry.filImage.fname, "SD:");
-		entry.filImage.fattrib |= AM_DIR;
-		entry.filIcon.fname[0] = 0;
-		folder.entries.push_back(entry);
-
-		for (int USBDriveIndex = 0; USBDriveIndex < numberOfUSBMassStorageDevices; ++USBDriveIndex)
-		{
-			char USBDriveId[16];
-			sprintf(USBDriveId, "USB%02d:", USBDriveIndex + 1);
-
-			f_getlabel(USBDriveId, label, &vsn);
-
-			if (strlen(label) > 0)
-				sprintf(entry.filImage.fname, "%s %s", USBDriveId, label);
-			else
-				strcpy(entry.filImage.fname, USBDriveId);
-
-			entry.filImage.fattrib |= AM_DIR;
-			entry.filIcon.fname[0] = 0;
-			folder.entries.push_back(entry);
-		}
+		FileBrowser::RefreshDevicesEntries(folder.entries, false);
 	}
 	else
 	{
@@ -660,6 +681,13 @@ void FileBrowser::FolderChanged()
 void FileBrowser::DisplayRoot()
 {
 	f_chdir("/1541");
+	FolderChanged();
+}
+
+void FileBrowser::DeviceSwitched()
+{
+	displayingDevices = false;
+	m_IEC_Commands.SetDisplayingDevices(displayingDevices);
 	FolderChanged();
 }
 
@@ -867,9 +895,11 @@ void FileBrowser::PopFolder()
 	if (f_getcwd(buffer, 1024) == FR_OK)
 	{
 		int deviceRoot = IsAtRootOfDevice();
+		DEBUG_LOG("deviceRoot = %d\r\n", deviceRoot);
 		if (deviceRoot >= 0)
 		{
 			displayingDevices = true;
+			m_IEC_Commands.SetDisplayingDevices(displayingDevices);
 			RefreshFolderEntries();
 			folder.currentIndex = deviceRoot;
 			folder.SetCurrent();
@@ -1058,6 +1088,7 @@ void FileBrowser::UpdateInputFolders()
 				{
 					SwitchDrive("SD:");
 					displayingDevices = false;
+					m_IEC_Commands.SetDisplayingDevices(displayingDevices);
 					RefreshFolderEntries();
 				}
 				else
@@ -1071,6 +1102,7 @@ void FileBrowser::UpdateInputFolders()
 						{
 							SwitchDrive(USBDriveId);
 							displayingDevices = false;
+							m_IEC_Commands.SetDisplayingDevices(displayingDevices);
 							RefreshFolderEntries();
 						}
 					}

@@ -47,7 +47,7 @@ extern "C"
 #include "ssd_logo.h"
 
 unsigned versionMajor = 1;
-unsigned versionMinor = 16;
+unsigned versionMinor = 17;
 
 // When the emulated CPU starts we execute the first million odd cycles in non-real-time (ie as fast as possible so the emulated 1541 becomes responsive to CBM-Browser asap)
 // During these cycles the CPU is executing the ROM self test routines (these do not need to be cycle accurate)
@@ -1113,6 +1113,10 @@ void emulator()
 						case IEC_Commands::DEVICEID_CHANGED:
 							GlobalSetDeviceID( m_IEC_Commands.GetDeviceId() );
 							fileBrowser->ShowDeviceAndROM();
+							break;
+						case IEC_Commands::DECIVE_SWITCHED:
+							DEBUG_LOG("DECIVE_SWITCHED\r\n");
+							fileBrowser->DeviceSwitched();
 							break;
 						default:
 							break;
