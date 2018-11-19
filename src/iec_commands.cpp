@@ -178,13 +178,15 @@ void Error(u8 errorCode, u8 track = 0, u8 sector = 0)
 	switch (errorCode)
 	{
 		case ERROR_00_OK:
-			msg = "OK";
+			msg = " OK";
 		break;
 		case ERROR_25_WRITE_ERROR:
 			msg = "WRITE ERROR";
 		break;
 		case ERROR_73_DOSVERSION:
-			msg = "PI1541";
+			sprintf(ErrorMessage, "%02d,PI1541 V%02d.%02d,%02d,%02d", errorCode,
+						versionMajor, versionMinor, track, sector);
+			return;
 		break;
 		case ERROR_30_SYNTAX_ERROR:
 		case ERROR_31_SYNTAX_ERROR:
@@ -206,7 +208,7 @@ void Error(u8 errorCode, u8 track = 0, u8 sector = 0)
 			DEBUG_LOG("EC=%d?\r\n", errorCode);
 		break;
 	}
-	sprintf(ErrorMessage, "%02d, %s, %02d, %02d", errorCode, msg, track, sector);
+	sprintf(ErrorMessage, "%02d,%s,%02d,%02d", errorCode, msg, track, sector);
 }
 
 static inline bool IsDirectory(FILINFO& filInfo)
