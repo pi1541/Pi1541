@@ -2,7 +2,7 @@
 
 Commodore 1541/1581 emulator for the Raspberry Pi
 
-Pi1541 is a real-time, cycle exact, Commodore 1541 disk drive emulator that can run on a Raspberry Pi 3B (or 3B+). The software is free and I have endeavored to make the hardware as simple and inexpensive as possible.
+Pi1541 is a real-time, cycle exact, Commodore 1541 disk drive emulator that can run on a Raspberry Pi 3A, 3B or 3B+. The software is free and I have endeavored to make the hardware as simple and inexpensive as possible.
 
 Pi1541 provides you with an SD card solution for using D64, G64, NIB and NBZ Commodore disk images on real Commodore 8 bit computers such as;-
 Commodore 64
