@@ -41,6 +41,8 @@ public:
 
 	void Insert(DiskImage* diskImage);
 
+	inline const DiskImage* GetDiskImage() const { return diskImage; }
+
 	inline bool IsLEDOn() const { return LED; }
 	inline bool IsMotorOn() const { return wd177x.IsExternalMotorAsserted(); }
 	inline void SetLED(bool value) { LED = value; }
@@ -54,6 +56,7 @@ public:
 	unsigned int RDYDelayCount;
 
 private:
+	DiskImage* diskImage;
 	bool LED;
 
 	//u8 Memory[0xc000];

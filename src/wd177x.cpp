@@ -38,10 +38,6 @@
 
 extern Pi1581 pi1581;
 
-extern bool bLoggingCYCs;
-int stepcount = 0;
-int racount = 0;
-
 // Clocks
 //	Master 16Mhz
 //		into 74ls93
@@ -1198,8 +1194,6 @@ void WD177x::Write(unsigned int address, unsigned char value)
 
 						//  An interrupt is generated at the completion of the command.
 						stepDirection = -1;
-						stepcount++;
-						//DEBUG_LOG("STEP OUT %d\r\n", stepcount);
 
 						commandType = 1;
 					break;
@@ -1255,9 +1249,6 @@ void WD177x::Write(unsigned int address, unsigned char value)
 						settleCycleDelay = 0;
 
 						readAddressState = SEARCHING_FOR_NEXT_ID;
-
-						racount++;
-						//DEBUG_LOG("READ_ADDRESS %d\r\n", racount);
 
 						commandType = 3;
 					break;

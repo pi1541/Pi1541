@@ -47,7 +47,7 @@ extern "C"
 #include "ssd_logo.h"
 
 unsigned versionMajor = 1;
-unsigned versionMinor = 17;
+unsigned versionMinor = 18;
 
 // When the emulated CPU starts we execute the first million odd cycles in non-real-time (ie as fast as possible so the emulated 1541 becomes responsive to CBM-Browser asap)
 // During these cycles the CPU is executing the ROM self test routines (these do not need to be cycle accurate)
@@ -853,7 +853,7 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 	int headSoundFreqCounter = 0;
 	//			const int headSoundFreq = 833;	// 1200Hz = 1/1200 * 10^6;
 	const int headSoundFreq = 1000000 / options.SoundOnGPIOFreq();	// 1200Hz = 1/1200 * 10^6;
-	unsigned char oldHeadDir;
+	unsigned int oldTrack;
 	int resetCount = 0;
 
 	unsigned numberOfImages = diskCaddy.GetNumberOfImages();
@@ -879,6 +879,8 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 
 	//resetWhileEmulating = false;
 	selectedViaIECCommands = false;
+
+	oldTrack = pi1581.wd177x.GetCurrentTrack();
 
 	while (exitReason == EXIT_UNKNOWN)
 	{
@@ -917,7 +919,7 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 			IEC_Bus::RefreshOuts1581();	// Now output all outputs.
 		}
 
-		if (cycleCount >= FAST_BOOT_CYCLES)	// cycleCount is used so we can quickly get through 1541's self test code. This will make the emulated 1541 responsive to commands asap. During this time we don't need to set outputs.
+		//if (cycleCount >= FAST_BOOT_CYCLES)	// cycleCount is used so we can quickly get through 1541's self test code. This will make the emulated 1541 responsive to commands asap. During this time we don't need to set outputs.
 		{
 			IEC_Bus::OutputLED = pi1581.IsLEDOn();
 			if (IEC_Bus::OutputLED ^ oldLED)
@@ -926,7 +928,21 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 				oldLED = IEC_Bus::OutputLED;
 			}
 
-			//IEC_Bus::RefreshOuts1581();	// Now output all outputs.
+			// Do head moving sound
+			unsigned int track = pi1581.wd177x.GetCurrentTrack();
+			if (track != oldTrack)	// Need to start a new sound?
+			{
+				oldTrack = track;
+				if (options.SoundOnGPIO())
+				{
+					headSoundCounter = 1000 * options.SoundOnGPIODuration();
+					headSoundFreqCounter = headSoundFreq;
+				}
+				else
+				{
+					PlaySoundDMA();
+				}
+			}
 		}
 
 
@@ -974,6 +990,47 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 			} while (ctAfter == ctBefore);
 		}
 		ctBefore = ctAfter;
+
+		if (options.SoundOnGPIO() && headSoundCounter > 0)
+		{
+			headSoundFreqCounter--;		// Continue updating a GPIO non DMA sound.
+			if (headSoundFreqCounter <= 0)
+			{
+				headSoundFreqCounter = headSoundFreq;
+				headSoundCounter -= headSoundFreq * 8;
+				IEC_Bus::OutputSound = !IEC_Bus::OutputSound;
+			}
+		}
+
+		if (numberOfImages > 1)
+		{
+			bool nextDisk = inputMappings->NextDisk();
+			bool prevDisk = inputMappings->PrevDisk();
+			if (nextDisk)
+			{
+				pi1581.Insert(diskCaddy.PrevDisk());
+			}
+			else if (prevDisk)
+			{
+				pi1581.Insert(diskCaddy.NextDisk());
+			}
+			else if (inputMappings->directDiskSwapRequest != 0)
+			{
+				for (caddyIndex = 0; caddyIndex < numberOfImagesMax; ++caddyIndex)
+				{
+					if (inputMappings->directDiskSwapRequest & (1 << caddyIndex))
+					{
+						DiskImage* diskImage = diskCaddy.SelectImage(caddyIndex);
+						if (diskImage && diskImage != pi1581.GetDiskImage())
+						{
+							pi1581.Insert(diskImage);
+							break;
+						}
+					}
+				}
+				inputMappings->directDiskSwapRequest = 0;
+			}
+		}
 
 	}
 	return exitReason;

@@ -295,5 +295,6 @@ void Pi1581::Insert(DiskImage* diskImage)
 //	CIA.GetPortB()->SetInput(PORTB_PINS_WPAT, !diskImage->GetReadOnly());
 	CIA.GetPortA()->SetInput(PORTA_PINS_DISKCHNG, true);
 	wd177x.Insert(diskImage);
+	this->diskImage = diskImage;
 }
 
