@@ -1541,14 +1541,18 @@ void IEC_Commands::LoadFile()
 
 	if (channel.filInfo.fname[0] != 0)
 	{
+		FSIZE_t size = f_size(&channel.file);
+		FSIZE_t sizeRemaining = size;
 		u32 bytesRead;
 		do
 		{
 			f_read(&channel.file, channel.buffer, sizeof(channel.buffer), &bytesRead);
 			if (bytesRead > 0)
 			{
+				//DEBUG_LOG("%d %d %d\r\n", (int)size, bytesRead, (int)sizeRemaining);
+				sizeRemaining -= bytesRead;
 				channel.cursor = bytesRead;
-				if (SendBuffer(channel, true))
+				if (SendBuffer(channel, sizeRemaining <= 0))
 					return;
 			}
 		}

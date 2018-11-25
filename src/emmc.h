@@ -5,16 +5,6 @@
 
 #include "types.h"
 
-/*
-#include <circle/device.h>
-//#include <circle/interrupt.h>
-#include <circle/timer.h>
-#include <circle/actled.h>
-#include <circle/fs/partitionmanager.h>
-#include <circle/logger.h>
-#include <circle/types.h>
-*/
-
 #define BOOT_SIGNATURE		0xAA55
 
 struct TSCR			// SD configuration register

@@ -157,7 +157,7 @@ DRESULT disk_read (
 	}
 	else
 	{
-		unsigned bytes = (unsigned)USPiMassStorageDeviceRead(sector << UMSD_BLOCK_SHIFT, buff, count << UMSD_BLOCK_SHIFT, pdrv - 1);
+		unsigned bytes = (unsigned)USPiMassStorageDeviceRead((unsigned long long )(sector << UMSD_BLOCK_SHIFT), buff, count << UMSD_BLOCK_SHIFT, pdrv - 1);
 
 		if (bytes != (count << UMSD_BLOCK_SHIFT))
 			return RES_ERROR;

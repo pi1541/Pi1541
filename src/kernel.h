@@ -20,23 +20,7 @@
 #ifndef _kernel_h
 #define _kernel_h
 
-//#include <circle/memory.h>
-//#include <circle/actled.h>
-//#include <circle/devicenameservice.h>
-//#include <circle/koptions.h>
-//#include <circle/screen.h>
-//#include <circle/serial.h>
-//#include <circle/exceptionhandler.h>
-//#include <circle/interrupt.h>
-//#include <circle/logger.h>
-//#include <circle/types.h>
-//#include <circle/gpiomanager.h>
 #include "emmc.h"
-//#include <SDCard/emmc.h>
-//#include <circle/fs/fat/fatfs.h>
-//#include <circle/multicore.h>
-
-//#include <circle/usb/dwhcidevice.h>
 
 #include "iec_bus.h"
 #include "iec_commands.h"
@@ -59,13 +43,6 @@ public:
 	bool Initialize (void);
 
 	TShutdownMode Run (void);
-
-
-//private:
-//	static void KeyPressedHandler(const char *pString);
-//	static void ShutdownHandler(void);
-//
-//	static void KeyStatusHandlerRaw(unsigned char ucModifiers, const unsigned char RawKeys[6]);
 
 private:
 

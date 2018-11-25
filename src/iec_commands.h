@@ -112,15 +112,15 @@ protected:
 
 	struct Channel
 	{
-		FILINFO filInfo;
-		FIL file;
-		bool writing;
-		u32 cursor;
-		u32 bytesSent;
-		bool open;
-
 		u8 buffer[0x1000];
 		u8 command[0x100];
+
+		FILINFO filInfo;
+		FIL file;
+		u32 cursor;
+		u32 bytesSent;
+		u32 open : 1;
+		u32 writing : 1;
 
 		void Close();
 		bool WriteFull() const { return cursor >= sizeof(buffer); }
