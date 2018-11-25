@@ -916,8 +916,9 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 			}
 			pi1581.m6502.Step();
 			pi1581.Update();
-			IEC_Bus::RefreshOuts1581();	// Now output all outputs.
 		}
+
+		IEC_Bus::RefreshOuts1581();	// Now output all outputs.
 
 		//if (cycleCount >= FAST_BOOT_CYCLES)	// cycleCount is used so we can quickly get through 1541's self test code. This will make the emulated 1541 responsive to commands asap. During this time we don't need to set outputs.
 		{
@@ -944,7 +945,6 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 				}
 			}
 		}
-
 
 		// Other core will check the uart (as it is slow) (could enable uart irqs - will they execute on this core?)
 		inputMappings->CheckKeyboardEmulationMode(numberOfImages, numberOfImagesMax);
