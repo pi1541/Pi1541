@@ -1482,11 +1482,12 @@ bool IEC_Commands::FindFirst(DIR& dir, const char* matchstr, FILINFO& filInfo)
 	// This basically changes a file name from something like
 	// SOMELONGDISKIMAGENAME.D64 to SOMELONGDISKIMAGENAME*.D64
 	// so the actual SOMELONGDISKIMAGENAMETHATISWAYTOOLONGFORCBMFILEBROWSERTODISPLAY.D64 will be found.
+	bool diskImage = DiskImage::IsDiskImageExtention(matchstr);
 	strcpy(pattern, matchstr);
-	if (strlen(pattern) > 12)
+	if (strlen(pattern) > CBM_NAME_LENGTH_MINUS_D64)
 	{
 		char* ext = strrchr(matchstr, '.');
-		if (ext)
+		if (ext && diskImage)
 		{
 			char* ptr = strrchr(pattern, '.');
 			*ptr++ = '*';
