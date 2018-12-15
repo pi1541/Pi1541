@@ -72,6 +72,8 @@ public:
 	void SetDeviceId(u8 id) { deviceID = id; }
 	u8 GetDeviceId() { return deviceID; }
 
+	void SetLowercaseBrowseModeFilenames(bool value) { lowercaseBrowseModeFilenames = value; }
+
 	void SetAutoBootFB128(bool autoBootFB128) { this->autoBootFB128 = autoBootFB128; }
 	void Set128BootSectorName(const char* SectorName) 
 	{
@@ -165,6 +167,8 @@ protected:
 
 	bool SendBuffer(Channel& channel, bool eoi);
 
+	u8 GetFilenameCharacter(u8 value);
+
 	UpdateAction updateAction;
 	u8 commandCode;
 	bool receivedCommand : 1;
@@ -188,6 +192,7 @@ protected:
 	const char* C128BootSectorName;
 
 	bool displayingDevices;
+	bool lowercaseBrowseModeFilenames;
 };
 #endif
 

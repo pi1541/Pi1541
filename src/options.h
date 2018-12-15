@@ -73,6 +73,9 @@ public:
 	inline unsigned int AutoBootFB128() const { return autoBootFB128; }
 	inline const char* Get128BootSectorName() const { return C128BootSectorName; }
 
+	inline unsigned int LowercaseBrowseModeFilenames() const { return lowercaseBrowseModeFilenames; }
+	
+
 	inline unsigned int ScreenWidth() const { return screenWidth; }
 	inline unsigned int ScreenHeight() const { return screenHeight; }
 
@@ -125,6 +128,8 @@ private:
 	unsigned int splitIECLines;
 	unsigned int ignoreReset;
 	unsigned int autoBootFB128;
+
+	unsigned int lowercaseBrowseModeFilenames;
 
 	unsigned int screenWidth;
 	unsigned int screenHeight;

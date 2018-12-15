@@ -243,6 +243,7 @@ IEC_Commands::IEC_Commands()
 	starFileName = 0;
 	C128BootSectorName = 0;
 	displayingDevices = false;
+	lowercaseBrowseModeFilenames = false;
 }
 
 void IEC_Commands::Reset(void)
@@ -1602,6 +1603,14 @@ void IEC_Commands::SendError()
 	while (!finalByte);
 }
 
+u8 IEC_Commands::GetFilenameCharacter(u8 value)
+{
+	if (lowercaseBrowseModeFilenames)
+		value = tolower(value);
+
+	return ascii2petscii(value);
+}
+
 void IEC_Commands::AddDirectoryEntry(Channel& channel, const char* name, u16 blocks, int fileType)
 {
 	u8* data = channel.buffer + channel.cursor;
@@ -1640,20 +1649,20 @@ void IEC_Commands::AddDirectoryEntry(Channel& channel, const char* name, u16 blo
 
 		do
 		{
-			data[index + i++] = ascii2petscii(*name++);
+			data[index + i++] = GetFilenameCharacter(*name++);
 		}
 		while (!(*name == 0x22 || *name == 0 || i == CBM_NAME_LENGTH_MINUS_D64));
 
 		for (int extIndex = 0; extIndex < 4; ++extIndex)
 		{
-			data[index + i++] = ascii2petscii(*extName++);
+			data[index + i++] = GetFilenameCharacter(*extName++);
 		}
 	}
 	else
 	{
 		do
 		{
-			data[index + i++] = ascii2petscii(*name++);
+			data[index + i++] = GetFilenameCharacter(*name++);
 		}
 		while (!(*name == 0x22 || *name == 0 || i == CBM_NAME_LENGTH));
 	}

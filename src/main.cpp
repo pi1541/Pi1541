@@ -1051,6 +1051,7 @@ void emulator()
 
 	m_IEC_Commands.SetAutoBootFB128(options.AutoBootFB128());
 	m_IEC_Commands.Set128BootSectorName(options.Get128BootSectorName());
+	m_IEC_Commands.SetLowercaseBrowseModeFilenames(options.LowercaseBrowseModeFilenames());
 
 	emulating = IEC_COMMANDS;
 
