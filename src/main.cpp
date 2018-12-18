@@ -117,6 +117,7 @@ u16 pc;
 
 unsigned int screenWidth = 1024;
 unsigned int screenHeight = 768;
+int i2cLcdUseCBMChar = 0;
 
 const char* termainalTextRed = "\E[31m";
 const char* termainalTextNormal = "\E[0m";
@@ -250,6 +251,7 @@ void InitialiseLCD()
 	int i2cLcdOnContrast = options.I2CLcdOnContrast();
 	int i2cLcdDimContrast = options.I2CLcdDimContrast();
 	int i2cLcdDimTime = options.I2CLcdDimTime();
+  i2cLcdUseCBMChar = options.I2cLcdUseCBMChar();
 	LCD_MODEL i2cLcdModel = options.I2CLcdModel();
 
 	if (i2cLcdModel)
@@ -259,7 +261,7 @@ void InitialiseLCD()
 		if (i2cLcdModel == LCD_1306_128x32)
 			height = 32;
 		screenLCD = new ScreenLCD();
-		screenLCD->Open(width, height, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel);
+		screenLCD->Open(width, height, 1, i2cBusMaster, i2cLcdAddress, i2cLcdFlip, i2cLcdModel, i2cLcdUseCBMChar);
 		screenLCD->SetContrast(i2cLcdOnContrast);
 		screenLCD->ClearInit(0); // sh1106 needs this
 
@@ -268,7 +270,7 @@ void InitialiseLCD()
 		{
 			screenLCD->PlotRawImage(logo_ssd_1541ii, 0, 0, width, height);
 			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
-			screenLCD->PrintText(0, 16, 0, tempBuffer, 0xffffffff);
+			screenLCD->PrintText(false, 16, 0, tempBuffer, 0xffffffff);
 			logo_done = true;
 		}
 		else if (( height == 64) && (strcasecmp(options.GetLcdLogoName(), "1541classic") == 0) )
@@ -297,7 +299,7 @@ void InitialiseLCD()
 			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
 			int x = (width - 8*strlen(tempBuffer) ) /2;
 			int y = (height-16)/2;
-			screenLCD->PrintText(0, x, y, tempBuffer, 0x0);
+			screenLCD->PrintText(false, x, y, tempBuffer, 0x0);
 		}
 		screenLCD->RefreshScreen();
 	}
@@ -345,7 +347,7 @@ void UpdateScreen()
 	int top, top2, top3;
 	int bottom;
 	int graphX = 0;
-	//bool refreshUartStatusDisplay;
+  //bool refreshUartStatusDisplay;
 
 	top = screenHeight - height / 2;
 	bottom = screenHeight - 1;
@@ -1051,7 +1053,7 @@ void emulator()
 
 	m_IEC_Commands.SetAutoBootFB128(options.AutoBootFB128());
 	m_IEC_Commands.Set128BootSectorName(options.Get128BootSectorName());
-	m_IEC_Commands.SetLowercaseBrowseModeFilenames(options.LowercaseBrowseModeFilenames());
+  m_IEC_Commands.SetLowercaseBrowseModeFilenames(options.LowercaseBrowseModeFilenames());
 
 	emulating = IEC_COMMANDS;
 
@@ -1342,6 +1344,8 @@ void DisplayOptions(int y_pos)
 	snprintf(tempBuffer, tempBufferSize, "LcdLogoName = %s\r\n", options.GetLcdLogoName());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "AutoBaseName = %s\r\n", options.GetAutoBaseName());
+	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	snprintf(tempBuffer, tempBufferSize, "I2cLcdUseCBMChar = %d\r\n", i2cLcdUseCBMChar);
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 }
 
