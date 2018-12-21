@@ -23,7 +23,9 @@
 #include "debug.h"
 #include "ssd_logo.h"
 
-void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int BSCMaster, int LCDAddress, int LCDFlip, LCD_MODEL LCDType)
+extern unsigned char* CBMFont;
+
+void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int BSCMaster, int LCDAddress, int LCDFlip, LCD_MODEL LCDType, bool luseCBMFont)
 {
 	bpp = 1;
 
@@ -38,7 +40,8 @@ void ScreenLCD::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth, int B
 
 	width = widthDesired;
 	height = heightDesired;
-
+	useCBMFont = luseCBMFont;
+ 
 	ssd1306 = new SSD1306(BSCMaster, LCDAddress, width, height, LCDFlip, LCDType);
 	ssd1306->ClearScreen();
 	ssd1306->RefreshScreen();
@@ -100,7 +103,7 @@ void ScreenLCD::PlotRawImage(const u8* image, int x, int y, int w, int h)
 u32 ScreenLCD::PrintText(bool petscii, u32 x, u32 y, char *ptr, RGBA TxtColour, RGBA BkColour, bool measureOnly, u32* width, u32* height)
 {
 	int len = 0;
-	ssd1306->PlotText(x >> 3, y >> 4, ptr, (BkColour & 0xffffff) != 0);
+	ssd1306->PlotText(UseCBMFont(), petscii, x >> 3, y >> 4, ptr, (BkColour & 0xffffff) != 0);
 	return len;
 }
 
@@ -111,7 +114,10 @@ u32 ScreenLCD::MeasureText(bool petscii, char *ptr, u32* width, u32* height)
 
 u32 ScreenLCD::GetFontHeight()
 {
-	return 16;
+	if (CBMFont && useCBMFont)
+		return 8;
+	else
+		return 16;
 }
 
 void ScreenLCD::RefreshScreen()
@@ -127,5 +133,20 @@ void ScreenLCD::SwapBuffers()
 void ScreenLCD::RefreshRows(u32 start, u32 amountOfRows)
 {
 	if (ssd1306)
+	{
+	if (UseCBMFont())
 		ssd1306->RefreshTextRows(start, amountOfRows);
+	else
+		ssd1306->RefreshTextRows(start*2, amountOfRows*2);   
+	}
+}
+
+bool ScreenLCD::IsLCD()
+{
+	return true;
+}
+
+bool ScreenLCD::UseCBMFont()
+{
+	return (CBMFont && useCBMFont);
 }

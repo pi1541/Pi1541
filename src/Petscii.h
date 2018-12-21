@@ -24,6 +24,7 @@ static inline u8 ascii2petscii(u8 ch)
 	if (ch > 64 && ch < 91) ch += 128;
 	else if (ch > 96 && ch < 123) ch -= 32;
 	else if (ch > 192 && ch < 219) ch -= 128;
+	else if (ch == 95) ch = 164; // to handle underscore 
 	return ch;
 }
 static inline u8 petscii2ascii(u8 ch)
