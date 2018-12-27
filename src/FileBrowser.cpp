@@ -82,7 +82,7 @@ void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, b
 	if (entryIndex < list->entries.size())
 	{
 		FileBrowser::BrowsableList::Entry* entry = &list->entries[entryIndex];
-		if (screen->IsMonocrome())
+		if (screen->IsLCD())
 		{
 			// pre-clear line on OLED
 			memset(buffer1, ' ', columnsMax);
@@ -114,9 +114,9 @@ void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, b
 		int len = strlen(buffer2 + highlightScrollOffset);
 		strncpy(buffer1, buffer2 + highlightScrollOffset, sizeof(buffer1));
 
-		if (!screen->IsMonocrome())
+		if (!screen->IsLCD())
 		{
-			// space pad the remainder of the line (but not on OLED==monochrome)
+			// space pad the remainder of the line (but not on OLED)
 			while (len < (int)columnsMax)
 				buffer1[len++] = ' ';
 			buffer1[columnsMax] = 0;
@@ -524,7 +524,7 @@ FileBrowser::FileBrowser(InputMappings* inputMappings, DiskCaddy* diskCaddy, ROM
 	if (screenLCD)
 	{
 		columns = screenLCD->Width() / 8;
-		rows = screenLCD->Height() / 16;
+		rows = screenLCD->Height() / screenLCD->GetFontHeight();
 		positionX = 0;
 		positionY = 0;
 

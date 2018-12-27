@@ -19,11 +19,14 @@
 #include "SSD1306.h"
 #include "debug.h"
 #include <string.h>
+#include "Petscii.h"
 
 extern "C"
 {
 #include "xga_font_data.h"
 }
+
+extern unsigned char* CBMFont;
 
 SSD1306::SSD1306(int BSCMaster, u8 address, unsigned width, unsigned height, int flip, LCD_MODEL type)
 	: BSCMaster(BSCMaster)
@@ -142,13 +145,13 @@ void SSD1306::RefreshScreen()
 	}
 }
 
-// assumes a text row is 16 bit high
+// assumes a text row is 8 bit high
 void SSD1306::RefreshTextRows(u32 start, u32 amountOfRows)
 {
 	unsigned int i;
 
-	start <<= 1;
-	amountOfRows <<= 1;
+	//start <<= 1;
+	//amountOfRows <<= 1;
 	for (i = start; i < start+amountOfRows; i++)
 	{
 		RefreshPage(i);
@@ -230,14 +233,14 @@ void SSD1306::SetVCOMDeselect(u8 value)
 	SendCommand( (value & 7) << 4 );
 }
 
-void SSD1306::PlotText(int x, int y, char* str, bool inverse)
+void SSD1306::PlotText(bool useCBMFont, bool petscii, int x, int y, char* str, bool inverse)
 {
 // assumes 16 character width
 	int i;
 	i = 0;
 	while (str[i] && x < 16)
 	{
-		PlotCharacter(x++, y, str[i++], inverse);
+		PlotCharacter(useCBMFont, petscii, x++, y, str[i++], inverse);
 	}
 }
 
@@ -268,13 +271,25 @@ void transpose8(unsigned char* B, const unsigned char* A, bool inverse)
 	B[4] = y >> 24; B[5] = y >> 16; B[6] = y >> 8; B[7] = y;
 }
 
-void SSD1306::PlotCharacter(int x, int y, char c, bool inverse)
+void SSD1306::PlotCharacter(bool useCBMFont, bool petscii, int x, int y, char c, bool inverse)
 {
 	unsigned char a[8], b[8];
-	transpose8(a, avpriv_vga16_font + (c * 16), inverse);
-	transpose8(b, avpriv_vga16_font + (c * 16) + 8, inverse);
-	memcpy(frame + (y * 256) + (x * 8), a, 8);
-	memcpy(frame + (y * 256) + (x * 8) + 128, b, 8);
+	if (useCBMFont && CBMFont)
+	{
+		if (! petscii)
+			c = ascii2petscii(c);
+		c = petscii2screen(c);
+		transpose8(a, CBMFont + ((c+256) * 8), inverse); // 256 byte shift to use the maj/min bank
+		memcpy(frame + (y * 128) + (x * 8), a, 8);
+	}
+	else
+	{
+		transpose8(a, avpriv_vga16_font + (c * 16), inverse);
+		transpose8(b, avpriv_vga16_font + (c * 16) + 8, inverse);
+		memcpy(frame + (y * 256) + (x * 8), a, 8);
+		memcpy(frame + (y * 256) + (x * 8) + 128, b, 8);
+	}
+
 }
 
 void SSD1306::PlotPixel(int x, int y, int c)

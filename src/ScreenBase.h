@@ -74,6 +74,9 @@ public:
 	virtual void SwapBuffers() = 0;
 	virtual void RefreshRows(u32 start, u32 amountOfRows) {}
 
+	virtual bool IsLCD() { return false; };
+	virtual bool UseCBMFont() { return false; };
+
 	bool IsMonocrome() const { return bpp == 1; }
 
 protected:
