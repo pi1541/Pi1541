@@ -1259,9 +1259,11 @@ bool FileBrowser::MakeLST(const char* filenameLST)
 		FileBrowser::BrowsableList::Entry* entry = 0;
 		u32 bytes;
 
-		for (unsigned index = 0; index < folder.entries.size(); ++index)
+		BrowsableList& list = caddySelections.entries.size() > 1 ? caddySelections : folder;
+
+		for (unsigned index = 0; index < list.entries.size(); ++index)
 		{
-			entry = &folder.entries[index];
+			entry = &list.entries[index];
 			if (entry->filImage.fattrib & AM_DIR)
 				continue;	// skip dirs
 
