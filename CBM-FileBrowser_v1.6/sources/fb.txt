@@ -1,0 +1,32 @@
+start tok64 fb.prg
+10 fora=0to6:readb:poke320+a,b:next
+20 sys320:a=0:b=peek(327)
+30 ifb<>226then60
+40 a=1:poke53311,1:b=peek(53312):poke53311,0:ifb=255thena=2
+50 goto200
+60 ifb<>34then100
+70 a=3:b=peek(44):ifb=4thena=4
+80 ifb=18thena=5
+81 mc=0:sj=0:poke40320,0:b=peek(39936)
+82 ifb=214thenmc=1:sj=peek(40000)=76
+83 printmc:printsj
+90 goto200
+100 ifb=246thena=6
+110 ifb=61thena=7
+200 forb=0to7:readsy$(b):next
+210 print"{clear}cbm filebrowser{down}"
+215 print"system: "sy$(a):ifa=0thenend
+230 ld=186:ifa=6thenld=174
+235 ifa<3ora=6ora=7ormc=0then270
+240 a=8:print"mega-cart detected"
+250 ifsj=0thenprint"sjload not installed":goto270
+260 print "sjload ok, used":sys40000
+270 forb=1to8:readprg$(b):next
+280 print "loading..."
+290 dr=peek(ld):loadprg$(a),dr
+300 data173,252,255,141,71,01,96
+310 data "not supported","c64","c64dtv","vic unexpanded"
+320 data "vic +3k","vic +8/16/24k","c16-plus4","c128"
+330 data "fb64","fb64dtv","fb20","fb20-3k","fb20-8k","fb16","fb128","fb20-mc"
+stop tok64
+(bastext 1.04)

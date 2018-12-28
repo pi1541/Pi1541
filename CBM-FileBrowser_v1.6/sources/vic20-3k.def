@@ -1,0 +1,164 @@
+; --- config.def - configuration
+
+; - CBM target system
+target = 20	; choose the target system
+		; 20 = Commodore VIC-20
+		; 64 = Commodore 64
+		; 16 = The Commodore 264 Series (C16, C116, plus/4) 
+		;128 = Commodore 128 (Not implemented yet)
+
+		; Select a variant according with target system 
+variant = 0     ; 0 = None, Standard System.
+                ; 1 = Vic-20 with Mega-Cart
+                ; 2 = C64 Direct-to-TV
+
+                ; device number 
+hwdevicenum = 0 ; a device number, 0 = autodetect.
+
+autodetectm = 0 ; Drive auto detect mode if hwdevicenum = 0
+                ; 0 = use the current drive (small program size) 
+		; 1 = detect the first active drive
+
+drivechange = 0 ; drive change function
+                ; 0 = do not change drive
+		; 1 = change drive by pressing the key_drive
+
+rootonstart = 0 ; exit to root when start the program or change the drive
+                ; 0 = do not exit to root on start/drive change
+		; 1 = exit to root on start/drive change
+
+rootentry = 1   ; "exit to root" entry on menu
+                ; 0 = none
+		; 1 = present
+
+tap_support = 1	; add tap capability via "XT:" command (ITS Module required)
+		; 0 = none
+		; 1 = yes
+
+printbars = 1   ; display a top/bottom bar with some key funcions according with current configuration
+                ; 0 = do not diplay the top/bottom bar 
+		; 1 = display the the top/bottom bar 
+
+; - vic memory configuration (Vic-20 Only parameter)
+vicmemcfg = 3   ; choose the memory configuration of the program
+                ; 0 = Vic Unexpanded
+                ; 3 = Vic +3K ram
+		; 8 = Vic +8K or more 
+
+; - start mode for selected programs (Vic-20 Only parameter)
+startmode = 0   ; memory configuration and execution method
+                ; 0 = automatic only (small program size)
+		; 1 = automatic or manual by pressing the key_startmode
+
+; - functionality (0/1)
+minimal = 0         ; remove all extra features for smallest prg size
+!if minimal = 1 {
+rememberpos = 0
+showcursors = 1
+clearscrena = 1
+fastscrolle = 0
+colorenable = 0
+disknameena = 0
+statusenabl = 0
+pleasewaite = 0
+sortdir     = 0
+} else {
+rememberpos = 1	    ; remember position on previous directory
+showcursors = 1     ; show cursors
+clearscrena = 1     ; enable screen clearing & color setting
+fastscrolle = 1     ; enable fast list scrolling
+colorenable = 1     ; enable colors
+disknameena = 1     ; enable disk name printing
+statusenabl = 1     ; enable status printing
+pleasewaite = 1     ; enable "please wait" printing
+sortdir     = 1     ; enable sort dir function by using the key_sort
+}
+
+; - layout/cosmetic/etc
+joyrepeat = 15      ; joystick repeat delay
+rastercmp = 1       ; raster line to wait for in mainwait
+
+; list location
+
+!if printbars = 1 {
+
+listtopy = 2        ; 0 <= x < listbottomy
+listbottomy = 21    ; listtopy < x <= 25
+
+} else {
+
+listtopy = 1        ; 0 <= x < listbottomy
+listbottomy = 23    ; listtopy < x <= 25
+
+}
+
+listx = 1           ; 0 <= x <= 24
+listbackgnd = 32    ; char to display in list background
+
+; disk name location
+disknamey = 0
+disknamex = 1
+
+; status text location
+statusy = listtopy
+statusx = listx+namelen+2
+
+!if colorenable = 0 {
+
+backcolor = 255
+bordercolor = 255
+forecolor2 = 255
+forecolor = 0
+arrowcolor = 6    ;REQUIRED OTHERWHISE THE LEFT ARROW IS NOT PROPERLY PRINTED
+buttoncolor = 0
+
+} else {
+
+; back & border & fore2 color:
+; 0 = black, 1 = white, 2 = red, 3 = cyan, 4 = purple
+; 5 = green, 6 = blue, 7 = yellow, 8 = orange, 9 = brown
+; 10 = lred, 10 = gray1, 12 = gray2, 13 = lgreen,
+; 14 = lblue, 15 = gray3
+
+backcolor = 0       ; 0..15, if >15 -> no change
+bordercolor = 6     ; Vic20 0...7, if >7  -> no change also for backcolor
+forecolor2 = 1      ; Vic20 0...7, if >7  -> no change (must be the relative forecolor code, Example (Red: 2 and 28)
+
+
+; foreground & arrow color:
+
+; 5 = white, 28 = red, 30 = green, 31 = blue, 129 = orange
+; 144 = black, 149 = brown, 150 = lred, 151 = grey1, 152 = grey2
+; 153 = lgreen, 154 = lblue, 155 = grey3, 156 = purple
+; 158 = yellow, 159 = black
+
+forecolor = 5       ; (see table) if <5 -> no change
+arrowcolor = 28     ; (see table) if <5 -> forecolor2
+buttoncolor = 28    ; (see table) if <5 -> no change
+
+}
+
+; - key settings
+key_nexte = 17          ; next entry    (cursor down)
+key_preve = 145         ; prev entry    (cursor up)
+key_nextp = 29          ; next page     (cursor right)
+key_prevp = 157         ; prev page     (cursor left)
+key_nextp2 = 136        ; next page alt (F7)  (255 = none)
+key_prevp2 = 135        ; prev page alt (F5)  (255 = none) 
+
+key_fire = 13           ; select        (enter)
+key_top = 139           ; to top        (F6)
+key_bottom = 140        ; to bottom     (F8)
+key_exit = 20           ; exit dir      (backspc)
+key_quit = 81           ; quit to basic (Q)
+
+key_sort = 83           ; sort dir      (S)
+
+key_drive = 68          ; change drive  (D) 
+
+key_reset = 95          ; reset or restart Mega-Cart (<- ESC key)
+
+key_startmode = 77      ; Start Mode    (M) (Vic-20 Only)
+
+; - load&run code positions
+loadrunpos = $33C ;cassette buffer
