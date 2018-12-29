@@ -32,6 +32,7 @@ static inline u8 petscii2ascii(u8 ch)
 	if (ch >(64 + 128) && ch < (91 + 128)) ch -= 128;
 	else if (ch >(96 - 32) && ch < (123 - 32)) ch += 32;
 	else if (ch >(192 - 128) && ch < (219 - 128)) ch += 128;
+	else if (ch == 164) ch = 95; // to handle underscore 
 	return ch;
 }
 

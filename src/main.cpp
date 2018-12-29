@@ -120,7 +120,6 @@ SpinLock core0RefreshingScreen;
 
 unsigned int screenWidth = 1024;
 unsigned int screenHeight = 768;
-int i2cLcdUseCBMChar = 0;
 
 const char* termainalTextRed = "\E[31m";
 const char* termainalTextNormal = "\E[0m";
@@ -254,7 +253,7 @@ void InitialiseLCD()
 	int i2cLcdOnContrast = options.I2CLcdOnContrast();
 	int i2cLcdDimContrast = options.I2CLcdDimContrast();
 	int i2cLcdDimTime = options.I2CLcdDimTime();
-  i2cLcdUseCBMChar = options.I2cLcdUseCBMChar();
+	int i2cLcdUseCBMChar = options.I2cLcdUseCBMChar();
 	LCD_MODEL i2cLcdModel = options.I2CLcdModel();
 
 	if (i2cLcdModel)
@@ -1067,7 +1066,7 @@ void emulator()
 
 	m_IEC_Commands.SetAutoBootFB128(options.AutoBootFB128());
 	m_IEC_Commands.Set128BootSectorName(options.Get128BootSectorName());
-  m_IEC_Commands.SetLowercaseBrowseModeFilenames(options.LowercaseBrowseModeFilenames());
+	m_IEC_Commands.SetLowercaseBrowseModeFilenames(options.LowercaseBrowseModeFilenames());
 
 	emulating = IEC_COMMANDS;
 
@@ -1361,8 +1360,6 @@ void DisplayOptions(int y_pos)
 	snprintf(tempBuffer, tempBufferSize, "LcdLogoName = %s\r\n", options.GetLcdLogoName());
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "AutoBaseName = %s\r\n", options.GetAutoBaseName());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-	snprintf(tempBuffer, tempBufferSize, "I2cLcdUseCBMChar = %d\r\n", i2cLcdUseCBMChar);
 	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 }
 
