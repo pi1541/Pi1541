@@ -1,6 +1,5 @@
 #include "interrupt.h"
 #include "rpiHardware.h"
-#include "bcm2835int.h"
 
 #define ARM_IC_IRQ_PENDING(irq)	(  (irq) < ARM_IRQ2_BASE	\
 				 ? ARM_IC_IRQ_PENDING_1		\

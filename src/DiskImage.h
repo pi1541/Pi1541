@@ -115,22 +115,10 @@ public:
 	inline unsigned TrackLength(unsigned track) const { return trackLengths[track]; }
 
 	inline bool IsD81() const { return diskType == D81; }
+	inline bool IsD71() const { return diskType == D71; }
 	inline unsigned char GetD81Byte(unsigned track, unsigned headIndex, unsigned headPos) const { return tracksD81[track][headIndex][headPos]; }
 	inline void SetD81Byte(unsigned track, unsigned headIndex, unsigned headPos, unsigned char data)
 	{
-		//unsigned headDataOffset;
-		//if (headPos > 0)
-		//	headDataOffset = headPos - 1;
-		//else
-		//	headDataOffset = trackLengths[track] - 1;
-		//if (tracksD81[track][headIndex][headDataOffset] != data)
-		//{
-		//	tracksD81[track][headIndex][headDataOffset] = data;
-		//	trackDirty[track] = true;
-		//	trackUsed[track] = true;
-		//	dirty = true;
-		//}
-
 		if (tracksD81[track][headIndex][headPos] != data)
 		{
 			tracksD81[track][headIndex][headPos] = data;
@@ -138,20 +126,6 @@ public:
 			trackUsed[track] = true;
 			dirty = true;
 		}
-
-		//unsigned headDataOffset;
-		//if (headPos < trackLengths[track])
-		//	headDataOffset = headPos + 1;
-		//else
-		//	headDataOffset =  0;
-		//if (tracksD81[track][headIndex][headDataOffset] != data)
-		//{
-		//	tracksD81[track][headIndex][headDataOffset] = data;
-		//	trackDirty[track] = true;
-		//	trackUsed[track] = true;
-		//	dirty = true;
-		//}
-
 	}
 
 	inline bool IsD81ByteASync(unsigned track, unsigned headIndex, unsigned headPos) const

@@ -206,7 +206,7 @@ private:
 	void BRK(void) {}
 	void CLC(void) { ClearC(); }
 	void CLD(void) { ClearD(); }
-	void CLI(void) { ClearI(); CLIMaskingInterrupt = true; } // Like the real hardware the flag will be cleared here (incase it is read by the next instruction) but needs to dely one more cycle (and let another instruction execute) before the IRQ handling will possibly trigger (CLIMaskingInterrupt is used to track and emulate this).
+	void CLI(void) { ClearI(); CLIMaskingInterrupt = true; } // Like the real hardware the flag will be cleared here (incase it is read by the next instruction) but needs to delay one more cycle (and let another instruction execute) before the IRQ handling will possibly trigger (CLIMaskingInterrupt is used to track and emulate this).
 	void CLV(void) { ClearV(); }
 	void CMP(void) { u16 result = a - value; SetC(a >= (u8)value); SetZ(a == (u8)value); EstablishN(result); }
 	void CPX(void) { u16 result = x - value; SetC(x >= (u8)value); SetZ(x == (u8)value); EstablishN(result); }

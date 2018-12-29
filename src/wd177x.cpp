@@ -36,25 +36,11 @@
 
 #include "Pi1581.h"
 
-extern Pi1581 pi1581;
-
 // Clocks
 //	Master 16Mhz
 //		into 74ls93
 //			QB - 16Mhz / 2 = 8MHz (177x)
 //			QD - 16Mhz / 8 = 2MHz (6502)
-// CS
-// 8520
-//	$4000
-//
-// 1770
-//	$6000
-//
-// ROM
-//	$8000
-//
-// RAM
-// 0-$1fff
 
 // Disk spins at 300rpm = 5rps so to calculate how many 8Mhz cycles one rotation takes;-
 // 8000000 / 5 = 1600000;

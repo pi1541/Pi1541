@@ -212,7 +212,7 @@ private:
 	void RefreshFolderEntries();
 
 	void UpdateInputFolders();
-	void UpdateInputDiskCaddy();
+	//void UpdateInputDiskCaddy();
 
 	void UpdateCurrentHighlight();
 
