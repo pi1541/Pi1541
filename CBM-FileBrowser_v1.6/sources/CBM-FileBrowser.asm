@@ -726,6 +726,18 @@ jsr CHROUT
 !if clearscrena = 1 {
 jsr CLEARSCREEN
 
+; Set text color for C64 with V2 KERNAL 
+!if target = 64 { 
+    lda #forecolor2 
+    ldx #$00 
+loop 
+    sta color,x 
+    sta color+256,x 
+    sta color+512,x 
+    sta color+768,x 
+    dex 
+    bne loop 
+}
 
 !if target = 20 & forecolor2 <> 1 & forecolor2 < 8 {
 ;Set foreground char color if not white (NOT REQUIRED FOR C64)

@@ -1,0 +1,163 @@
+; --- config.def - configuration
+
+; - CBM target system
+target = 64	; choose the target system
+		; 20 = Commodore VIC-20
+		; 64 = Commodore 64
+		; 16 = The Commodore 264 Series (C16, C116, plus/4)  
+		;128 = Commodore 128 (Not implemented yet)
+
+		; Select a variant according with target system 
+variant = 2     ; 0 = None, Standard System.
+                ; 1 = Vic-20 with Mega-Cart
+                ; 2 = C64 Direct-to-TV
+
+                ; device number 
+hwdevicenum = 0 ; a device number, 0 = autodetect.
+
+autodetectm = 1 ; Drive auto detect mode if hwdevicenum = 0
+                ; 0 = use the current drive (small program size) 
+		; 1 = detect the first active drive
+
+drivechange = 1 ; drive change function
+                ; 0 = do not change drive
+		; 1 = change drive by pressing the key_drive 
+
+rootonstart = 0 ; exit to root when start the program or change the drive
+                ; 0 = do not exit to root on start/drive change
+		; 1 = exit to root on start/drive change
+
+rootentry = 1   ; "exit to root" entry on menu
+                ; 0 = none
+		; 1 = present
+
+tap_support = 0	; add tap capability via "XT:" command (ITS Module required)
+		; 0 = none
+		; 1 = yes
+
+printbars = 1   ; display a top/bottom bar with some key funcions according with current configuration
+                ; 0 = do not diplay the top/bottom bar 
+		; 1 = display the the top/bottom bar 
+
+startmode = 1   ; start mode for selected programs (C16/C64 meaning)
+                ; 0 = fixed LOAD"FILE",8,1 + RUN (old method, small program size)
+		; 1 = LOAD"FILE",8,1 + RUN  (by pressing key_fire or Joy button)
+		;     LOAD"FILE",8 + RUN (by holding CBM while pressing key_fire or Joy button)
+
+; - functionality (0/1)
+minimal = 0         ; remove all extra features for smallest prg size
+!if minimal = 1 {
+rememberpos = 0
+showcursors = 1
+clearscrena = 1
+fastscrolle = 0
+colorenable = 0
+disknameena = 0
+statusenabl = 0
+pleasewaite = 0
+sortdir     = 0
+} else {
+rememberpos = 1	    ; remember position on previous directory
+showcursors = 1     ; show cursors
+clearscrena = 1     ; enable screen clearing & color setting
+fastscrolle = 1     ; enable fast list scrolling
+colorenable = 1     ; enable colors
+disknameena = 1     ; enable disk name printing
+statusenabl = 1     ; enable status printing
+pleasewaite = 1     ; enable "please wait" printing
+sortdir     = 1     ; enable sort dir function by using the key_sort
+}
+
+; - layout/cosmetic/etc
+joyrepeat = 15      ; joystick repeat delay
+rastercmp = 1       ; raster line to wait for in mainwait
+
+; list location
+
+!if printbars = 1 {
+
+listtopy = 2        ; 0 <= x < listbottomy
+listbottomy = 23    ; listtopy < x <= 25
+
+} else {
+
+listtopy = 1        ; 0 <= x < listbottomy
+listbottomy = 25    ; listtopy < x <= 25
+
+}
+
+listx = 9           ; 0 <= x <= 24
+listbackgnd = 32    ; char to display in list background
+
+; disk name location
+disknamey = 0
+disknamex = 9
+
+; status text location
+statusy = listtopy
+statusx = listx+namelen+2
+
+!if colorenable = 0 {
+
+backcolor = 255
+bordercolor = 255
+forecolor2 = 255
+forecolor = 0
+arrowcolor = 0
+buttoncolor = 0
+
+} else {
+
+; back & border & fore2 color:
+; 0 = black, 1 = white, 2 = red, 3 = cyan, 4 = purple
+; 5 = green, 6 = blue, 7 = yellow, 8 = orange, 9 = brown
+; 10 = lred, 10 = gray1, 12 = gray2, 13 = lgreen,
+; 14 = lblue, 15 = gray3
+
+backcolor = 0       ; 0..15, if >15 -> no change
+bordercolor = 6     ; 0..15, if >15 -> no change
+forecolor2 = 1      ; 0..15  if >15 -> no change
+
+
+; foreground & arrow color:
+
+; 5 = white, 28 = red, 30 = green, 31 = blue, 129 = orange
+; 144 = black, 149 = brown, 150 = lred, 151 = grey1, 152 = grey2
+; 153 = lgreen, 154 = lblue, 155 = grey3, 156 = purple
+; 158 = yellow, 159 = black
+
+forecolor = 5       ; (see table) if <5 -> no change
+arrowcolor = 28     ; (see table) if <5 -> forecolor2
+buttoncolor = 28    ; (see table) if <5 -> no change
+
+}
+
+; - key settings        use keymap suitable for DTV's "RABCD" buttons 
+key_nexte = 255         ; next entry    (disabled)
+key_preve = 255         ; prev entry    (disabled)
+key_nextp = 255         ; next page     (disabled)
+key_prevp = 255         ; prev page     (disabled)
+key_nextp2 = 255        ; next page alt (disabled) 
+key_prevp2 = 255        ; prev page alt (disabled) 
+
+key_fire = 255          ; select        (disabled)
+key_fire2 = 255         ; select alt    (disabled) (IF startmode = 1, Target=16 or 64 only)
+key_top = 133           ; to top        (DTV_A) (F1 ON VICE)
+key_bottom = 20         ; to bottom     (DTV_B) (DEL ON VICE) (<-- BACK ARROW ON PC)
+key_exit = 136          ; exit dir      (DTV_R) (F7 ON VICE)
+key_quit = 255          ; quit to basic (disabled)
+
+key_sort = 13           ; sort dir      (DTV_C) (RETURN ON VICE)
+
+key_drive = 29          ; change drive  (DTV_D) (CUR -> ON VICE)   
+
+key_reset = 255         ; reset         (disabled) 
+
+
+; - load&run code positions
+!if startmode = 0 {     ; old method
+loadrunpos =  $0400+40*24 ;(screen+40*24)
+}
+!if startmode = 1 {
+loadrunpos =  $0334   ;unused + tape buffer (prevent screen garbage on loading)
+}
