@@ -724,7 +724,8 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 			//read32(ARM_SYSTIMER_CLO);	//Each one of these is > 100ns
 			//read32(ARM_SYSTIMER_CLO);
 			//read32(ARM_SYSTIMER_CLO);
-			//IEC_Bus::RefreshOuts();	// Now output all outputs.
+
+			IEC_Bus::RefreshOuts1541();	// Now output all outputs.
 
 			IEC_Bus::OutputLED = pi1541.drive.IsLEDOn();
 			if (IEC_Bus::OutputLED ^ oldLED)
@@ -749,20 +750,10 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 				}
 			}
 
-			//if (options.SoundOnGPIO() && headSoundCounter > 0)
-			//{
-			//	headSoundFreqCounter--;		// Continue updating a GPIO non DMA sound.
-			//	if (headSoundFreqCounter <= 0)
-			//	{
-			//		headSoundFreqCounter = headSoundFreq;
-			//		headSoundCounter -= headSoundFreq * 8;
-			//		IEC_Bus::OutputSound = !IEC_Bus::OutputSound;
-			//	}
-			//}
 
-
-			IEC_Bus::RefreshOuts1541();	// Now output all outputs.
 		}
+
+		IEC_Bus::ReadButtonsEmulationMode();
 
 		// Other core will check the uart (as it is slow) (could enable uart irqs - will they execute on this core?)
 		inputMappings->CheckKeyboardEmulationMode(numberOfImages, numberOfImagesMax);

@@ -351,6 +351,7 @@ public:
 
 	static void ReadBrowseMode(void);
 	static void ReadEmulationMode1541(void);
+	static void ReadButtonsEmulationMode(void);
 	static void ReadEmulationMode1581(void);
 
 	static void WaitUntilReset(void)
@@ -369,99 +370,9 @@ public:
 	}
 
 	// Out going
-	static void PortB_OnPortOut(void* pUserData, unsigned char status)
-	{
-		bool oldDataSetToOut = DataSetToOut;
-		bool oldClockSetToOut = ClockSetToOut;
+	static void PortB_OnPortOut(void* pUserData, unsigned char status);
 
-		// These are the values the VIA is trying to set the outputs to
-		VIA_Atna = (status & (unsigned char)VIAPORTPINS_ATNAOUT) != 0;
-		VIA_Data = (status & (unsigned char)VIAPORTPINS_DATAOUT) != 0;		// VIA DATAout PB1 inverted and then connected to DIN DATA
-		VIA_Clock = (status & (unsigned char)VIAPORTPINS_CLOCKOUT) != 0;	// VIA CLKout PB3 inverted and then connected to DIN CLK
-
-		if (VIA)
-		{
-			// Emulate the XOR gate UD3
-			AtnaDataSetToOut = (VIA_Atna != PI_Atn);
-		}
-		else
-		{
-			AtnaDataSetToOut = (VIA_Atna & PI_Atn);
-		}
-
-		if (AtnaDataSetToOut)
-		{
-			// if the output of the XOR gate is high (ie VIA_Atna != PI_Atn) then this is inverted and pulls DATA low (activating it)
-			PI_Data = true;
-			if (port) port->SetInput(VIAPORTPINS_DATAIN, true);	// simulate the read in software
-		}
-
-		if (VIA && port)
-		{
-			// If the VIA's data and clock outputs ever get set to inputs the real hardware reads these lines as asserted.
-			bool PB1SetToInput = (port->GetDirection() & 2) == 0;
-			bool PB3SetToInput = (port->GetDirection() & 8) == 0;
-			if (PB1SetToInput) VIA_Data = true;
-			if (PB3SetToInput) VIA_Clock = true;
-		}
-
-		ClockSetToOut = VIA_Clock;
-		DataSetToOut = VIA_Data;
-
-		if (!oldDataSetToOut && DataSetToOut)
-		{
-			PI_Data = true;
-			if (port) port->SetInput(VIAPORTPINS_DATAOUT, true); // simulate the read in software
-		}
-
-		if (!oldClockSetToOut && ClockSetToOut)
-		{
-			PI_Clock = true;
-			if (port) port->SetInput(VIAPORTPINS_CLOCKIN, true); // simulate the read in software
-		}
-
-	}
-
-	static inline void RefreshOuts1541(void)
-	{
-		unsigned set = 0;
-		unsigned clear = 0;
-		unsigned tmp;
-
-		if (!splitIECLines)
-		{
-			unsigned outputs = 0;
-
-			if (AtnaDataSetToOut || DataSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_DATA - 10) * 3));
-			if (ClockSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_CLOCK - 10) * 3));
-
-			unsigned nValue = (myOutsGPFSEL1 & PI_OUTPUT_MASK_GPFSEL1) | outputs;
-			write32(ARM_GPIO_GPFSEL1, nValue);
-		}
-		else
-		{
-			if (AtnaDataSetToOut || DataSetToOut) set |= 1 << PIGPIO_OUT_DATA;
-			else clear |= 1 << PIGPIO_OUT_DATA;
-
-			if (ClockSetToOut) set |= 1 << PIGPIO_OUT_CLOCK;
-			else clear |= 1 << PIGPIO_OUT_CLOCK;
-
-			if (!invertIECOutputs) {
-				tmp = set;
-				set = clear;
-				clear = tmp;
-			}
-		}
-
-		if (OutputLED) set |= 1 << PIGPIO_OUT_LED;
-		else clear |= 1 << PIGPIO_OUT_LED;
-
-		if (OutputSound) set |= 1 << PIGPIO_OUT_SOUND;
-		else clear |= 1 << PIGPIO_OUT_SOUND;
-
-		write32(ARM_GPIO_GPSET0, set);
-		write32(ARM_GPIO_GPCLR0, clear);
-	}
+	static void RefreshOuts1541(void);
 
 	static inline void RefreshOuts1581(void)
 	{
@@ -696,6 +607,8 @@ private:
 	static u32 PIGPIO_MASK_IN_RESET;
 
 	static u32 emulationModeCheckButtonIndex;
+
+	static unsigned gplev0;
 
 	static bool PI_Atn;
 	static bool PI_Data;
