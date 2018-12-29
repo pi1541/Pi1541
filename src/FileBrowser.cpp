@@ -43,7 +43,7 @@ extern Options options;
 extern void GlobalSetDeviceID(u8 id);
 extern void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser);
 
-extern void SwitchDrive(const char* drive);
+extern bool SwitchDrive(const char* drive);
 extern int numberOfUSBMassStorageDevices;
 
 unsigned char FileBrowser::LSTBuffer[FileBrowser::LSTBuffer_size];
@@ -1373,7 +1373,7 @@ void FileBrowser::DisplayStatusBar()
 	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y);
 
 	char bufferOut[128];
-	snprintf(bufferOut, 256, "LED 0 Motor 0 Track 18.0 ATN 0 DAT 0 CLK 0");
+	snprintf(bufferOut, 128, "LED 0 Motor 0 Track 18.0 ATN 0 DAT 0 CLK 0");
 	screenMain->PrintText(false, x, y, bufferOut, RGBA(0, 0, 0, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
 }
 

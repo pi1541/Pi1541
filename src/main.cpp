@@ -81,7 +81,7 @@ enum EmulatingMode
 	EMULATING_1581
 };
 
-EmulatingMode emulating;
+volatile EmulatingMode emulating;
 
 typedef void(*func_ptr)();
 
@@ -1538,12 +1538,112 @@ void Reboot_Pi()
 	reboot_now();
 }
 
-void SwitchDrive(const char* drive)
+bool SwitchDrive(const char* drive)
 {
 	FRESULT res;
 
 	res = f_chdrive(drive);
 	DEBUG_LOG("chdrive %s res %d\r\n", drive, res);
+	return res == FR_OK;
+}
+
+void UpdateFirmwareToSD()
+{
+	const char* firmwareName = "kernel.img";
+	DIR dir;
+	FILINFO filInfo;
+	FRESULT res;
+	u32 widthText, heightText;
+	u32 widthScreen = screen.Width();
+	u32 heightScreen = screen.Height();
+	u32 xpos, ypos;
+
+	if (SwitchDrive("USB01:"))
+	{
+		char cwd[1024];
+		if (f_getcwd(cwd, 1024) == FR_OK)
+		{
+			f_chdir("\\");
+
+			bool found = f_findfirst(&dir, &filInfo, ".", firmwareName) == FR_OK;
+
+			if (found)
+			{
+				char* mem = (char*)malloc((u32)filInfo.fsize);
+				if (mem)
+				{
+					FIL fp;
+					u32 bytes;
+					res = f_open(&fp, firmwareName, FA_READ);
+					if (res == FR_OK)
+					{
+						screen.Clear(COLOUR_BLACK);
+						snprintf(tempBuffer, tempBufferSize, "Checking firmware on USB.\r\n");
+						screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+						xpos = (widthScreen - widthText) >> 1;
+						ypos = (heightScreen - heightText) >> 1;
+						screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+
+						res = f_read(&fp, mem, (u32)filInfo.fsize, &bytes);
+						f_close(&fp);
+						if ((res == FR_OK) && ((u32)filInfo.fsize == bytes))
+						{
+							if (SwitchDrive("SD:"))
+							{
+								if (f_chdir("\\") == FR_OK)
+								{
+									bool same = true;
+									if (FR_OK == f_open(&fp, firmwareName, FA_READ))
+									{
+										char* ptr = mem;
+										char buffer[256];
+										unsigned bufferIndex = 0;
+										unsigned bytesRead;
+										do
+										{
+											f_read(&fp, buffer, 256, &bytesRead);
+
+											for (unsigned index = 0; index < bytesRead; ++index)
+											{
+												if (buffer[index] != mem[bufferIndex + index])
+												{
+													same = false;
+													break;
+												}
+											}
+											bufferIndex += bytesRead;
+										} while (same && (bufferIndex < (u32)filInfo.fsize));
+										f_close(&fp);
+									}
+
+									screen.Clear(COLOUR_BLACK);
+									if (!same && (FR_OK == f_open(&fp, firmwareName, FA_CREATE_ALWAYS | FA_WRITE)))
+									{
+										snprintf(tempBuffer, tempBufferSize, "Updating firmware.\r\n");
+										screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+										xpos = (widthScreen - widthText) >> 1;
+										ypos = (heightScreen - heightText) >> 1;
+										screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+
+										res = f_write(&fp, mem, (u32)filInfo.fsize, &bytes);
+										f_close(&fp);
+									}
+								}
+							}
+						}
+					}
+					else
+					{
+						DEBUG_LOG("failed to open file %s %d\r\n", firmwareName, (int)res);
+					}
+					free(mem);
+				}
+			}
+
+			SwitchDrive("USB01:");
+			f_chdir(cwd);
+		}
+	}
 }
 
 extern "C"
@@ -1642,7 +1742,10 @@ extern "C"
 			res = f_mount(&fileSystemUSB[USBDriveIndex], USBDriveId, 1);
 		}
 		if (numberOfUSBMassStorageDevices > 0)
-			SwitchDrive("USB01:");
+		{
+			if (SwitchDrive("USB01:"))
+				UpdateFirmwareToSD();
+		}
 
 		f_chdir("/1541");
 

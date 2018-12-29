@@ -452,6 +452,9 @@ IEC_Commands::UpdateAction IEC_Commands::SimulateIECUpdate(void)
 	}
 
 	updateAction = NONE;
+
+	if (selectedImageName[0] != 0) updateAction = IMAGE_SELECTED;
+
 	switch (atnSequence)
 	{
 		case ATN_SEQUENCE_IDLE:
