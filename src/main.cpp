@@ -41,13 +41,14 @@ extern "C"
 #include "Pi1581.h"
 #include "FileBrowser.h"
 #include "ScreenLCD.h"
+#include "SpinLock.h"
 
 #include "logo.h"
 #include "sample.h"
 #include "ssd_logo.h"
 
 unsigned versionMajor = 1;
-unsigned versionMinor = 18;
+unsigned versionMinor = 19;
 
 // When the emulated CPU starts we execute the first million odd cycles in non-real-time (ie as fast as possible so the emulated 1541 becomes responsive to CBM-Browser asap)
 // During these cycles the CPU is executing the ROM self test routines (these do not need to be cycle accurate)
@@ -114,6 +115,8 @@ bool USBKeyboardDetected = false;
 //bool resetWhileEmulating = false;
 bool selectedViaIECCommands = false;
 u16 pc;
+
+SpinLock core0RefreshingScreen;
 
 unsigned int screenWidth = 1024;
 unsigned int screenHeight = 768;
@@ -504,14 +507,21 @@ void UpdateScreen()
 
 				if (screenLCD)
 				{
+					core0RefreshingScreen.Acquire();
+
+					IEC_Bus::WaitMicroSeconds(100);
+
 					screenLCD->PrintText(false, 0, 0, tempBuffer, 0, RGBA(0xff, 0xff, 0xff, 0xff));
 					//				screenLCD->SetContrast(255.0/79.0*track);
 					screenLCD->RefreshRows(0, 1);
+
+					IEC_Bus::WaitMicroSeconds(100);
+					core0RefreshingScreen.Release();
 				}
 
 			}
 		}
-		else
+		else if (emulating == EMULATING_1581)
 		{
 			track = pi1581.wd177x.GetCurrentTrack();
 			if (track != oldTrack)
@@ -523,9 +533,13 @@ void UpdateScreen()
 
 				if (screenLCD)
 				{
+					core0RefreshingScreen.Acquire();
+					IEC_Bus::WaitMicroSeconds(100);
 					screenLCD->PrintText(false, 0, 0, tempBuffer, 0, RGBA(0xff, 0xff, 0xff, 0xff));
 					//				screenLCD->SetContrast(255.0/79.0*track);
 					screenLCD->RefreshRows(0, 1);
+					IEC_Bus::WaitMicroSeconds(100);
+					core0RefreshingScreen.Release();
 				}
 
 			}
@@ -1069,6 +1083,9 @@ void emulator()
 
 			IEC_Bus::LetSRQBePulledHigh();
 
+			core0RefreshingScreen.Acquire();
+			IEC_Bus::WaitMicroSeconds(100);
+
 // workaround for occasional oled curruption
 			if (screenLCD)
 				screenLCD->ClearInit(0);
@@ -1084,6 +1101,8 @@ void emulator()
 //				fileBrowser->DisplayRoot(); // Go back to the root folder and display it.
 //			else
 				fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
+
+			core0RefreshingScreen.Release();
 
 //			resetWhileEmulating = false;
 			selectedViaIECCommands = false;
@@ -1215,8 +1234,6 @@ void emulator()
 			//					if (screenLCD)
 			//						screenLCD->ClearInit(0);
 
-			fileBrowser->ClearSelections();
-			fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
 
 			IEC_Bus::WaitUntilReset();
 			//DEBUG_LOG("6502 resetting\r\n");
