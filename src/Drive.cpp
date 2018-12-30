@@ -352,7 +352,7 @@ Drive::Drive() : m_pVIA(0)
 
 void Drive::Reset()
 {
-	headTrackPos = 0;		// Start with the head over track 19 (Very later Vorpal ie Cakifornia Games) need to have had the last head movement -ve
+	headTrackPos = 18*2;		// Start with the head over track 19 (Very later Vorpal ie Cakifornia Games) need to have had the last head movement -ve
 	CLOCK_SEL_AB = 3;		// Track 18 will use speed zone 3 (encoder/decoder (ie UE7Counter) clocked at 1.2307Mhz)
 	UpdateHeadSectorPosition();
 	lastHeadDirection = 0;
