@@ -32,8 +32,6 @@ static char buffer[256] = { 0 };
 static u32 white = RGBA(0xff, 0xff, 0xff, 0xff);
 static u32 red = RGBA(0xff, 0, 0, 0xff);
 
-#define LCDFONTHEIGHT 16
-
 bool DiskCaddy::Empty()
 {
 	int x;
@@ -64,7 +62,7 @@ bool DiskCaddy::Empty()
 
 				snprintf(buffer, 256, "Saving");
 				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), BkColour);
-				y += LCDFONTHEIGHT;
+				y += screenLCD->GetFontHeight();
 				snprintf(buffer, 256, "%s                ", disks[index].GetName());
 				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 				screenLCD->SwapBuffers();
@@ -93,7 +91,7 @@ bool DiskCaddy::Empty()
 
 			snprintf(buffer, 256, "Saving");
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), BkColour);
-			y += LCDFONTHEIGHT;
+			y += screenLCD->GetFontHeight();
 			snprintf(buffer, 256, "Complete                ");
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			screenLCD->SwapBuffers();
@@ -132,7 +130,7 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 
 			snprintf(buffer, 256, "Loading");
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), BkColour);
-			y += LCDFONTHEIGHT;
+			y += screenLCD->GetFontHeight();
 			snprintf(buffer, 256, "%s                ", fileInfo->fname);
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			screenLCD->SwapBuffers();
@@ -300,7 +298,7 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 	if (screenLCD)
 	{
 		unsigned numberOfImages = GetNumberOfImages();
-		unsigned numberOfDisplayedImages = screenLCD->Height()/LCDFONTHEIGHT-1;
+		unsigned numberOfDisplayedImages = screenLCD->Height()/screenLCD->GetFontHeight()-1;
 		unsigned caddyIndex;
 
 		RGBA BkColour = RGBA(0, 0, 0, 0xFF);
@@ -314,7 +312,7 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 			, GetImage(index)->GetReadOnly() ? 'R' : ' '
 			);
 		screenLCD->PrintText(false, x, y, buffer, 0, RGBA(0xff, 0xff, 0xff, 0xff));
-		y += LCDFONTHEIGHT;
+		y += screenLCD->GetFontHeight();
 
 		if (numberOfImages > numberOfDisplayedImages && index > numberOfDisplayedImages-1)
 		{
@@ -338,7 +336,7 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 				screenLCD->PrintText(false, x, y, buffer, BkColour, BkColour);
 				snprintf(buffer, 256, "%d %s", caddyIndex + 1, name);
 				screenLCD->PrintText(false, x, y, buffer, 0, caddyIndex == index ? RGBA(0xff, 0xff, 0xff, 0xff) : BkColour);
-				y += LCDFONTHEIGHT;
+				y += screenLCD->GetFontHeight();
 			}
 			if (y >= screenLCD->Height())
 				break;
