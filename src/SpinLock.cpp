@@ -18,8 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 #include "SpinLock.h"
-
-//#ifdef HAS_MULTICORE
+#include "defs.h"
 
 bool SpinLock::s_bEnabled = true;
 
@@ -34,6 +33,7 @@ SpinLock::~SpinLock(void)
 
 void SpinLock::Acquire(void)
 {
+#ifdef HAS_MULTICORE
 	if (s_bEnabled)
 	{
 		// See: ARMv7-A Architecture Reference Manual, Section D7.3
@@ -52,10 +52,12 @@ void SpinLock::Acquire(void)
 			: : "r" ((u32)&m_bLocked)
 			);
 	}
+#endif
 }
 
 void SpinLock::Release(void)
 {
+#ifdef HAS_MULTICORE
 	if (s_bEnabled)
 	{
 		// See: ARMv7-A Architecture Reference Manual, Section D7.3
@@ -71,6 +73,6 @@ void SpinLock::Release(void)
 			: : "r" ((u32)&m_bLocked)
 			);
 	}
+#endif
 }
 
-//#endif
