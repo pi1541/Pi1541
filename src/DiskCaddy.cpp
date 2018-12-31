@@ -298,7 +298,7 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 	if (screenLCD)
 	{
 		unsigned numberOfImages = GetNumberOfImages();
-		unsigned numberOfDisplayedImages = screenLCD->Height()/screenLCD->GetFontHeight()-1;
+		unsigned numberOfDisplayedImages = (screenLCD->Height()/screenLCD->GetFontHeight())-1;
 		unsigned caddyIndex;
 
 		RGBA BkColour = RGBA(0, 0, 0, 0xFF);

@@ -181,7 +181,7 @@ void FileBrowser::BrowsableListView::Refresh()
 		entryIndex = offset + index;
 
 		RefreshLine(entryIndex, x, y, /*showSelected && */list->currentIndex == entryIndex);
-		y += 16;
+		y += screen->GetFontHeight ();
 	}
 
 	screen->SwapBuffers();
@@ -248,7 +248,7 @@ void FileBrowser::BrowsableListView::RefreshHighlightScroll()
 		int rowIndex = list->currentIndex - offset;
 		
 		u32 y = positionY;
-		y += rowIndex * 16;
+		y += rowIndex * screen->GetFontHeight ();
 
 		RefreshLine(list->currentIndex, 0, y, true);
 
