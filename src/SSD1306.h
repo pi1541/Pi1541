@@ -98,6 +98,7 @@ public:
 protected:
 	void SendCommand(u8 command);
 	void SendData(u8 data);
+	void SendDataLong(void* data, u8 length);
 
 	void Home();
 	void SetDataPointer(u8 row, u8 col);
