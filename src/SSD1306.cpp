@@ -118,6 +118,17 @@ void SSD1306::SendData(u8 data)
 	RPI_I2CWrite(BSCMaster, address, buffer, sizeof(buffer));
 }
 
+//We can send up to 16 bytes to the i2c bus
+void SSD1306::SendDataLong(void* data, u8 length)
+{
+	char buffer[15];
+
+	buffer[0] = SSD1306_DATA_REG;
+	memcpy(&buffer[1], data, length);
+
+	RPI_I2CWrite(BSCMaster, address, buffer, ++length);
+}
+
 void SSD1306::Home()
 {
 	SetDataPointer(0, 0);
@@ -193,10 +204,22 @@ void SSD1306::RefreshPage(u32 page)
 	if (new_start >= 0)
 	{
 		SetDataPointer(page, new_start-start);
-		for (i = new_start; i <= new_end; i++)
+		new_end++;
+		while (new_start < new_end)
 		{
-			SendData(frame[i]);
-			oldFrame[i] = frame[i];
+			i = (new_end-new_start < 15) ? new_end-new_start : 15;
+			if (i == 1)
+			{
+				SendData(frame[new_start]);
+				oldFrame[new_start] = frame[new_start];
+			}
+			else // Use the ability to send up to 16 byte in a row
+				 // (1 for command and 15 for data)
+			{
+				SendDataLong(&frame[new_start],i);
+				memcpy(&oldFrame[new_start], &frame[new_start],i);
+			}
+			new_start += i;
 		}
 	}
 }
@@ -204,7 +227,7 @@ void SSD1306::RefreshPage(u32 page)
 void SSD1306::ClearScreen()
 {
 	memset(frame, 0, sizeof_frame);
-	memset(oldFrame, 0xff, sizeof_frame);	// to force update
+	//memset(oldFrame, 0xff, sizeof_frame);	// to force update
 	RefreshScreen();
 }
 
