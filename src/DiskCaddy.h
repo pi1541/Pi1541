@@ -100,7 +100,7 @@ private:
 	u32 selectedIndex;
 	u32 oldCaddyIndex;
 
-	Screen* screen;
+	ScreenBase* screen;
 	ScreenBase* screenLCD;
 };
 

@@ -103,7 +103,7 @@ void ScreenLCD::PlotRawImage(const u8* image, int x, int y, int w, int h)
 u32 ScreenLCD::PrintText(bool petscii, u32 x, u32 y, char *ptr, RGBA TxtColour, RGBA BkColour, bool measureOnly, u32* width, u32* height)
 {
 	int len = 0;
-	ssd1306->PlotText(UseCBMFont(), petscii, x >> 3, y >> 4, ptr, (BkColour & 0xffffff) != 0);
+	ssd1306->PlotText(UseCBMFont(), petscii, x >> 3, y / GetFontHeight (), ptr, (BkColour & 0xffffff) != 0);
 	return len;
 }
 
