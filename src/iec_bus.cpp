@@ -20,6 +20,8 @@
 
 static int buttonCount = sizeof(ButtonPinFlags) / sizeof(unsigned);
 
+u32 IEC_Bus::oldClears = 0;
+u32 IEC_Bus::oldSets = 0;
 u32 IEC_Bus::PIGPIO_MASK_IN_ATN = 1 << PIGPIO_ATN;
 u32 IEC_Bus::PIGPIO_MASK_IN_DATA = 1 << PIGPIO_DATA;
 u32 IEC_Bus::PIGPIO_MASK_IN_CLOCK = 1 << PIGPIO_CLOCK;
@@ -72,7 +74,6 @@ unsigned IEC_Bus::gplev0;
 
 void IEC_Bus::ReadBrowseMode(void)
 {
-	IOPort* portB = 0;
 	gplev0 = read32(ARM_GPIO_GPLEV0);
 
 	int index;
@@ -86,9 +87,6 @@ void IEC_Bus::ReadBrowseMode(void)
 	{
 		PI_Atn = ATNIn;
 	}
-
-	if (portB && (portB->GetDirection() & 0x10) == 0)
-		AtnaDataSetToOut = false; // If the ATNA PB4 gets set to an input then we can't be pulling data low. (Maniac Mansion does this)
 
 	if (!AtnaDataSetToOut && !DataSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
 	{
@@ -311,8 +309,16 @@ void IEC_Bus::RefreshOuts1541(void)
 	if (OutputSound) set |= 1 << PIGPIO_OUT_SOUND;
 	else clear |= 1 << PIGPIO_OUT_SOUND;
 
-	write32(ARM_GPIO_GPCLR0, clear);
-	write32(ARM_GPIO_GPSET0, set);
+	if (oldClears != clear)
+	{
+		write32(ARM_GPIO_GPCLR0, clear);
+		oldClears = clear;
+	}
+	if (oldSets != set)
+	{
+		write32(ARM_GPIO_GPSET0, set);
+		oldSets = set;
+	}
 }
 
 void IEC_Bus::PortB_OnPortOut(void* pUserData, unsigned char status)

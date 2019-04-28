@@ -495,7 +495,7 @@ public:
 	static inline bool IsClockReleased() { return !PI_Clock; }
 	static inline bool GetPI_Reset() { return PI_Reset; }
 	static inline bool IsDataSetToOut() { return DataSetToOut; }
-	static inline bool IsAtnaDataSetToOut() { return AtnaDataSetToOut; }
+	//static inline bool IsAtnaDataSetToOut() { return AtnaDataSetToOut; }
 	static inline bool IsClockSetToOut() { return ClockSetToOut; }
 	static inline bool IsReset() { return Resetting; }
 
@@ -595,6 +595,9 @@ public:
 	static bool OutputSound;
 
 private:
+	static u32 oldClears;
+	static u32 oldSets;
+
 	static bool splitIECLines;
 	static bool invertIECInputs;
 	static bool invertIECOutputs;

@@ -686,7 +686,6 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 
 	while (exitReason == EXIT_UNKNOWN)
 	{
-		IEC_Bus::ReadEmulationMode1541();
 
 		if (pi1541.m6502.SYNC())	// About to start a new instruction.
 		{
@@ -750,6 +749,16 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 				}
 			}
 
+			if (options.SoundOnGPIO() && headSoundCounter > 0)
+			{
+				headSoundFreqCounter--;		// Continue updating a GPIO non DMA sound.
+				if (headSoundFreqCounter <= 0)
+				{
+					headSoundFreqCounter = headSoundFreq;
+					headSoundCounter -= headSoundFreq * 8;
+					IEC_Bus::OutputSound = !IEC_Bus::OutputSound;
+				}
+			}
 
 		}
 
@@ -802,17 +811,9 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 			} while (ctAfter == ctBefore);
 		}
 		ctBefore = ctAfter;
-
-		if (options.SoundOnGPIO() && headSoundCounter > 0)
-		{
-			headSoundFreqCounter--;		// Continue updating a GPIO non DMA sound.
-			if (headSoundFreqCounter <= 0)
-			{
-				headSoundFreqCounter = headSoundFreq;
-				headSoundCounter -= headSoundFreq * 8;
-				IEC_Bus::OutputSound = !IEC_Bus::OutputSound;
-			}
-		}
+		IEC_Bus::ReadEmulationMode1541();
+		if (cycleCount >= FAST_BOOT_CYCLES)	// cycleCount is used so we can quickly get through 1541's self test code. This will make the emulated 1541 responsive to commands asap. During this time we don't need to set outputs.
+			IEC_Bus::RefreshOuts1541();	// Now output all outputs.
 
 		if (numberOfImages > 1)
 		{
