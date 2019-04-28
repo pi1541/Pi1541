@@ -185,7 +185,13 @@ void Screen::Clear(RGBA colour)
 	DrawRectangle(0, 0, width, height, colour);
 }
 
+// HACK: I have a better fix for this coming when I commit support for other LCDs and screens (each screen can use its own character set/font)
 u32 Screen::GetFontHeight()
+{
+	return 16;
+}
+
+u32 Screen::GetFontHeightDirectoryDisplay()
 {
 	if (CBMFont)
 		return 8;

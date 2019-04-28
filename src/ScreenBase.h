@@ -70,6 +70,7 @@ public:
 
 	virtual u32 GetFontWidth() { return 8; }
 	virtual u32 GetFontHeight() = 0;
+	virtual u32 GetFontHeightDirectoryDisplay() { return 16; }
 
 	virtual void SwapBuffers() = 0;
 	virtual void RefreshRows(u32 start, u32 amountOfRows) {}

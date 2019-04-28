@@ -54,6 +54,7 @@ public:
 	u32 ScaleY(u32 y) { return (u32)((float)y * scaleY); }
 
 	u32 GetFontHeight();
+	u32 GetFontHeightDirectoryDisplay();
 
 	void SwapBuffers() {}
 private:
