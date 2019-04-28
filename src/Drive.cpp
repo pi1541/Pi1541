@@ -156,7 +156,7 @@ extern "C"
 // Side effects
 // When software uses a valid encoding scheme long runs of 0 are avoided. 
 // Even if the disk is old or the drive is slightly miss alligned or varying in rotation speed (within a certain range) there should not be a problem reading the data.
-// But there is still nothing that to prevent the magnetic field on a disk changing slowly.
+// But there is still nothing to prevent the magnetic field on a disk changing slowly.
 // So what happens when the magnetic field is changing slowly but just fast enough for induction to be detected?
 // The first amplifier will detect the weak induced signal and maximise its gain. With a maximised gain noise can become a problem.
 // The slope of the slowly changing signal will be differentiated to produce a signal that will be near zero.
@@ -222,7 +222,7 @@ extern "C"
 // If UE4's count is left to cycle (ie no flux reversals for 16 counts) a 1 will be shifted in regardless.
 // This limits the hardware to only read three consecutive 0s between any two 1s. (with GCR this will never occur)
 //
-// The 1541 uses soft sectors. The hardware can only detect the sync sequence of then one bits in a row and everything must then be phase locked to that.
+// The 1541 uses soft sectors. The hardware can only detect the sync sequence of ten one bits in a row and everything must then be phase locked to that.
 // The sync sequence phase locks to blocks. Blocks can really be any size, even the entire track.
 // UC2 monitors the parallel output of UD2/UE4, when all 10 bits are 1, the output pin 9 goes low indicating a SYNC sequence has been read.
 // Whenever the SYNC is asserted UE3 is reset and we are also phase locked to bytes.
