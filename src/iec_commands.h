@@ -162,6 +162,7 @@ protected:
 
 	void Memory(void);
 	void User(void);
+	void Extended(void);
 
 	void ProcessCommand(void);
 

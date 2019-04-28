@@ -1322,6 +1322,25 @@ void IEC_Commands::User(void)
 	}
 }
 
+void IEC_Commands::Extended(void)
+{
+	Channel& channel = channels[15];
+
+	//DEBUG_LOG("User channel.buffer[1] = %c\r\n", channel.buffer[1]);
+
+	switch (toupper(channel.buffer[1]))
+	{
+		case '?':
+			Error(ERROR_73_DOSVERSION);
+		break;
+		default:
+			// Extended commands not implemented yet
+			Error(ERROR_31_SYNTAX_ERROR);
+		break;
+	}
+}
+
+// http://www.n2dvm.com/UIEC.pdf
 void IEC_Commands::ProcessCommand(void)
 {
 	Error(ERROR_00_OK);
@@ -1406,8 +1425,10 @@ void IEC_Commands::ProcessCommand(void)
 				//OPEN1, 9, 15, "XW":CLOSE1
 			break;
 			case 'X':
-				// Extended commands not implemented yet
-				Error(ERROR_31_SYNTAX_ERROR);
+				Extended();
+			break;
+			case '/':
+				
 			break;
 			default:
 				Error(ERROR_31_SYNTAX_ERROR);
