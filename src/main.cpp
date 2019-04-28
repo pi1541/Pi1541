@@ -557,6 +557,29 @@ void UpdateScreen()
 	}
 }
 
+static bool Snoop(u8 a)
+{
+	if (a == snoopBackCommand[snoopIndex] || (snoopIndex == 2 && (a == snoopBackCommand[3])))
+	{
+		if ((snoopIndex + 1) == sizeof(snoopBackCommand) || (snoopIndex == 2 && (a == snoopBackCommand[3])))
+		{
+			// Exit full emulation back to IEC commands level simulation.
+			snoopIndex = 0;
+			return true;
+		}
+		else
+		{
+			snoopIndex++;
+		}
+	}
+	else
+	{
+		snoopIndex = 0;
+		snoopPC = 0;
+	}
+	return false;
+}
+
 EmulatingMode BeginEmulating(FileBrowser* fileBrowser, const char* filenameForIcon)
 {
 	DiskImage* diskImage = diskCaddy.SelectFirstImage();
@@ -695,22 +718,13 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 
 			if (pc == snoopPC)
 			{
-				u8 a = pi1541.m6502.GetA();
-				if (a == snoopBackCommand[snoopIndex])
+				if (pc == snoopPC)
 				{
-					snoopIndex++;
-					if (snoopIndex == sizeof(snoopBackCommand))
+					if (Snoop(pi1541.m6502.GetA()))
 					{
-						// Exit full emulation back to IEC commands level simulation.
-						snoopIndex = 0;
 						emulating = IEC_COMMANDS;
 						exitReason = EXIT_CD;
 					}
-				}
-				else
-				{
-					snoopIndex = 0;
-					snoopPC = 0;
 				}
 			}
 		}
@@ -902,22 +916,10 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 
 				if (pc == snoopPC)
 				{
-					u8 a = pi1581.m6502.GetA();
-					if (a == snoopBackCommand[snoopIndex])
+					if (Snoop(pi1581.m6502.GetA()))
 					{
-						snoopIndex++;
-						if (snoopIndex == sizeof(snoopBackCommand))
-						{
-							// Exit full emulation back to IEC commands level simulation.
-							snoopIndex = 0;
-							emulating = IEC_COMMANDS;
-							exitReason = EXIT_CD;
-						}
-					}
-					else
-					{
-						snoopIndex = 0;
-						snoopPC = 0;
+						emulating = IEC_COMMANDS;
+						exitReason = EXIT_CD;
 					}
 				}
 			}
