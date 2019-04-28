@@ -18,6 +18,8 @@
 
 #include "iec_bus.h"
 
+//#define REAL_XOR 1
+
 static int buttonCount = sizeof(ButtonPinFlags) / sizeof(unsigned);
 
 u32 IEC_Bus::oldClears = 0;
@@ -134,6 +136,7 @@ void IEC_Bus::ReadEmulationMode1541(void)
 
 	portB = port;
 
+#ifndef REAL_XOR
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
 	if (PI_Atn != ATNIn)
 	{
@@ -175,7 +178,34 @@ void IEC_Bus::ReadEmulationMode1541(void)
 		PI_Data = true;
 		portB->SetInput(VIAPORTPINS_DATAIN, true);	// simulate the read in software
 	}
+#else
+	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
+	if (PI_Atn != ATNIn)
+	{
+		PI_Atn = ATNIn;
 
+		{
+			portB->SetInput(VIAPORTPINS_ATNIN, ATNIn);	//is inverted and then connected to pb7 and ca1
+			VIA->InputCA1(ATNIn);
+		}
+	}
+
+	if (!DataSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
+	{
+		bool DATAIn = (gplev0 & PIGPIO_MASK_IN_DATA) == (invertIECInputs ? PIGPIO_MASK_IN_DATA : 0);
+		//if (PI_Data != DATAIn)
+		{
+			PI_Data = DATAIn;
+			portB->SetInput(VIAPORTPINS_DATAIN, DATAIn);	// VIA DATAin pb0 output from inverted DIN 5 DATA
+		}
+	}
+	else
+	{
+		PI_Data = true;
+		portB->SetInput(VIAPORTPINS_DATAIN, true);	// simulate the read in software
+	}
+
+#endif
 	if (!ClockSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
 	{
 		bool CLOCKIn = (gplev0 & PIGPIO_MASK_IN_CLOCK) == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK : 0);
@@ -332,6 +362,7 @@ void IEC_Bus::PortB_OnPortOut(void* pUserData, unsigned char status)
 	VIA_Data = (status & (unsigned char)VIAPORTPINS_DATAOUT) != 0;		// VIA DATAout PB1 inverted and then connected to DIN DATA
 	VIA_Clock = (status & (unsigned char)VIAPORTPINS_CLOCKOUT) != 0;	// VIA CLKout PB3 inverted and then connected to DIN CLK
 
+#ifndef REAL_XOR
 	if (VIA)
 	{
 		// Emulate the XOR gate UD3
@@ -341,6 +372,9 @@ void IEC_Bus::PortB_OnPortOut(void* pUserData, unsigned char status)
 	{
 		AtnaDataSetToOut = (VIA_Atna & PI_Atn);
 	}
+#else
+	AtnaDataSetToOut = VIA_Atna;
+#endif
 
 	//if (AtnaDataSetToOut)
 	//{
@@ -376,3 +410,40 @@ void IEC_Bus::PortB_OnPortOut(void* pUserData, unsigned char status)
 	//if (AtnaDataSetToOutOld ^ AtnaDataSetToOut)
 	//	RefreshOuts1541();
 }
+
+void IEC_Bus::Reset(void)
+{
+	WaitUntilReset();
+
+	// VIA $1800
+	//	CA2, CB1 and CB2 are not connected (reads as high)
+	// VIA $1C00
+	//	CB1 not connected (reads as high)
+
+	VIA_Atna = false;
+	VIA_Data = false;
+	VIA_Clock = false;
+
+	DataSetToOut = false;
+	ClockSetToOut = false;
+	SRQSetToOut = false;
+
+	PI_Atn = false;
+	PI_Data = false;
+	PI_Clock = false;
+	PI_SRQ = false;
+
+#ifdef REAL_XOR
+	AtnaDataSetToOut = VIA_Atna;
+#else
+	if (VIA)
+		AtnaDataSetToOut = (VIA_Atna != PI_Atn);
+	else
+		AtnaDataSetToOut = (VIA_Atna & PI_Atn);
+
+	if (AtnaDataSetToOut) PI_Data = true;
+#endif
+
+	RefreshOuts1581();
+}
+

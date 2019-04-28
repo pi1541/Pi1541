@@ -553,37 +553,7 @@ public:
 	static m8520* CIA;
 	static IOPort* port;
 
-	static inline void Reset(void)
-	{
-		WaitUntilReset();
-
-		// VIA $1800
-		//	CA2, CB1 and CB2 are not connected (reads as high)
-		// VIA $1C00
-		//	CB1 not connected (reads as high)
-
-		VIA_Atna = false;
-		VIA_Data = false;
-		VIA_Clock = false;
-
-		DataSetToOut = false;
-		ClockSetToOut = false;
-		SRQSetToOut = false;
-
-		PI_Atn = false;
-		PI_Data = false;
-		PI_Clock = false;
-		PI_SRQ = false;
-
-		if (VIA)
-			AtnaDataSetToOut = (VIA_Atna != PI_Atn);
-		else
-			AtnaDataSetToOut = (VIA_Atna & PI_Atn);
-
-		if (AtnaDataSetToOut) PI_Data = true;
-
-		RefreshOuts1581();
-	}
+	static void Reset(void);
 
 	static bool GetInputButtonPressed(int buttonIndex) { return InputButton[buttonIndex] && !InputButtonPrev[buttonIndex]; }
 	static bool GetInputButtonReleased(int buttonIndex) { return InputButton[buttonIndex] == false; }
