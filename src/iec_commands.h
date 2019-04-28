@@ -22,6 +22,7 @@
 #include "iec_bus.h"
 #include "ff.h"
 #include "debug.h"
+#include "DiskImage.h"
 
 struct TimerMicroSeconds
 {
@@ -73,7 +74,7 @@ public:
 	u8 GetDeviceId() { return deviceID; }
 
 	void SetLowercaseBrowseModeFilenames(bool value) { lowercaseBrowseModeFilenames = value; }
-
+	void SetNewDiskType(DiskImage::DiskType type) { newDiskType = type; }
 	void SetAutoBootFB128(bool autoBootFB128) { this->autoBootFB128 = autoBootFB128; }
 	void Set128BootSectorName(const char* SectorName) 
 	{
@@ -91,7 +92,7 @@ public:
 	const FILINFO* GetImageSelected() const { return &filInfoSelectedImage; }
 	void SetStarFileName(const char* fileName) { starFileName = fileName; }
 
-	int CreateD64(char* filenameNew, char* ID, bool automount);
+	int CreateNewDisk(char* filenameNew, char* ID, bool automount);
 
 	void SetDisplayingDevices(bool displayingDevices) { this->displayingDevices = displayingDevices; }
 
@@ -194,6 +195,7 @@ protected:
 
 	bool displayingDevices;
 	bool lowercaseBrowseModeFilenames;
+	DiskImage::DiskType newDiskType;
 };
 #endif
 

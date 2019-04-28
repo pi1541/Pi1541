@@ -51,6 +51,7 @@ extern void Reboot_Pi();
 
 extern void SwitchDrive(const char* drive);
 extern int numberOfUSBMassStorageDevices;
+extern void DisplayMessage(int x, int y, bool LCD, const char* message, u32 textColour, u32 backgroundColour);
 
 #define WaitWhile(checkStatus) \
 	do\
@@ -244,6 +245,7 @@ IEC_Commands::IEC_Commands()
 	C128BootSectorName = 0;
 	displayingDevices = false;
 	lowercaseBrowseModeFilenames = false;
+	newDiskType = DiskImage::D64;
 }
 
 void IEC_Commands::Reset(void)
@@ -1171,7 +1173,7 @@ void IEC_Commands::New(void)
 	{
 		FILINFO filInfo;
 
-		int ret = CreateD64(filenameNew, ID, true);
+		int ret = CreateNewDisk(filenameNew, ID, true);
 
 		if (ret==0)
 			updateAction = REFRESH;
@@ -2051,63 +2053,104 @@ void IEC_Commands::CloseFile(u8 secondary)
 	channel.Close();
 }
 
-int IEC_Commands::CreateD64(char* filenameNew, char* ID, bool automount)
+int IEC_Commands::CreateNewDisk(char* filenameNew, char* ID, bool automount)
 {
 	FILINFO filInfo;
 	FRESULT res;
 	char* ptr;
 	int i;
-	//bool g64 = false;
 
-	//if (strstr(filenameNew, ".g64") || strstr(filenameNew, ".G64"))
-	//	g64 = true;
-	//else
-	if(!(strstr(filenameNew, ".d64") || strstr(filenameNew, ".D64")))
-		strcat(filenameNew, ".d64");
+	DisplayMessage(240, 280, false, "Creating new disk", RGBA(0xff, 0xff, 0xff, 0xff), RGBA(0xff, 0, 0, 0xff));
+	DisplayMessage(0, 0, true, "Creating new disk", RGBA(0xff, 0xff, 0xff, 0xff), RGBA(0xff, 0, 0, 0xff));
+
+	switch (newDiskType)
+	{
+		case DiskImage::D64:
+			if (!(strstr(filenameNew, ".d64") || strstr(filenameNew, ".D64")))
+				strcat(filenameNew, ".d64");
+		break;
+		case DiskImage::G64:
+			if (!(strstr(filenameNew, ".g64") || strstr(filenameNew, ".G64")))
+				strcat(filenameNew, ".g64");
+		break;
+		default:
+			return ERROR_25_WRITE_ERROR;
+		break;
+	}
 
 	res = f_stat(filenameNew, &filInfo);
 	if (res == FR_NO_FILE)
 	{
-		FIL fpOut;
-		res = f_open(&fpOut, filenameNew, FA_CREATE_ALWAYS | FA_WRITE);
-		if (res == FR_OK)
-		{
-			char buffer[256];
-			u32 bytes;
-			u32 blocks;
 
-			memset(buffer, 0, sizeof(buffer));
-			// TODO: Should check for disk full.
-			for (blocks = 0; blocks < 357; ++blocks)
+		unsigned char* dest = DiskImage::readBuffer;
+
+		char buffer[256];
+		u32 bytes;
+		u32 blocks;
+
+		memset(buffer, 0, sizeof(buffer));
+		// TODO: Should check for disk full.
+		for (blocks = 0; blocks < 357; ++blocks)
+		{
+			for (i = 0; i < 256; ++i)
 			{
-				if (f_write(&fpOut, buffer, 256, &bytes) != FR_OK)
-					break;
+				*dest++ = buffer[i];
 			}
-			ptr = (char*)&blankD64DIRBAM[DISKNAME_OFFSET_IN_DIR_BLOCK];
-			int len = strlen(filenameNew);
-			for (i = 0; i < len; ++i)
-			{
-				*ptr++ = ascii2petscii(filenameNew[i]);
-			}
-			for (; i < 18; ++i)
-			{
-				*ptr++ = 0xa0;
-			}
-			for (i = 0; i < 2; ++i)
-			{
-				*ptr++ = ascii2petscii(ID[i]);
-			}
-			f_write(&fpOut, blankD64DIRBAM, 256, &bytes);
-			buffer[1] = 0xff;
-			f_write(&fpOut, buffer, 256, &bytes);
-			buffer[1] = 0;
-			for (blocks = 0; blocks < 324; ++blocks)
-			{
-				if (f_write(&fpOut, buffer, 256, &bytes) != FR_OK)
-					break;
-			}
-			f_close(&fpOut);
 		}
+		ptr = (char*)&blankD64DIRBAM[DISKNAME_OFFSET_IN_DIR_BLOCK];
+		int len = strlen(filenameNew);
+		for (i = 0; i < len; ++i)
+		{
+			*ptr++ = ascii2petscii(filenameNew[i]);
+		}
+		for (; i < 18; ++i)
+		{
+			*ptr++ = 0xa0;
+		}
+		for (i = 0; i < 2; ++i)
+		{
+			*ptr++ = ascii2petscii(ID[i]);
+		}
+		//f_write(&fpOut, blankD64DIRBAM, 256, &bytes);
+		for (i = 0; i < 256; ++i)
+		{
+			*dest++ = blankD64DIRBAM[i];
+		}
+		buffer[1] = 0xff;
+		//f_write(&fpOut, buffer, 256, &bytes);
+		for (i = 0; i < 256; ++i)
+		{
+			*dest++ = buffer[i];
+		}
+		buffer[1] = 0;
+		for (blocks = 0; blocks < 324; ++blocks)
+		{
+			//if (f_write(&fpOut, buffer, 256, &bytes) != FR_OK)
+			//	break;
+			for (i = 0; i < 256; ++i)
+			{
+				*dest++ = buffer[i];
+			}
+		}
+
+		DiskImage diskImage;
+		diskImage.OpenD64((const FILINFO*)0, (unsigned char*)DiskImage::readBuffer, dest - (unsigned char*)DiskImage::readBuffer);
+
+		switch (newDiskType)
+		{
+			case DiskImage::D64:
+				if (!diskImage.WriteD64(filenameNew))
+					return ERROR_25_WRITE_ERROR;
+			break;
+			case DiskImage::G64:
+				if (!diskImage.WriteG64(filenameNew))
+					return ERROR_25_WRITE_ERROR;
+			break;
+			default:
+				return ERROR_25_WRITE_ERROR;
+			break;
+		}
+
 		// Mount the new disk? Shoud we do this or let them do it manually?
 		if (automount && f_stat(filenameNew, &filInfo) == FR_OK)
 		{

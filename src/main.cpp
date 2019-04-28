@@ -1637,6 +1637,26 @@ void UpdateFirmwareToSD()
 	}
 }
 
+void DisplayMessage(int x, int y, bool LCD, const char* message, u32 textColour, u32 backgroundColour)
+{
+	char buffer[256] = { 0 };
+
+	if (!LCD)
+	{
+		x = screen.ScaleX(x);
+		y = screen.ScaleY(y);
+
+		screen.PrintText(false, x, y, (char*)message, textColour, backgroundColour);
+	}
+	else if (screenLCD)
+	{
+		RGBA BkColour = RGBA(0, 0, 0, 0xFF);
+		screenLCD->Clear(BkColour);
+		screenLCD->PrintText(false, x, y, (char*)message, textColour, backgroundColour);
+		screenLCD->SwapBuffers();
+	}
+}
+
 extern "C"
 {
 	void kernel_main(unsigned int r0, unsigned int r1, unsigned int atags)

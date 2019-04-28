@@ -1175,7 +1175,7 @@ void FileBrowser::UpdateInputFolders()
 		char newFileName[64];
 		strncpy (newFileName, options.GetAutoBaseName(), 63);
 		int num = folder.FindNextAutoName( newFileName );
-		m_IEC_Commands.CreateD64(newFileName, "42", true);
+		m_IEC_Commands.CreateNewDisk(newFileName, "42", true);
 		FolderChanged();
 	}
 	else if (inputMappings->BrowseWriteProtect())
@@ -1420,7 +1420,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 	char name[17] = { 0 };
 	unsigned char buffer[260] = { 0 };
 	int charIndex;
-	u32 fontHeight = screenMain->GetFontHeight();
+	u32 fontHeight = screenMain->GetFontHeightDirectoryDisplay();
 	u32 x = 0;
 	u32 y = 0;
 	char bufferOut[128] = { 0 };

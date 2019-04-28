@@ -208,13 +208,13 @@ bool DiskImage::OpenD64(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 	return true;
 }
 
-bool DiskImage::WriteD64()
+bool DiskImage::WriteD64(char* name)
 {
 	if (readOnly)
 		return true;
 
 	FIL fp;
-	FRESULT res = f_open(&fp, fileInfo->fname, FA_CREATE_ALWAYS | FA_WRITE);
+	FRESULT res = f_open(&fp, fileInfo ? fileInfo->fname : name, FA_CREATE_ALWAYS | FA_WRITE);
 	if (res == FR_OK)
 	{
 		u32 bytesToWrite;
@@ -790,13 +790,13 @@ static bool WriteDwords(FIL* fp, u32* values, u32 amount)
 	return true;
 }
 
-bool DiskImage::WriteG64()
+bool DiskImage::WriteG64(char* name)
 {
 	if (readOnly)
 		return true;
 
 	FIL fp;
-	FRESULT res = f_open(&fp, fileInfo->fname, FA_CREATE_ALWAYS | FA_WRITE);
+	FRESULT res = f_open(&fp, fileInfo ? fileInfo->fname : name, FA_CREATE_ALWAYS | FA_WRITE);
 	if (res == FR_OK)
 	{
 		u32 bytesToWrite;

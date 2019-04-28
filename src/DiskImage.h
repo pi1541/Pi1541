@@ -164,6 +164,9 @@ public:
 		unsigned char tracksD81[HALF_TRACK_COUNT][2][MAX_TRACK_LENGTH];
 	};
 
+	bool WriteD64(char* name = 0);
+	bool WriteG64(char* name = 0);
+
 private:
 	void CloseD64();
 	void CloseG64();
@@ -172,8 +175,6 @@ private:
 	void CloseD71();
 	void CloseD81();
 
-	bool WriteD64();
-	bool WriteG64();
 	bool WriteNIB();
 	bool WriteNBZ();
 	bool WriteD71();
