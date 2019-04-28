@@ -147,22 +147,6 @@ void m6522::Execute()
 	{
 		t1c.value = t1l.value;
 		t1TimedOut = false;
-
-		if (t1FreeRun)
-		{
-			if (t1FreeRunIRQsOn)
-				SetInterrupt(IR_T1);
-		}
-		else
-		{
-			if (!t1OneShotTriggeredIRQ)
-			{
-				t1OneShotTriggeredIRQ = true;
-				SetInterrupt(IR_T1);
-			}
-			// At this time the counter will continue to decrement at system clock rate.
-			// This allows the system processor to read the contents of the counter to determine the time since interrupt.
-		}
 	}
 	else if (t1Ticking && !t1Reload && !t1c.value--)
 	{
@@ -170,6 +154,9 @@ void m6522::Execute()
 
 		if (t1FreeRun)
 		{
+			if (t1FreeRunIRQsOn)
+				SetInterrupt(IR_T1);
+
 			if (t1l.value > 1)	// A real VIA will not flip PB7 if the frequency is above a certain (ie 1 cycle) threshold
 			{
 				t1_pb7 = !t1_pb7;
@@ -189,6 +176,9 @@ void m6522::Execute()
 		{
 			if (!t1OneShotTriggeredIRQ)
 			{
+				t1OneShotTriggeredIRQ = true;
+				SetInterrupt(IR_T1);
+
 				if (t1OutPB7)
 				{
 					// PB7 was set low on the write to T1CH now the signal on PB7 will go high
@@ -216,16 +206,7 @@ void m6522::Execute()
 		t2TimedOut = false;
 
 		// In both modes the interrupt is only set once
-		if (!t2OneShotTriggeredIRQ)
-		{
-			t2OneShotTriggeredIRQ = true;
-			SetInterrupt(IR_T2);
-		}
-		else
-		{
-			// At this time the counter will continue to decrement at system clock rate or PB6 negative edge counts (depending upon mode)
-			// This allows the system processor to read the contents of the counter to determine the time since interrupt.
-		}
+
 
 		if ((auxiliaryControlRegister & 0xc) == 4) // shift by timer 2?
 		{
@@ -301,6 +282,21 @@ void m6522::Execute()
 		else
 		{
 			t2Reload = false;
+		}
+
+		if (t2TimedOut)
+		{
+			// In both modes the interrupt is only set once
+			if (!t2OneShotTriggeredIRQ)
+			{
+				t2OneShotTriggeredIRQ = true;
+				SetInterrupt(IR_T2);
+			}
+			else
+			{
+				// At this time the counter will continue to decrement at system clock rate or PB6 negative edge counts (depending upon mode)
+				// This allows the system processor to read the contents of the counter to determine the time since interrupt.
+			}
 		}
 	}
 	pb6Old = pb6;

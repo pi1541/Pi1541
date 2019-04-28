@@ -29,7 +29,7 @@ class m6522
 	// PB 1		data out
 	// PB 2		clock in
 	// PB 3		clock out
-	// PB 4		ATNA
+	// PB 4		ATNA out
 	// PB 5,6	device address
 	// PB 7,CA1	ATN IN
 
