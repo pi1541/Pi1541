@@ -159,6 +159,11 @@ void DiskImage::DumpTrack(unsigned track)
 
 bool DiskImage::OpenD64(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size)
 {
+	unsigned char errorinfo[MAXBLOCKSONDISK];
+	unsigned last_track = MAXBLOCKSONDISK;
+	unsigned sector_ref;
+	unsigned char error;
+
 	Close();
 
 	this->fileInfo = fileInfo;
@@ -170,7 +175,31 @@ bool DiskImage::OpenD64(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 
 	attachedImageSize = size;
 
-	for (unsigned halfTrackIndex = 0; halfTrackIndex < HALF_TRACK_COUNT; ++halfTrackIndex)
+	memset(errorinfo, SECTOR_OK, sizeof(errorinfo));
+
+	switch (size)
+	{
+		case (BLOCKSONDISK * 257):		// 35 track image with errorinfo
+			memcpy(errorinfo, diskImage + (BLOCKSONDISK * 256), BLOCKSONDISK);
+			/* FALLTHROUGH */
+		case (BLOCKSONDISK * 256):		// 35 track image w/o errorinfo
+			last_track = 35;
+			break;
+
+		case (MAXBLOCKSONDISK * 257):	// 40 track image with errorinfo
+			memcpy(errorinfo, diskImage + (MAXBLOCKSONDISK * 256), MAXBLOCKSONDISK);
+			/* FALLTHROUGH */
+		case (MAXBLOCKSONDISK * 256):	// 40 track image w/o errorinfo
+			last_track = 40;
+			break;
+
+		default:  // non-standard images, attempt to load anyway
+			last_track = 40;
+			break;
+	}
+
+	sector_ref = 0;
+	for (unsigned halfTrackIndex = 0; halfTrackIndex < last_track * 2; ++halfTrackIndex)
 	{
 		unsigned char track = (halfTrackIndex >> 1);
 		unsigned char* dest = tracks[halfTrackIndex];
@@ -185,7 +214,9 @@ bool DiskImage::OpenD64(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 				//DEBUG_LOG("Track %d used\r\n", halfTrackIndex);
 				for (unsigned sectorNo = 0; sectorNo < SectorsPerTrack[track]; ++sectorNo)
 				{
-					convert_sector_to_GCR(diskImage + offset, dest, track + 1, sectorNo, diskImage + 0x165A2, 0);
+					error = errorinfo[sector_ref++];
+
+					convert_sector_to_GCR(diskImage + offset, dest, track + 1, sectorNo, diskImage + 0x165A2, error);
 					dest += 361;
 
 					offset += SECTOR_LENGTH;
