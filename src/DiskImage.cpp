@@ -30,6 +30,8 @@ extern "C"
 #include "rpi-gpio.h"
 }
 
+extern u32 HashBuffer(const void* pBuffer, u32 length);
+
 unsigned char DiskImage::readBuffer[READBUFFER_SIZE];
 
 static unsigned char compressionBuffer[HALF_TRACK_COUNT * MAX_TRACK_LENGTH];
@@ -144,6 +146,7 @@ void DiskImage::Close()
 	memset(trackLengths, 0, sizeof(trackLengths));
 	diskType = NONE;
 	fileInfo = 0;
+	hash = 0;
 }
 
 void DiskImage::DumpTrack(unsigned track)
@@ -762,7 +765,9 @@ bool DiskImage::OpenG64(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 
 	if (memcmp(diskImage, "GCR-1541", 8) == 0)
 	{
-		//DEBUG_LOG("Is G64\r\n");
+		hash = HashBuffer(diskImage, size);
+
+		//DEBUG_LOG("Is G64 %08x\r\n", hash);
 
 		unsigned char numTracks = diskImage[9];
 		//DEBUG_LOG("numTracks = %d\r\n", numTracks);

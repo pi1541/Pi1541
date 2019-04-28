@@ -580,6 +580,24 @@ static bool Snoop(u8 a)
 	return false;
 }
 
+//--------------------------------------------------------------------------------------
+// This is an implementation of FNV-1a
+// (http://www.isthe.com/chongo/tech/comp/fnv/)
+//--------------------------------------------------------------------------------------
+u32 HashBuffer(const void* pBuffer, u32 length)
+{
+	u8*	pu8Buffer = (u8*)pBuffer;
+	u32	hash = 0x811c9dc5U;
+
+	while (length)
+	{
+		hash ^= *pu8Buffer++;
+		hash *= 16777619U;
+		--length;
+	}
+	return hash;
+}
+
 EmulatingMode BeginEmulating(FileBrowser* fileBrowser, const char* filenameForIcon)
 {
 	DiskImage* diskImage = diskCaddy.SelectFirstImage();
@@ -679,7 +697,7 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	const int headSoundFreq = 1000000 / options.SoundOnGPIOFreq();	// 1200Hz = 1/1200 * 10^6;
 	unsigned char oldHeadDir;
 	int resetCount = 0;
-
+	bool refreshOutsAfterCPUStep = true;
 	unsigned numberOfImages = diskCaddy.GetNumberOfImages();
 	unsigned numberOfImagesMax = numberOfImages;
 	if (numberOfImagesMax > 10)
@@ -706,6 +724,14 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 
 	//resetWhileEmulating = false;
 	selectedViaIECCommands = false;
+
+	u32 hash = pi1541.drive.GetDiskImage()->GetHash();
+	// 0x42c02586 = maniac_mansion_s1[lucasfilm_1989](ntsc).g64
+	// 0x18651422 = aliens[electric_dreams_1987].g64
+	if (hash == 0x42c02586 || hash == 0x18651422)
+	{
+		refreshOutsAfterCPUStep = false;
+	}
 
 	while (exitReason == EXIT_UNKNOWN)
 	{
@@ -738,7 +764,9 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 			//read32(ARM_SYSTIMER_CLO);
 			//read32(ARM_SYSTIMER_CLO);
 
-			IEC_Bus::RefreshOuts1541();	// Now output all outputs.
+//			IEC_Bus::ReadEmulationMode1541();
+			if (refreshOutsAfterCPUStep)
+				IEC_Bus::RefreshOuts1541();	// Now output all outputs.
 
 			IEC_Bus::OutputLED = pi1541.drive.IsLEDOn();
 			if (IEC_Bus::OutputLED ^ oldLED)

@@ -167,6 +167,8 @@ public:
 	bool WriteD64(char* name = 0);
 	bool WriteG64(char* name = 0);
 
+	unsigned GetHash() const { return hash; }
+
 private:
 	void CloseD64();
 	void CloseG64();
@@ -204,6 +206,7 @@ private:
 	unsigned attachedImageSize;
 	DiskType diskType;
 	const FILINFO* fileInfo;
+	unsigned hash;
 
 	unsigned short trackLengths[HALF_TRACK_COUNT];
 	union
