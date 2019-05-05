@@ -173,6 +173,7 @@ Options::Options(void)
 	ROMNameSlot7[0] = 0;
 	ROMNameSlot8[0] = 0;
 	ROMName1581[0] = 0;
+	newDiskType[0] = 0;
 }
 
 #define ELSE_CHECK_DECIMAL_OPTION(Name) \
@@ -306,6 +307,10 @@ void Options::Process(char* buffer)
 		{
 			strncpy(ROMNameSlot8, pValue, 255);
 		}
+		else if ((strcasecmp(pOption, "NewDiskType") == 0))
+		{
+			strncpy(newDiskType, pValue, 31);
+		}
 	}
 
 	if (!SplitIECLines())
@@ -357,5 +362,13 @@ const char* Options::GetRomName(int index) const
 const char* Options::GetRomName1581() const
 {
 	return ROMName1581;
+}
+
+DiskImage::DiskType Options::GetNewDiskType() const
+{
+	if (strcasecmp(newDiskType, "g64") == 0)
+		return DiskImage::G64;
+
+	return DiskImage::D64;
 }
 

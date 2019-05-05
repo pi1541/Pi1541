@@ -276,11 +276,11 @@ void DiskCaddy::Display()
 		}
 	}
 
-	if (screenLCD)
-	{
-		RGBA BkColour = RGBA(0, 0, 0, 0xFF);
-		screenLCD->Clear(BkColour);
-	}
+	//if (screenLCD)
+	//{
+	//	RGBA BkColour = RGBA(0, 0, 0, 0xFF);
+	//	screenLCD->Clear(BkColour);
+	//}
 	ShowSelectedImage(0);
 }
 

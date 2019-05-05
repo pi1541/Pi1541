@@ -20,6 +20,7 @@
 #define OPTIONS_H
 
 #include "types.h"
+#include "DiskImage.h"
 
 class TextParser
 {
@@ -74,7 +75,8 @@ public:
 	inline const char* Get128BootSectorName() const { return C128BootSectorName; }
 
 	inline unsigned int LowercaseBrowseModeFilenames() const { return lowercaseBrowseModeFilenames; }
-	
+	DiskImage::DiskType GetNewDiskType() const;
+
 	inline unsigned int ScreenWidth() const { return screenWidth; }
 	inline unsigned int ScreenHeight() const { return screenHeight; }
 
@@ -171,5 +173,7 @@ private:
 	char ROMNameSlot7[256];
 	char ROMNameSlot8[256];
 	char ROMName1581[256];
+
+	char newDiskType[32];
 };
 #endif

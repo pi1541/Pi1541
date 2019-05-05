@@ -703,7 +703,9 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	if (numberOfImagesMax > 10)
 		numberOfImagesMax = 10;
 
+	core0RefreshingScreen.Acquire();
 	diskCaddy.Display();
+	core0RefreshingScreen.Release();
 
 	inputMappings->directDiskSwapRequest = 0;
 	// Force an update on all the buttons now before we start emulation mode. 
@@ -728,7 +730,8 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	u32 hash = pi1541.drive.GetDiskImage()->GetHash();
 	// 0x42c02586 = maniac_mansion_s1[lucasfilm_1989](ntsc).g64
 	// 0x18651422 = aliens[electric_dreams_1987].g64
-	if (hash == 0x42c02586 || hash == 0x18651422)
+	// 0x2a7f4b77 = zak_mckracken_boot[activision_1988](manual)(!).g64
+	if (hash == 0x42c02586 || hash == 0x18651422 || hash == 0x2a7f4b77)
 	{
 		refreshOutsAfterCPUStep = false;
 	}
@@ -744,13 +747,10 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 
 			if (pc == snoopPC)
 			{
-				if (pc == snoopPC)
+				if (Snoop(pi1541.m6502.GetA()))
 				{
-					if (Snoop(pi1541.m6502.GetA()))
-					{
-						emulating = IEC_COMMANDS;
-						exitReason = EXIT_CD;
-					}
+					emulating = IEC_COMMANDS;
+					exitReason = EXIT_CD;
 				}
 			}
 		}
@@ -910,7 +910,9 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 	if (numberOfImagesMax > 10)
 		numberOfImagesMax = 10;
 
+	core0RefreshingScreen.Acquire();
 	diskCaddy.Display();
+	core0RefreshingScreen.Release();
 
 	inputMappings->directDiskSwapRequest = 0;
 	// Force an update on all the buttons now before we start emulation mode. 
@@ -1089,6 +1091,7 @@ void emulator()
 	m_IEC_Commands.SetAutoBootFB128(options.AutoBootFB128());
 	m_IEC_Commands.Set128BootSectorName(options.Get128BootSectorName());
 	m_IEC_Commands.SetLowercaseBrowseModeFilenames(options.LowercaseBrowseModeFilenames());
+	m_IEC_Commands.SetNewDiskType(options.GetNewDiskType());
 
 	emulating = IEC_COMMANDS;
 
@@ -1107,25 +1110,16 @@ void emulator()
 			core0RefreshingScreen.Acquire();
 			IEC_Bus::WaitMicroSeconds(100);
 
-// workaround for occasional oled curruption
-			if (screenLCD)
-				screenLCD->ClearInit(0);
-
 			roms.ResetCurrentROMIndex();
 			fileBrowser->ClearScreen();
 
 			fileBrowserSelectedName = 0;
 			fileBrowser->ClearSelections();
 
-			// Go back to the root folder so you can load fb* again?
-//			if ((resetWhileEmulating && options.GetOnResetChangeToStartingFolder()) || selectedViaIECCommands)
-//				fileBrowser->DisplayRoot(); // Go back to the root folder and display it.
-//			else
-				fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
+			fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
 
 			core0RefreshingScreen.Release();
 
-//			resetWhileEmulating = false;
 			selectedViaIECCommands = false;
 
 			inputMappings->Reset();
@@ -1250,11 +1244,6 @@ void emulator()
 			//	- pass in a call back function?
 			if (diskCaddy.Empty())
 				IEC_Bus::WaitMicroSeconds(2 * 1000000);
-
-			// workaround for occasional oled curruption
-			//					if (screenLCD)
-			//						screenLCD->ClearInit(0);
-
 
 			IEC_Bus::WaitUntilReset();
 			//DEBUG_LOG("6502 resetting\r\n");
@@ -1682,9 +1671,15 @@ void DisplayMessage(int x, int y, bool LCD, const char* message, u32 textColour,
 	else if (screenLCD)
 	{
 		RGBA BkColour = RGBA(0, 0, 0, 0xFF);
+
+		core0RefreshingScreen.Acquire();
+
 		screenLCD->Clear(BkColour);
 		screenLCD->PrintText(false, x, y, (char*)message, textColour, backgroundColour);
 		screenLCD->SwapBuffers();
+
+		core0RefreshingScreen.Release();
+
 	}
 }
 
@@ -1729,8 +1724,8 @@ extern "C"
 		if (options.ShowOptions())
 			DisplayOptions(y_pos+=32);
 
-		if (!options.QuickBoot())
-			IEC_Bus::WaitMicroSeconds(3 * 1000000);
+		//if (!options.QuickBoot())
+		//	IEC_Bus::WaitMicroSeconds(3 * 1000000);
 
 		InterruptSystemInitialize();
 		TimerSystemInitialize();
