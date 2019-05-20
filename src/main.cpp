@@ -618,6 +618,7 @@ EmulatingMode BeginEmulating(FileBrowser* fileBrowser, const char* filenameForIc
 			return EMULATING_1541;
 		}
 	}
+	inputMappings->WaitForClearButtons();
 	return IEC_COMMANDS;
 }
 
@@ -1251,6 +1252,8 @@ void emulator()
 
 			if ((exitReason == EXIT_RESET) && (options.GetOnResetChangeToStartingFolder() || selectedViaIECCommands))
 				fileBrowser->DisplayRoot(); // TO CHECK
+
+			inputMappings->WaitForClearButtons();
 		}
 	}
 	delete fileBrowser;

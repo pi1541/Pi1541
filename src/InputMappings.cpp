@@ -23,6 +23,7 @@
 extern "C"
 {
 #include "rpi-aux.h"
+extern void usDelay(unsigned nMicroSeconds);
 }
 extern void Reboot_Pi(void);
 
@@ -67,6 +68,7 @@ bool InputMappings::CheckButtonsBrowseMode()
 			SetButtonFlag(FUNCTION_FLAG);
 			inputROMOrDevice = 11;
 		}
+		insertButtonPressedPrev = false;
 	}
 	else if (IEC_Bus::GetInputButtonHeld(INPUT_BUTTON_ENTER))	// Change ROMs
 	{
@@ -90,6 +92,7 @@ bool InputMappings::CheckButtonsBrowseMode()
 			SetButtonFlag(FUNCTION_FLAG);
 			inputROMOrDevice = 4;
 		}
+		enterButtonPressedPrev = false;
 	}
 	else if (IEC_Bus::GetInputButtonRepeating(INPUT_BUTTON_UP))
 		SetButtonFlag(UP_FLAG);
@@ -97,19 +100,39 @@ bool InputMappings::CheckButtonsBrowseMode()
 		SetButtonFlag(DOWN_FLAG);
 	else if (IEC_Bus::GetInputButtonPressed(INPUT_BUTTON_BACK))
 		SetButtonFlag(BACK_FLAG);
+	else
+	{
+		// edge detection
+		insertButtonPressed = !IEC_Bus::GetInputButtonReleased(INPUT_BUTTON_INSERT);
+		if (insertButtonPressedPrev && !insertButtonPressed)
+			SetButtonFlag(INSERT_FLAG);
+		insertButtonPressedPrev = insertButtonPressed;
 
-// edge detection
-	insertButtonPressed = !IEC_Bus::GetInputButtonReleased(INPUT_BUTTON_INSERT);
-	if (insertButtonPressedPrev && !insertButtonPressed)
-		SetButtonFlag(INSERT_FLAG);
-	insertButtonPressedPrev = insertButtonPressed;
-
-	enterButtonPressed = !IEC_Bus::GetInputButtonReleased(INPUT_BUTTON_ENTER);
-	if (enterButtonPressedPrev && !enterButtonPressed)
-		SetButtonFlag(ENTER_FLAG);
-	enterButtonPressedPrev = enterButtonPressed;
+		enterButtonPressed = !IEC_Bus::GetInputButtonReleased(INPUT_BUTTON_ENTER);
+		if (enterButtonPressedPrev && !enterButtonPressed)
+			SetButtonFlag(ENTER_FLAG);
+		enterButtonPressedPrev = enterButtonPressed;
+	}
 
 	return buttonFlags != 0;
+}
+
+void InputMappings::WaitForClearButtons()
+{
+	buttonFlags = 0;
+
+	do
+	{
+		IEC_Bus::ReadBrowseMode();
+
+		insertButtonPressed = !IEC_Bus::GetInputButtonReleased(INPUT_BUTTON_INSERT);
+		insertButtonPressedPrev = insertButtonPressed;
+
+		enterButtonPressed = !IEC_Bus::GetInputButtonReleased(INPUT_BUTTON_ENTER);
+		enterButtonPressedPrev = enterButtonPressed;
+		
+		usDelay(1);
+	} while (insertButtonPressedPrev || enterButtonPressedPrev);
 }
 
 void InputMappings::CheckButtonsEmulationMode()

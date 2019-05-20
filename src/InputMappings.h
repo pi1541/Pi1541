@@ -84,6 +84,8 @@ public:
 	bool CheckButtonsBrowseMode();
 	void CheckButtonsEmulationMode();
 
+	void WaitForClearButtons();
+
 	u8 INPUT_BUTTON_ENTER = 0;
 	u8 INPUT_BUTTON_UP = 1;
 	u8 INPUT_BUTTON_DOWN = 2;
