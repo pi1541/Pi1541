@@ -1161,7 +1161,7 @@ DiskImage::DiskType DiskImage::GetDiskImageTypeViaExtention(const char* diskImag
 			return NBZ;
 		else if (toupper((char)ext[1]) == 'D' && ext[2] == '6' && ext[3] == '4')
 			return D64;
-		else if (toupper((char)ext[1]) == 'L' && toupper((char)ext[2]) == 'S' && toupper((char)ext[3]) == 'T')
+		else if (IsLSTExtention(diskImageName))
 			return LST;
 		else if (toupper((char)ext[1]) == 'D' && ext[2] == '8' && ext[3] == '1')
 			return D81;
@@ -1202,7 +1202,14 @@ bool DiskImage::IsLSTExtention(const char* diskImageName)
 {
 	char* ext = strrchr((char*)diskImageName, '.');
 
-	if (ext && toupper((char)ext[1]) == 'L' && toupper((char)ext[2]) == 'S' && toupper((char)ext[3]) == 'T')
+	if (ext && 
+			(
+				(toupper((char)ext[1]) == 'L' && toupper((char)ext[2]) == 'S' && toupper((char)ext[3]) == 'T')
+				||
+				(toupper((char)ext[1]) == 'V' && toupper((char)ext[2]) == 'F' && toupper((char)ext[3]) == 'L')
+			)
+		)
+
 		return true;
 	return false;
 }
