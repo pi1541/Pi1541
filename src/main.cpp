@@ -1209,8 +1209,8 @@ void emulator()
 							GlobalSetDeviceID( m_IEC_Commands.GetDeviceId() );
 							fileBrowser->ShowDeviceAndROM();
 							break;
-						case IEC_Commands::DECIVE_SWITCHED:
-							DEBUG_LOG("DECIVE_SWITCHED\r\n");
+						case IEC_Commands::DEVICE_SWITCHED:
+							DEBUG_LOG("DEVICE_SWITCHED\r\n");
 							fileBrowser->DeviceSwitched();
 							break;
 						default:
