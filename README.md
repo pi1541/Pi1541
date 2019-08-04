@@ -36,3 +36,6 @@ Building
 make
 ```
 This will build kernel.img
+
+
+In order to build the Commodore programs from the `CBM-FileBrowser_v1.6/sources/` directory, you'll need to install the ACME cross assembler, which is available at https://github.com/meonwax/acme/
