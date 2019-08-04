@@ -788,7 +788,7 @@ void IEC_Commands::CD(int partition, char* filename)
 			{
 				SwitchDrive("SD:");
 				displayingDevices = false;
-				updateAction = DECIVE_SWITCHED;
+				updateAction = DEVICE_SWITCHED;
 			}
 			else
 			{
@@ -801,7 +801,7 @@ void IEC_Commands::CD(int partition, char* filename)
 					{
 						SwitchDrive(USBDriveId);
 						displayingDevices = false;
-						updateAction = DECIVE_SWITCHED;
+						updateAction = DEVICE_SWITCHED;
 					}
 				}
 			}
@@ -1093,7 +1093,7 @@ void IEC_Commands::ChangeDevice(void)
 		{
 			SwitchDrive("SD:");
 			displayingDevices = false;
-			updateAction = DECIVE_SWITCHED;
+			updateAction = DEVICE_SWITCHED;
 		}
 		else if ((deviceIndex - 1) < numberOfUSBMassStorageDevices)
 		{
@@ -1101,7 +1101,7 @@ void IEC_Commands::ChangeDevice(void)
 			sprintf(USBDriveId, "USB%02d:", deviceIndex);
 			SwitchDrive(USBDriveId);
 			displayingDevices = false;
-			updateAction = DECIVE_SWITCHED;
+			updateAction = DEVICE_SWITCHED;
 		}
 		else
 		{
