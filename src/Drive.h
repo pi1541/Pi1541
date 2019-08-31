@@ -23,6 +23,17 @@
 #include "DiskImage.h"
 #include <stdlib.h>
 
+#if defined(EXPERIMENTALZERO)
+inline int ceil(float num) {
+	int inum = (int)num;
+	if (num == (float)inum) {
+		return inum;
+	}
+	return inum + 1;
+}
+#endif
+
+
 class Drive
 {
 public:
@@ -37,6 +48,11 @@ public:
 	static void OnPortOut(void*, unsigned char status);
 
 	bool Update();
+#if defined(EXPERIMENTALZERO)
+	void DriveLoopWrite();
+	void DriveLoopRead();
+#endif
+
 	void Insert(DiskImage* diskImage);
 	inline const DiskImage* GetDiskImage() const { return diskImage; }
 	void Eject();
@@ -49,6 +65,16 @@ public:
 
 	inline unsigned char GetLastHeadDirection() const { return lastHeadDirection; } // For simulated head movement sounds
 private:
+#if defined(EXPERIMENTALZERO)
+	int32_t localSeed;
+	inline void ResetEncoderDecoder(unsigned int min, unsigned int /*max*/span)
+	{
+		UE7Counter = CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6)
+		UF4Counter = 0;
+		localSeed = ((localSeed * 1103515245) + 12345) & 0x7fffffff;
+		fluxReversalCyclesLeft = (span) * (localSeed >> 11) + min;
+	}
+#else
 	inline float GenerateRandomFluxReversalTime(float min, float max) { return ((max - min) * ((float)rand() / RAND_MAX)) + min; } // Inputs in micro seconds
 
 	inline void ResetEncoderDecoder(float min, float max)
@@ -57,6 +83,7 @@ private:
 		UF4Counter = 0;
 		randomFluxReversalTime = GenerateRandomFluxReversalTime(min, max);
 	}
+#endif
 	inline void UpdateHeadSectorPosition()
 	{
 		// Disk spins at 300rpm = 5rps so to calculate how many 16Mhz cycles one rotation takes;-
@@ -132,13 +159,18 @@ private:
 	// CB2 (output)
 	//	- R/!W
 	m6522* m_pVIA;
-
+#if defined(EXPERIMENTALZERO)
+	unsigned int cyclesLeftForBit;
+	unsigned int fluxReversalCyclesLeft;
+	unsigned int UE7Counter;
+#else
+	int UE7Counter;
+#endif
 	float cyclesForBit;
 	u32 readShiftRegister;
 	unsigned headTrackPos;
 	u32 headBitOffset;
 	float randomFluxReversalTime;
-	int UE7Counter;
 	int UF4Counter;
 	int UE3Counter;
 	int CLOCK_SEL_AB;

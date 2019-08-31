@@ -1,3 +1,4 @@
+
 // Pi1541 - A Commodore 1541 disk drive emulator
 // Copyright(C) 2018 Stephen White
 //
@@ -217,9 +218,11 @@ void InputMappings::CheckButtonsEmulationMode()
 
 bool InputMappings::CheckKeyboardBrowseMode()
 {
+#if not defined(EXPERIMENTALZERO)
 	Keyboard* keyboard = Keyboard::Instance();
-
+#endif
 	keyboardFlags = 0;
+#if not defined(EXPERIMENTALZERO)
 	keyboardNumLetter = 0;
 	if (!keyboard->CheckChanged())
 	{
@@ -305,12 +308,13 @@ bool InputMappings::CheckKeyboardBrowseMode()
 			}
 		}
 	}
-
+#endif
 	return keyboardFlags != 0;
 }
 
 void InputMappings::CheckKeyboardEmulationMode(unsigned numberOfImages, unsigned numberOfImagesMax)
 {
+#if not defined(EXPERIMENTALZERO)
 	Keyboard* keyboard = Keyboard::Instance();
 
 	keyboardFlags = 0;
@@ -341,5 +345,6 @@ void InputMappings::CheckKeyboardEmulationMode(unsigned numberOfImages, unsigned
 				directDiskSwapRequest |= (1 << index);
 		}
 	}
+#endif
 }
 

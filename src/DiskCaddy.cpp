@@ -44,6 +44,7 @@ bool DiskCaddy::Empty()
 		if (disks[index].IsDirty())
 		{
 			anyDirty = true;
+#if not defined(EXPERIMENTALZERO)
 			if (screen)
 			{
 				x = screen->ScaleX(screenPosXCaddySelections);
@@ -67,12 +68,14 @@ bool DiskCaddy::Empty()
 				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 				screenLCD->SwapBuffers();
 			}
+#endif
 		}
 		disks[index].Close();
 	}
 
 	if (anyDirty)
 	{
+#if not defined(EXPERIMENTALZERO)
 		if (screen)
 		{
 			x = screen->ScaleX(screenPosXCaddySelections);
@@ -96,6 +99,7 @@ bool DiskCaddy::Empty()
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			screenLCD->SwapBuffers();
 		}
+#endif
 	}
 
 	disks.clear();
@@ -112,6 +116,7 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 	FRESULT res = f_open(&fp, fileInfo->fname, FA_READ);
 	if (res == FR_OK)
 	{
+#if not defined(EXPERIMENTALZERO)
 		if (screen)
 		{
 			x = screen->ScaleX(screenPosXCaddySelections);
@@ -135,7 +140,7 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			screenLCD->SwapBuffers();
 		}
-
+#endif
 		u32 bytesRead;
 		SetACTLed(true);
 		f_read(&fp, DiskImage::readBuffer, READBUFFER_SIZE, &bytesRead);
@@ -254,6 +259,7 @@ void DiskCaddy::Display()
 	unsigned caddyIndex;
 	int x;
 	int y;
+#if not defined(EXPERIMENTALZERO)
 	if (screen)
 	{
 		x = screen->ScaleX(screenPosXCaddySelections);
@@ -281,6 +287,7 @@ void DiskCaddy::Display()
 	//	RGBA BkColour = RGBA(0, 0, 0, 0xFF);
 	//	screenLCD->Clear(BkColour);
 	//}
+#endif
 	ShowSelectedImage(0);
 }
 
@@ -288,6 +295,7 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 {
 	u32 x;
 	u32 y;
+#if not defined(EXPERIMENTALZERO)
 	if (screen)
 	{
 		x = screen->ScaleX(screenPosXCaddySelections) - 16;
@@ -343,6 +351,7 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 		}
 		screenLCD->SwapBuffers();
 	}
+#endif
 }
 
 bool DiskCaddy::Update()
@@ -352,6 +361,7 @@ bool DiskCaddy::Update()
 	u32 caddyIndex = GetSelectedIndex();
 	if (caddyIndex != oldCaddyIndex)
 	{
+#if not defined(EXPERIMENTALZERO)
 		if (screen)
 		{
 			x = screen->ScaleX(screenPosXCaddySelections) - 16;
@@ -366,7 +376,7 @@ bool DiskCaddy::Update()
 		{
 			
 		}
-
+#endif
 		return true;
 	}
 	return false;

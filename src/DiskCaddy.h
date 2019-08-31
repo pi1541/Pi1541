@@ -28,12 +28,17 @@ class DiskCaddy
 public:
 	DiskCaddy()
 		: selectedIndex(0)
+#if not defined(EXPERIMENTALZERO)
 		, screen(0)
 		, screenLCD(0)
+#endif
 	{
 	}
-
+#if defined(EXPERIMENTALZERO)
+	void SetScreen() {  }
+#else
 	void SetScreen(Screen* screen, ScreenBase* screenLCD) { this->screen = screen; this->screenLCD = screenLCD; }
+#endif
 
 	bool Empty();
 
@@ -55,9 +60,11 @@ public:
 
 	DiskImage* PrevDisk()
 	{
-		--selectedIndex;
-		if ((int)selectedIndex < 0)
-			selectedIndex += (u32)disks.size();
+		if (selectedIndex == 0u)
+			selectedIndex += (u32)disks.size()-1;
+		else
+			--selectedIndex;
+
 		return GetCurrentDisk();
 	}
 
@@ -99,9 +106,10 @@ private:
 	std::vector<DiskImage> disks;
 	u32 selectedIndex;
 	u32 oldCaddyIndex;
-
+#if not defined(EXPERIMENTALZERO)
 	ScreenBase* screen;
 	ScreenBase* screenLCD;
+#endif
 };
 
 #endif

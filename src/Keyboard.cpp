@@ -15,7 +15,7 @@
 // 
 // You should have received a copy of the GNU General Public License
 // along with Pi1541. If not, see <http://www.gnu.org/licenses/>.
-
+#if not defined(EXPERIMENTALZERO)
 #include "Keyboard.h"
 #include <string.h>
 #include <uspi.h>
@@ -156,3 +156,4 @@ Keyboard::Keyboard()
 	memset(keyRepeatCount, 0, sizeof(keyRepeatCount));
 	USPiKeyboardRegisterKeyStatusHandlerRaw(KeyPressedHandlerRaw);
 }
+#endif

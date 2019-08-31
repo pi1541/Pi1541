@@ -13,7 +13,7 @@ LD	= $(PREFIX)ld
 AR	= $(PREFIX)ar
 
 ifeq ($(strip $(RASPPI)),0)
-ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPIZERO=1
+ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPIZERO=1 -DEXPERIMENTALZERO=1
 CFLAGS	+= -DRPIZERO=1 -DRASPPI=1
 else ifeq ($(strip $(RASPPI)),1)
 ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPIBPLUS=1

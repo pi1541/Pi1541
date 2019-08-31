@@ -24,6 +24,7 @@ extern "C"
 {
 #include <uspi/usbkeyboard.h>
 }
+#if not defined(EXPERIMENTALZERO)
 
 #define MAX_KEYS 0x7f
 
@@ -355,4 +356,5 @@ public:
 
 	static Keyboard* instance;
 };
+#endif
 #endif
