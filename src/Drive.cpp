@@ -651,11 +651,12 @@ void Drive::DriveLoopRead()
 
 void Drive::DriveLoopWrite()
 {
-	unsigned int minCycles;
-	unsigned int cycles = 0;
-	for (unsigned int cycles = 0; cycles != 16; ++cycles)
+	const unsigned int cycleStep = 16 - CLOCK_SEL_AB;
+	unsigned int cycles = 16 - UE7Counter;
+	while(cycles < 16)
 	{
-		if (++UE7Counter == 0x10) // The count carry (bit 4) clocks UF4.
+		//No check is required. This loops is all about the UE7Counter.
+		//if (UE7Counter == 0x10) // The count carry (bit 4) clocks UF4.
 		{
 			UE7Counter = CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6) ie preload the encoder/decoder clock for the current density settings.
 										// The decoder consists of UF4 and UE5A. The ecoder has two outputs, Pin 1 of UE5A is the serial data output and pin 2 of UF4 (output B) is the serial clock output.
@@ -680,7 +681,15 @@ void Drive::DriveLoopWrite()
 				SO = (m_pVIA->GetFCR() & m6522::FCR_CA2_OUTPUT_MODE0) != 0;	// bit 2 of the FCR indicates "Byte Ready Active" turned on or not.
 				writeShiftRegister = m_pVIA->GetPortA()->GetOutput();
 			}
+
+			if ((16-cycles) < cycleStep)
+			{
+				UE7Counter += 16 - cycles;
+				return;
+			}
 		}
+		UE7Counter += cycleStep;
+		cycles += cycleStep;
 	}
 }
 #endif
