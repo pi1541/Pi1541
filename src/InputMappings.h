@@ -121,17 +121,17 @@ public:
 #else
 	inline bool Exit()
 	{
-		return KeyboardFlag(ESC_FLAG) /*| UartFlag(ESC_FLAG) |*/ ButtonFlag(ESC_FLAG);
+		return KeyboardFlag(ESC_FLAG) | /*UartFlag(ESC_FLAG) |*/ ButtonFlag(ESC_FLAG);
 	}
 
 	inline bool NextDisk()
 	{
-		return KeyboardFlag(NEXT_FLAG) /*| UartFlag(NEXT_FLAG) |*/ ButtonFlag(NEXT_FLAG);
+		return KeyboardFlag(NEXT_FLAG) | /*UartFlag(NEXT_FLAG) |*/ ButtonFlag(NEXT_FLAG);
 	}
 
 	inline bool PrevDisk()
 	{
-		return KeyboardFlag(PREV_FLAG) /*| UartFlag(PREV_FLAG) |*/ ButtonFlag(PREV_FLAG);
+		return KeyboardFlag(PREV_FLAG) | /*UartFlag(PREV_FLAG) |*/ ButtonFlag(PREV_FLAG);
 	}
 #endif
 	inline bool AutoLoad() { return KeyboardFlag(AUTOLOAD_FLAG); }

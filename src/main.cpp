@@ -692,6 +692,7 @@ void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
 	}
 }
 
+#if defined(EXPERIMENTALZERO)
 EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 {
 	bool oldLED = false;
@@ -842,7 +843,7 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	return EXIT_UNKNOWN;
 }
 
-#if not defined(EXPERIMENTALZERO)
+#else
 EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 {
 	EXIT_TYPE exitReason = EXIT_UNKNOWN;
