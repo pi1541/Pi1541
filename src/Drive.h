@@ -51,6 +51,9 @@ public:
 #if defined(EXPERIMENTALZERO)
 	void DriveLoopWrite();
 	void DriveLoopRead();
+	void DriveLoopReadNoFluxNoCycles();
+	void DriveLoopReadNoFlux();
+	void DriveLoopReadNoCycles();
 #endif
 
 	void Insert(DiskImage* diskImage);
@@ -69,7 +72,7 @@ private:
 	int32_t localSeed;
 	inline void ResetEncoderDecoder(unsigned int min, unsigned int /*max*/span)
 	{
-		UE7Counter = CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6)
+		UE7Counter = 16 - CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6)
 		UF4Counter = 0;
 		localSeed = ((localSeed * 1103515245) + 12345) & 0x7fffffff;
 		fluxReversalCyclesLeft = (span) * (localSeed >> 11) + min;

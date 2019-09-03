@@ -358,6 +358,7 @@ void Drive::Reset()
 #if defined(EXPERIMENTALZERO)
 	LED = false;
 	cyclesForBit = 0;
+	UE7Counter = 16;
 #endif
 	headTrackPos = 18*2;		// Start with the head over track 19 (Very later Vorpal ie Cakifornia Games) need to have had the last head movement -ve
 	CLOCK_SEL_AB = 3;		// Track 18 will use speed zone 3 (encoder/decoder (ie UE7Counter) clocked at 1.2307Mhz)
@@ -568,20 +569,71 @@ bool Drive::Update()
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 
-void Drive::DriveLoopRead()
+void Drive::DriveLoopReadNoFluxNoCycles()
+{
+	unsigned int cycles = 16;
+	fluxReversalCyclesLeft -= 16;
+	cyclesLeftForBit -= 16;
+	while (true)
+	{
+		if (cycles < UE7Counter)
+		{
+			UE7Counter -= cycles;
+			cycles = 0;
+			return;
+		}
+
+		cycles -= UE7Counter;
+
+		UE7Counter = 16 - CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6) ie preload the encoder/decoder clock for the current density settings.
+									// The decoder consists of UF4 and UE5A. The ecoder has two outputs, Pin 1 of UE5A is the serial data output and pin 2 of UF4 (output B) is the serial clock output.
+		++UF4Counter &= 0xf; // Clock and clamp UF4.
+								// The UD2 read shift register is clocked by serial clock (the rising edge of encoder/decoder's UF4 B output (serial clock))
+								//	- ie on counts 2, 6, 10 and 14 (2 is the only count that outputs a 1 into readShiftRegister as the MSB bits of the count NORed together for other values are 0)
+		if ((UF4Counter & 0x3) == 2)
+		{
+			readShiftRegister <<= 1;
+			readShiftRegister |= (UF4Counter == 2); // Emulate UE5A and only shift in a 1 when pins 6 (output C) and 7 (output D) (bits 2 and 3 of UF4Counter are 0. ie the first count of the bit cell)
+
+			writeShiftRegister <<= 1;
+			// Note: SYNC can only trigger during reading as R/!W line is one of UC2's inputs.
+			if (((readShiftRegister & 0x3ff) == 0x3ff))	// if the last 10 bits are 1s then SYNC
+			{
+				UE3Counter = 0;	// Phase lock on to byte boundary
+				m_pVIA->GetPortB()->SetInput(0x80, false);			// PB7 active low SYNC
+			}
+			else
+			{
+				m_pVIA->GetPortB()->SetInput(0x80, true); // SYNC not asserted if not following the SYNC bits
+				UE3Counter++;
+			}
+		}
+		// UC5B (NOR used to invert UF4's output B serial clock) output high when UF4 counts 0,1,4,5,8,9,12 and 13
+		else if (((UF4Counter & 2) == 0) && (UE3Counter == 8))	// Phase locked on to byte boundary
+		{
+			UE3Counter = 0;
+			SO = (m_pVIA->GetFCR() & m6522::FCR_CA2_OUTPUT_MODE0) != 0;	// bit 2 of the FCR indicates "Byte Ready Active" turned on or not.
+			writeShiftRegister = (u8)(readShiftRegister & 0xff);
+			m_pVIA->GetPortA()->SetInput(writeShiftRegister);
+		}
+	};
+}
+
+void Drive::DriveLoopReadNoFlux()
 {
 	unsigned int minCycles;
-	unsigned int cycles = 0;
+	unsigned int cycles = 16;
+
+	fluxReversalCyclesLeft -= 16;
 
 	while (true)
 	{
-		minCycles = min(min(cyclesLeftForBit, fluxReversalCyclesLeft), 16 - max(UE7Counter, cycles));
+		minCycles = min(min(cyclesLeftForBit, cycles), UE7Counter);
 		cyclesLeftForBit -= minCycles;
-		fluxReversalCyclesLeft -= minCycles;
-		cycles += minCycles;
-		UE7Counter += minCycles;
+		cycles -= minCycles;
+		UE7Counter -= minCycles;
 
-		if (cycles == 16)
+		if (cycles == 0)
 			return;
 
 		if (cyclesLeftForBit == 0)
@@ -605,14 +657,9 @@ void Drive::DriveLoopRead()
 			}
 		}
 
-		if (fluxReversalCyclesLeft == 0)//Not entirely right, a flux reversal will be skipped if a bit read was going to happen
+		if (UE7Counter == 0x0) // The count carry (bit 4) clocks UF4.
 		{
-			ResetEncoderDecoder(2 * 16, /*25 * 16*/23 * 16); // Trigger a random noise generated zero crossing and start seeing more anywhere between 2us and 25us after this one.
-		}
-
-		if (UE7Counter == 0x10) // The count carry (bit 4) clocks UF4.
-		{
-			UE7Counter = CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6) ie preload the encoder/decoder clock for the current density settings.
+			UE7Counter = 16 - CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6) ie preload the encoder/decoder clock for the current density settings.
 										// The decoder consists of UF4 and UE5A. The ecoder has two outputs, Pin 1 of UE5A is the serial data output and pin 2 of UF4 (output B) is the serial clock output.
 			++UF4Counter &= 0xf; // Clock and clamp UF4.
 								 // The UD2 read shift register is clocked by serial clock (the rising edge of encoder/decoder's UF4 B output (serial clock))
@@ -644,21 +691,32 @@ void Drive::DriveLoopRead()
 				m_pVIA->GetPortA()->SetInput(writeShiftRegister);
 			}
 		}
-
-
 	};
 }
-
-void Drive::DriveLoopWrite()
+void Drive::DriveLoopReadNoCycles()
 {
-	const unsigned int cycleStep = 16 - CLOCK_SEL_AB;
-	unsigned int cycles = 16 - UE7Counter;
-	while(cycles < 16)
+	unsigned int minCycles;
+	unsigned int cycles = 16;
+
+	cyclesLeftForBit -= 16;
+	while (true)
 	{
-		//No check is required. This loops is all about the UE7Counter.
-		//if (UE7Counter == 0x10) // The count carry (bit 4) clocks UF4.
+		minCycles = min(cycles, min(UE7Counter, fluxReversalCyclesLeft));
+		fluxReversalCyclesLeft -= minCycles;
+		cycles -= minCycles;
+		UE7Counter -= minCycles;
+
+		if (cycles == 0)
+			return;
+
+		if (fluxReversalCyclesLeft == 0)//Not entirely right, a flux reversal will be skipped if a bit read was going to happen
 		{
-			UE7Counter = CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6) ie preload the encoder/decoder clock for the current density settings.
+			ResetEncoderDecoder(2 * 16, /*25 * 16*/23 * 16); // Trigger a random noise generated zero crossing and start seeing more anywhere between 2us and 25us after this one.
+		}
+
+		if (UE7Counter == 0x0) // The count carry (bit 4) clocks UF4.
+		{
+			UE7Counter = 16 - CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6) ie preload the encoder/decoder clock for the current density settings.
 										// The decoder consists of UF4 and UE5A. The ecoder has two outputs, Pin 1 of UE5A is the serial data output and pin 2 of UF4 (output B) is the serial clock output.
 			++UF4Counter &= 0xf; // Clock and clamp UF4.
 								 // The UD2 read shift register is clocked by serial clock (the rising edge of encoder/decoder's UF4 B output (serial clock))
@@ -668,28 +726,166 @@ void Drive::DriveLoopWrite()
 				readShiftRegister <<= 1;
 				readShiftRegister |= (UF4Counter == 2); // Emulate UE5A and only shift in a 1 when pins 6 (output C) and 7 (output D) (bits 2 and 3 of UF4Counter are 0. ie the first count of the bit cell)
 
-				SetNextBit((writeShiftRegister & 0x80));
-
 				writeShiftRegister <<= 1;
 				// Note: SYNC can only trigger during reading as R/!W line is one of UC2's inputs.
-				UE3Counter++;
+				if (((readShiftRegister & 0x3ff) == 0x3ff))	// if the last 10 bits are 1s then SYNC
+				{
+					UE3Counter = 0;	// Phase lock on to byte boundary
+					m_pVIA->GetPortB()->SetInput(0x80, false);			// PB7 active low SYNC
+				}
+				else
+				{
+					m_pVIA->GetPortB()->SetInput(0x80, true); // SYNC not asserted if not following the SYNC bits
+					UE3Counter++;
+				}
 			}
 			// UC5B (NOR used to invert UF4's output B serial clock) output high when UF4 counts 0,1,4,5,8,9,12 and 13
 			else if (((UF4Counter & 2) == 0) && (UE3Counter == 8))	// Phase locked on to byte boundary
 			{
 				UE3Counter = 0;
 				SO = (m_pVIA->GetFCR() & m6522::FCR_CA2_OUTPUT_MODE0) != 0;	// bit 2 of the FCR indicates "Byte Ready Active" turned on or not.
-				writeShiftRegister = m_pVIA->GetPortA()->GetOutput();
-			}
-
-			if ((16-cycles) < cycleStep)
-			{
-				UE7Counter += 16 - cycles;
-				return;
+				writeShiftRegister = (u8)(readShiftRegister & 0xff);
+				m_pVIA->GetPortA()->SetInput(writeShiftRegister);
 			}
 		}
-		UE7Counter += cycleStep;
-		cycles += cycleStep;
+	};
+}
+void Drive::DriveLoopRead()
+{
+	
+	if (fluxReversalCyclesLeft > 16 && cyclesLeftForBit > 16)
+	{
+		DriveLoopReadNoFluxNoCycles();
+		return;
+	}
+
+	if (fluxReversalCyclesLeft > 16)
+	{
+		DriveLoopReadNoFlux();
+		return;
+	}
+
+	if (cyclesLeftForBit > 16)
+	{
+		DriveLoopReadNoCycles();
+		return;
+	}
+
+	unsigned int minCycles;
+	unsigned int cycles = 16;
+
+	while (true)
+	{
+		minCycles = min(min(cyclesLeftForBit, cycles), min(UE7Counter, fluxReversalCyclesLeft));
+		cyclesLeftForBit -= minCycles;
+		fluxReversalCyclesLeft -= minCycles;
+		cycles -= minCycles;
+		UE7Counter -= minCycles;
+
+		if (cycles == 0)
+			return;
+
+		if (cyclesLeftForBit == 0)
+		{
+			//which is faster? single loop ceil check or the 3 lines below?
+			float fn = 2.0f * cyclesPerBit - cyclesForBit;
+			cyclesLeftForBit = (int)fn;
+			cyclesForBit = cyclesPerBit;
+			if (fn != (float)cyclesLeftForBit) {
+				++cyclesLeftForBit;
+				++cyclesForBit;
+			}
+
+			//cyclesForBit -= cyclesPerBit;
+			//cyclesLeftForBit = ceil(cyclesPerBit - cyclesForBit);
+			//cyclesForBit += cyclesLeftForBit;
+
+			if (GetNextBit())
+			{
+				ResetEncoderDecoder(18 * 16, /*20 * 16*/ 2 * 16);
+			}
+		}
+
+		if (fluxReversalCyclesLeft == 0)//Not entirely right, a flux reversal will be skipped if a bit read was going to happen
+		{
+			ResetEncoderDecoder(2 * 16, /*25 * 16*/23 * 16); // Trigger a random noise generated zero crossing and start seeing more anywhere between 2us and 25us after this one.
+		}
+
+		if (UE7Counter == 0x0) // The count carry (bit 4) clocks UF4.
+		{
+			UE7Counter = 16-CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6) ie preload the encoder/decoder clock for the current density settings.
+										// The decoder consists of UF4 and UE5A. The ecoder has two outputs, Pin 1 of UE5A is the serial data output and pin 2 of UF4 (output B) is the serial clock output.
+			++UF4Counter &= 0xf; // Clock and clamp UF4.
+								 // The UD2 read shift register is clocked by serial clock (the rising edge of encoder/decoder's UF4 B output (serial clock))
+								 //	- ie on counts 2, 6, 10 and 14 (2 is the only count that outputs a 1 into readShiftRegister as the MSB bits of the count NORed together for other values are 0)
+			//if ((UF4Counter & 0x3) == 2)
+			if (UF4Counter == 2 || UF4Counter == 6) //You'd think the bit operation should be faster...
+			{
+				readShiftRegister <<= 1;
+				readShiftRegister |= (UF4Counter == 2); // Emulate UE5A and only shift in a 1 when pins 6 (output C) and 7 (output D) (bits 2 and 3 of UF4Counter are 0. ie the first count of the bit cell)
+
+				writeShiftRegister <<= 1;
+				// Note: SYNC can only trigger during reading as R/!W line is one of UC2's inputs.
+				if (((readShiftRegister & 0x3ff) == 0x3ff))	// if the last 10 bits are 1s then SYNC
+				{
+					UE3Counter = 0;	// Phase lock on to byte boundary
+					m_pVIA->GetPortB()->SetInput(0x80, false);			// PB7 active low SYNC
+				}
+				else
+				{
+					m_pVIA->GetPortB()->SetInput(0x80, true); // SYNC not asserted if not following the SYNC bits
+					UE3Counter++;
+				}
+			}
+			// UC5B (NOR used to invert UF4's output B serial clock) output high when UF4 counts 0,1,4,5,8,9,12 and 13
+			else if (((UF4Counter & 2) == 0) && (UE3Counter == 8))	// Phase locked on to byte boundary
+			{
+				UE3Counter = 0;
+				SO = (m_pVIA->GetFCR() & m6522::FCR_CA2_OUTPUT_MODE0) != 0;	// bit 2 of the FCR indicates "Byte Ready Active" turned on or not.
+				writeShiftRegister = (u8)(readShiftRegister & 0xff);
+				m_pVIA->GetPortA()->SetInput(writeShiftRegister);
+			}
+		}
+	};
+}
+
+void Drive::DriveLoopWrite()
+{
+	unsigned int cycles = 16;
+	while(true)
+	{
+		if (cycles < UE7Counter)
+		{
+			UE7Counter -= cycles;
+			cycles = 0;
+			return;
+		}
+		
+		cycles -= UE7Counter;
+
+		UE7Counter = 16 - CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6) ie preload the encoder/decoder clock for the current density settings.
+									// The decoder consists of UF4 and UE5A. The ecoder has two outputs, Pin 1 of UE5A is the serial data output and pin 2 of UF4 (output B) is the serial clock output.
+		++UF4Counter &= 0xf; // Clock and clamp UF4.
+								// The UD2 read shift register is clocked by serial clock (the rising edge of encoder/decoder's UF4 B output (serial clock))
+								//	- ie on counts 2, 6, 10 and 14 (2 is the only count that outputs a 1 into readShiftRegister as the MSB bits of the count NORed together for other values are 0)
+		if ((UF4Counter & 0x3) == 2)
+		{
+			readShiftRegister <<= 1;
+			readShiftRegister |= (UF4Counter == 2); // Emulate UE5A and only shift in a 1 when pins 6 (output C) and 7 (output D) (bits 2 and 3 of UF4Counter are 0. ie the first count of the bit cell)
+
+			SetNextBit((writeShiftRegister & 0x80));
+
+			writeShiftRegister <<= 1;
+			// Note: SYNC can only trigger during reading as R/!W line is one of UC2's inputs.
+			UE3Counter++;
+		}
+		// UC5B (NOR used to invert UF4's output B serial clock) output high when UF4 counts 0,1,4,5,8,9,12 and 13
+		else if (((UF4Counter & 2) == 0) && (UE3Counter == 8))	// Phase locked on to byte boundary
+		{
+			UE3Counter = 0;
+			SO = (m_pVIA->GetFCR() & m6522::FCR_CA2_OUTPUT_MODE0) != 0;	// bit 2 of the FCR indicates "Byte Ready Active" turned on or not.
+			writeShiftRegister = m_pVIA->GetPortA()->GetOutput();
+		}
 	}
 }
 #endif

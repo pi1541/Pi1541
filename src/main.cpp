@@ -101,7 +101,9 @@ u8 s_u8Memory[0xc000];
 int numberOfUSBMassStorageDevices = 0;
 DiskCaddy diskCaddy;
 Pi1541 pi1541;
+#if not defined(EXPERIMENTALZERO)
 Pi1581 pi1581;
+#endif
 CEMMCDevice	m_EMMC;
 Screen screen;
 ScreenLCD* screenLCD = 0;
@@ -118,8 +120,9 @@ bool USBKeyboardDetected = false;
 bool selectedViaIECCommands = false;
 u16 pc;
 
+#if not defined(EXPERIMENTALZERO)
 SpinLock core0RefreshingScreen;
-
+#endif
 unsigned int screenWidth = 1024;
 unsigned int screenHeight = 768;
 
@@ -609,6 +612,7 @@ EmulatingMode BeginEmulating(FileBrowser* fileBrowser, const char* filenameForIc
 	DiskImage* diskImage = diskCaddy.SelectFirstImage();
 	if (diskImage)
 	{
+#if not defined(EXPERIMENTALZERO)
 		if (diskImage->IsD81())
 		{
 			pi1581.Insert(diskImage);
@@ -617,6 +621,7 @@ EmulatingMode BeginEmulating(FileBrowser* fileBrowser, const char* filenameForIc
 			return EMULATING_1581;
 		}
 		else
+#endif
 		{
 			pi1541.drive.Insert(diskImage);
 			fileBrowser->DisplayDiskInfo(diskImage, filenameForIcon);
@@ -668,7 +673,9 @@ void GlobalSetDeviceID(u8 id)
 	deviceID = id;
 	m_IEC_Commands.SetDeviceId(id);
 	pi1541.SetDeviceID(id);
+#if not defined(EXPERIMENTALZERO)
 	pi1581.SetDeviceID(id);
+#endif
 }
 
 void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
@@ -712,10 +719,6 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	if (numberOfImagesMax > 10)
 		numberOfImagesMax = 10;
 
-	core0RefreshingScreen.Acquire();
-	diskCaddy.Display();
-	core0RefreshingScreen.Release();
-
 	inputMappings->directDiskSwapRequest = 0;
 	// Force an update on all the buttons now before we start emulation mode. 
 	IEC_Bus::ReadBrowseMode();
@@ -731,8 +734,6 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	pi1541.Reset();	// will call IEC_Bus::Reset();
 	IEC_Bus::OutputLED = false;
 	IEC_Bus::LetSRQBePulledHigh();
-	float avgTimer = 0.0f;
-
 	ctBefore = read32(ARM_SYSTIMER_CLO);
 
 	//resetWhileEmulating = false;
@@ -756,7 +757,6 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	}
 	bool buttonState = false;
 	bool prevButtonState = false;
-
 	while (true)
 	{
 
@@ -776,7 +776,7 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 		}
 
 		m6502.Step();	// If the CPU reads or writes to the VIA then clk and data can change
-
+		
 		if (refreshOutsAfterCPUStep)
 			IEC_Bus::RefreshOuts1541();	// Now output all outputs.
 
@@ -829,13 +829,13 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 
 		prevButtonState = buttonState;
 
-		do
+		do		
 		{
 			ctAfter = read32(ARM_SYSTIMER_CLO);
 		} while (ctAfter == ctBefore);	// Sync to the 1MHz clock
 	
 
-		ctBefore = ctAfter;
+		ctBefore = ctAfter;		
 		IEC_Bus::ReadEmulationMode1541();
 
 		IEC_Bus::RefreshOuts1541();	// Now output all outputs.
@@ -1274,8 +1274,9 @@ void emulator()
 			IEC_Bus::Reset();
 
 			IEC_Bus::LetSRQBePulledHigh();
-
+#if not defined(EXPERIMENTALZERO)
 			core0RefreshingScreen.Acquire();
+#endif
 			IEC_Bus::WaitMicroSeconds(100);
 
 			roms.ResetCurrentROMIndex();
@@ -1285,9 +1286,9 @@ void emulator()
 			fileBrowser->ClearSelections();
 
 			fileBrowser->RefeshDisplay(); // Just redisplay the current folder.
-
+#if not defined(EXPERIMENTALZERO)
 			core0RefreshingScreen.Release();
-
+#endif
 			selectedViaIECCommands = false;
 
 			inputMappings->Reset();
@@ -1590,7 +1591,7 @@ static void CheckOptions()
 
 	deviceID = (u8)options.GetDeviceID();
 	DEBUG_LOG("DeviceID = %d\r\n", deviceID);
-
+#if not defined(EXPERIMENTALZERO)
 	const char* FontROMName = options.GetRomFontName();
 	if (FontROMName)
 	{
@@ -1625,7 +1626,7 @@ static void CheckOptions()
 			//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
 		}
 	}
-
+#endif
 	const char* ROMName1581 = options.GetRomName1581();
 	if (ROMName1581)
 	{
