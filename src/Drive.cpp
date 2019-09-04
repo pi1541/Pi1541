@@ -473,7 +473,22 @@ bool Drive::Update()
 		if (writing)
 			DriveLoopWrite();
 		else
-			DriveLoopRead();
+		{
+			if (fluxReversalCyclesLeft > 16 && cyclesLeftForBit > 16)
+			{
+				DriveLoopReadNoFluxNoCycles();
+			}
+			else if (fluxReversalCyclesLeft > 16)
+			{
+				DriveLoopReadNoFlux();
+			}
+			else if (cyclesLeftForBit > 16)
+			{
+				DriveLoopReadNoCycles();
+			}
+			else
+				DriveLoopRead();
+		}
 #else
 		for (int cycles = 0; cycles < 16; ++cycles)
 		{
@@ -593,28 +608,24 @@ void Drive::DriveLoopReadNoFluxNoCycles()
 		if ((UF4Counter & 0x3) == 2)
 		{
 			readShiftRegister <<= 1;
-			readShiftRegister |= (UF4Counter == 2); // Emulate UE5A and only shift in a 1 when pins 6 (output C) and 7 (output D) (bits 2 and 3 of UF4Counter are 0. ie the first count of the bit cell)
+			readShiftRegister |= (UF4Counter == 2); 
 
-			writeShiftRegister <<= 1;
-			// Note: SYNC can only trigger during reading as R/!W line is one of UC2's inputs.
-			if (((readShiftRegister & 0x3ff) == 0x3ff))	// if the last 10 bits are 1s then SYNC
-			{
+			//writeShiftRegister <<= 1;
+			
+			bool resetTime = ((readShiftRegister & 0x3ff) == 0x3ff);
+			m_pVIA->GetPortB()->SetInput(0x80, !resetTime);
+			if (resetTime)	// if the last 10 bits are 1s then SYNC
 				UE3Counter = 0;	// Phase lock on to byte boundary
-				m_pVIA->GetPortB()->SetInput(0x80, false);			// PB7 active low SYNC
-			}
 			else
-			{
-				m_pVIA->GetPortB()->SetInput(0x80, true); // SYNC not asserted if not following the SYNC bits
 				UE3Counter++;
-			}
 		}
 		// UC5B (NOR used to invert UF4's output B serial clock) output high when UF4 counts 0,1,4,5,8,9,12 and 13
 		else if (((UF4Counter & 2) == 0) && (UE3Counter == 8))	// Phase locked on to byte boundary
 		{
 			UE3Counter = 0;
 			SO = (m_pVIA->GetFCR() & m6522::FCR_CA2_OUTPUT_MODE0) != 0;	// bit 2 of the FCR indicates "Byte Ready Active" turned on or not.
-			writeShiftRegister = (u8)(readShiftRegister & 0xff);
-			m_pVIA->GetPortA()->SetInput(writeShiftRegister);
+//			writeShiftRegister = readShiftRegister;
+			m_pVIA->GetPortA()->SetInput(readShiftRegister & 0xff);
 		}
 	};
 }
@@ -667,28 +678,24 @@ void Drive::DriveLoopReadNoFlux()
 			if ((UF4Counter & 0x3) == 2)
 			{
 				readShiftRegister <<= 1;
-				readShiftRegister |= (UF4Counter == 2); // Emulate UE5A and only shift in a 1 when pins 6 (output C) and 7 (output D) (bits 2 and 3 of UF4Counter are 0. ie the first count of the bit cell)
+				readShiftRegister |= (UF4Counter == 2);
 
-				writeShiftRegister <<= 1;
-				// Note: SYNC can only trigger during reading as R/!W line is one of UC2's inputs.
-				if (((readShiftRegister & 0x3ff) == 0x3ff))	// if the last 10 bits are 1s then SYNC
-				{
+				//writeShiftRegister <<= 1;
+
+				bool resetTime = ((readShiftRegister & 0x3ff) == 0x3ff);
+				m_pVIA->GetPortB()->SetInput(0x80, !resetTime);
+				if (resetTime)	// if the last 10 bits are 1s then SYNC
 					UE3Counter = 0;	// Phase lock on to byte boundary
-					m_pVIA->GetPortB()->SetInput(0x80, false);			// PB7 active low SYNC
-				}
 				else
-				{
-					m_pVIA->GetPortB()->SetInput(0x80, true); // SYNC not asserted if not following the SYNC bits
 					UE3Counter++;
-				}
 			}
 			// UC5B (NOR used to invert UF4's output B serial clock) output high when UF4 counts 0,1,4,5,8,9,12 and 13
 			else if (((UF4Counter & 2) == 0) && (UE3Counter == 8))	// Phase locked on to byte boundary
 			{
 				UE3Counter = 0;
 				SO = (m_pVIA->GetFCR() & m6522::FCR_CA2_OUTPUT_MODE0) != 0;	// bit 2 of the FCR indicates "Byte Ready Active" turned on or not.
-				writeShiftRegister = (u8)(readShiftRegister & 0xff);
-				m_pVIA->GetPortA()->SetInput(writeShiftRegister);
+	//			writeShiftRegister = readShiftRegister;
+				m_pVIA->GetPortA()->SetInput(readShiftRegister & 0xff);
 			}
 		}
 	};
@@ -724,53 +731,30 @@ void Drive::DriveLoopReadNoCycles()
 			if ((UF4Counter & 0x3) == 2)
 			{
 				readShiftRegister <<= 1;
-				readShiftRegister |= (UF4Counter == 2); // Emulate UE5A and only shift in a 1 when pins 6 (output C) and 7 (output D) (bits 2 and 3 of UF4Counter are 0. ie the first count of the bit cell)
+				readShiftRegister |= (UF4Counter == 2);
 
-				writeShiftRegister <<= 1;
-				// Note: SYNC can only trigger during reading as R/!W line is one of UC2's inputs.
-				if (((readShiftRegister & 0x3ff) == 0x3ff))	// if the last 10 bits are 1s then SYNC
-				{
+				//writeShiftRegister <<= 1;
+
+				bool resetTime = ((readShiftRegister & 0x3ff) == 0x3ff);
+				m_pVIA->GetPortB()->SetInput(0x80, !resetTime);
+				if (resetTime)	// if the last 10 bits are 1s then SYNC
 					UE3Counter = 0;	// Phase lock on to byte boundary
-					m_pVIA->GetPortB()->SetInput(0x80, false);			// PB7 active low SYNC
-				}
 				else
-				{
-					m_pVIA->GetPortB()->SetInput(0x80, true); // SYNC not asserted if not following the SYNC bits
 					UE3Counter++;
-				}
 			}
 			// UC5B (NOR used to invert UF4's output B serial clock) output high when UF4 counts 0,1,4,5,8,9,12 and 13
 			else if (((UF4Counter & 2) == 0) && (UE3Counter == 8))	// Phase locked on to byte boundary
 			{
 				UE3Counter = 0;
 				SO = (m_pVIA->GetFCR() & m6522::FCR_CA2_OUTPUT_MODE0) != 0;	// bit 2 of the FCR indicates "Byte Ready Active" turned on or not.
-				writeShiftRegister = (u8)(readShiftRegister & 0xff);
-				m_pVIA->GetPortA()->SetInput(writeShiftRegister);
+	//			writeShiftRegister = readShiftRegister;
+				m_pVIA->GetPortA()->SetInput(readShiftRegister & 0xff);
 			}
 		}
 	};
 }
 void Drive::DriveLoopRead()
 {
-	
-	if (fluxReversalCyclesLeft > 16 && cyclesLeftForBit > 16)
-	{
-		DriveLoopReadNoFluxNoCycles();
-		return;
-	}
-
-	if (fluxReversalCyclesLeft > 16)
-	{
-		DriveLoopReadNoFlux();
-		return;
-	}
-
-	if (cyclesLeftForBit > 16)
-	{
-		DriveLoopReadNoCycles();
-		return;
-	}
-
 	unsigned int minCycles;
 	unsigned int cycles = 16;
 
@@ -818,32 +802,27 @@ void Drive::DriveLoopRead()
 			++UF4Counter &= 0xf; // Clock and clamp UF4.
 								 // The UD2 read shift register is clocked by serial clock (the rising edge of encoder/decoder's UF4 B output (serial clock))
 								 //	- ie on counts 2, 6, 10 and 14 (2 is the only count that outputs a 1 into readShiftRegister as the MSB bits of the count NORed together for other values are 0)
-			//if ((UF4Counter & 0x3) == 2)
-			if (UF4Counter == 2 || UF4Counter == 6) //You'd think the bit operation should be faster...
+			if ((UF4Counter & 0x3) == 2)
 			{
 				readShiftRegister <<= 1;
-				readShiftRegister |= (UF4Counter == 2); // Emulate UE5A and only shift in a 1 when pins 6 (output C) and 7 (output D) (bits 2 and 3 of UF4Counter are 0. ie the first count of the bit cell)
+				readShiftRegister |= (UF4Counter == 2);
 
-				writeShiftRegister <<= 1;
-				// Note: SYNC can only trigger during reading as R/!W line is one of UC2's inputs.
-				if (((readShiftRegister & 0x3ff) == 0x3ff))	// if the last 10 bits are 1s then SYNC
-				{
+				//writeShiftRegister <<= 1;
+
+				bool resetTime = ((readShiftRegister & 0x3ff) == 0x3ff);
+				m_pVIA->GetPortB()->SetInput(0x80, !resetTime);
+				if (resetTime)	// if the last 10 bits are 1s then SYNC
 					UE3Counter = 0;	// Phase lock on to byte boundary
-					m_pVIA->GetPortB()->SetInput(0x80, false);			// PB7 active low SYNC
-				}
 				else
-				{
-					m_pVIA->GetPortB()->SetInput(0x80, true); // SYNC not asserted if not following the SYNC bits
 					UE3Counter++;
-				}
 			}
 			// UC5B (NOR used to invert UF4's output B serial clock) output high when UF4 counts 0,1,4,5,8,9,12 and 13
 			else if (((UF4Counter & 2) == 0) && (UE3Counter == 8))	// Phase locked on to byte boundary
 			{
 				UE3Counter = 0;
 				SO = (m_pVIA->GetFCR() & m6522::FCR_CA2_OUTPUT_MODE0) != 0;	// bit 2 of the FCR indicates "Byte Ready Active" turned on or not.
-				writeShiftRegister = (u8)(readShiftRegister & 0xff);
-				m_pVIA->GetPortA()->SetInput(writeShiftRegister);
+	//			writeShiftRegister = readShiftRegister;
+				m_pVIA->GetPortA()->SetInput(readShiftRegister & 0xff);
 			}
 		}
 	};

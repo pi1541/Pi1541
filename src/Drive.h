@@ -166,8 +166,10 @@ private:
 	unsigned int cyclesLeftForBit;
 	unsigned int fluxReversalCyclesLeft;
 	unsigned int UE7Counter;
+	u32 writeShiftRegister;
 #else
 	int UE7Counter;
+	u8 writeShiftRegister;
 #endif
 	float cyclesForBit;
 	u32 readShiftRegister;
@@ -183,6 +185,5 @@ private:
 	float cyclesPerBit;
 	bool motor;
 	bool LED;
-	u8 writeShiftRegister;
 };
 #endif
