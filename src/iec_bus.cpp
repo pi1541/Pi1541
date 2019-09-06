@@ -73,15 +73,68 @@ u32 IEC_Bus::emulationModeCheckButtonIndex = 0;
 
 unsigned IEC_Bus::gplev0;
 
+//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
+RotaryEncoder IEC_Bus::rotaryEncoder;
+bool IEC_Bus::rotaryEncoderEnable;
 
+//ROTARY: Modified for rotary encoder support - 09/05/2019 by Geo...
 void IEC_Bus::ReadBrowseMode(void)
 {
 	gplev0 = read32(ARM_GPIO_GPLEV0);
 
-	int index;
-	for (index = 0; index < buttonCount; ++index)
+	if (IEC_Bus::rotaryEncoderEnable == true)
 	{
-		UpdateButton(index, gplev0);
+
+		int indexEnter = 0;
+		int indexUp = 1;
+		int indexDown = 2;
+		int indexBack = 3;
+		int indexInsert = 4;
+
+		//Poll the rotary encoder
+		//
+		// Note: If the rotary encoder returns any value other than 'NoChange' an
+		//       event has been detected.  We force the button state of the original
+		//       input button registers to reflect the desired action, and allow the
+		//       original processing logic to do it's work.
+		//
+		rotary_result_t rotaryResult = IEC_Bus::rotaryEncoder.Poll(gplev0);
+		switch (rotaryResult)
+		{
+
+			case ButtonDown:
+				SetButtonState(indexEnter, true);
+				break;
+
+			case RotateNegative:
+				SetButtonState(indexUp, true);
+				break;
+
+			case RotatePositive:
+				SetButtonState(indexDown, true);
+				break;
+
+			default:
+				SetButtonState(indexEnter, false);
+				SetButtonState(indexUp, false);
+				SetButtonState(indexDown, false);
+				break;
+
+		}
+
+		UpdateButton(indexBack, gplev0);
+		UpdateButton(indexInsert, gplev0);
+
+	}
+	else // Unmolested original logic
+	{
+
+		int index;
+		for (index = 0; index < buttonCount; ++index)
+		{
+			UpdateButton(index, gplev0);
+		}
+
 	}
 
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);

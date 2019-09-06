@@ -100,6 +100,9 @@ public:
 	inline unsigned int GetButtonBack() const { return buttonBack - 1; }
 	inline unsigned int GetButtonInsert() const { return buttonInsert - 1; }
 
+	//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
+	inline unsigned int RotaryEncoderEnable() const { return rotaryEncoderEnable; }
+
 	// Page up and down will jump a different amount based on the maximum number rows displayed.
 	// Perhaps we should use some keyboard modifier to the the other screen?
 	inline unsigned int KeyboardBrowseLCDScreen() const { return keyboardBrowseLCDScreen; }
@@ -175,5 +178,9 @@ private:
 	char ROMName1581[256];
 
 	char newDiskType[32];
+
+	//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
+	unsigned int rotaryEncoderEnable;
+
 };
 #endif

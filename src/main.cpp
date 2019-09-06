@@ -1763,6 +1763,9 @@ extern "C"
 		IEC_Bus::SetInvertIECOutputs(options.InvertIECOutputs());
 		IEC_Bus::SetIgnoreReset(options.IgnoreReset());
 
+		//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
+		IEC_Bus::SetRotaryEncoderEnable(options.RotaryEncoderEnable());
+
 		if (!options.SoundOnGPIO())
 		{
 			dmaSound = (u32*)malloc(Sample_bin_size * 4);

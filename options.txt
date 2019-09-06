@@ -107,3 +107,24 @@ GraphIEC = 1
 //buttonDown = 3
 //buttonBack = 4
 //buttonInsert = 5
+
+//ROTARY:
+//
+// KY-040 Rotary Encoder Support
+//
+//    If you would like to use a KY-040 Rotary Encoder for browse menu up/down
+//    and select, you can enable it here.  Connect as follows:
+//
+//       GPIO 22  -  Menu up       -  Encoder pin A (CLK)
+//       GPIO 23  -  Menu down     -  Encoder pin B (DT)
+//       GPIO 27  -  Enter/Select  -  Encoder pushbutton (SW)
+//
+//    ** Using an encoder is incompatible with the button remapping.  You must
+//       use the default values of Enter=1, Up=2, Down=3, Back=4 and Insert=5.
+//
+//    ** This has only been tested using a Raspberry Pi 3.  Earlier models may
+//       or may not work as expected!
+//
+//    Please see dmRotary.h for full implementation details.
+//
+//RotaryEncoderEnable = 1
