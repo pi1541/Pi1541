@@ -487,7 +487,9 @@ bool Drive::Update()
 				DriveLoopReadNoCycles();
 			}
 			else
+			{
 				DriveLoopRead();
+			}
 		}
 #else
 		for (int cycles = 0; cycles < 16; ++cycles)
@@ -580,6 +582,7 @@ bool Drive::Update()
 	return dataReady;
 }
 
+
 #if defined(EXPERIMENTALZERO)
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 #define max(a,b) (((a) > (b)) ? (a) : (b))
@@ -597,7 +600,6 @@ void Drive::DriveLoopReadNoFluxNoCycles()
 			cycles = 0;
 			return;
 		}
-
 		cycles -= UE7Counter;
 
 		UE7Counter = 16 - CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6) ie preload the encoder/decoder clock for the current density settings.
@@ -649,14 +651,8 @@ void Drive::DriveLoopReadNoFlux()
 
 		if (cyclesLeftForBit == 0)
 		{
-			//which is faster? single loop ceil check or the 3 lines below?
-			float fn = 2.0f * cyclesPerBit - cyclesForBit;
-			cyclesLeftForBit = (int)fn;
-			cyclesForBit = cyclesPerBit;
-			if (fn != (float)cyclesLeftForBit) {
-				++cyclesLeftForBit;
-				++cyclesForBit;
-			}
+			cyclesForBitErrorCounter -= cyclesPerBitErrorConstant;
+			cyclesLeftForBit = cyclesPerBitInt + (cyclesForBitErrorCounter < cyclesPerBitErrorConstant);
 
 			//cyclesForBit -= cyclesPerBit;
 			//cyclesLeftForBit = ceil(cyclesPerBit - cyclesForBit);
@@ -772,13 +768,8 @@ void Drive::DriveLoopRead()
 		if (cyclesLeftForBit == 0)
 		{
 			//which is faster? single loop ceil check or the 3 lines below?
-			float fn = 2.0f * cyclesPerBit - cyclesForBit;
-			cyclesLeftForBit = (int)fn;
-			cyclesForBit = cyclesPerBit;
-			if (fn != (float)cyclesLeftForBit) {
-				++cyclesLeftForBit;
-				++cyclesForBit;
-			}
+			cyclesForBitErrorCounter -= cyclesPerBitErrorConstant;
+			cyclesLeftForBit = cyclesPerBitInt + (cyclesForBitErrorCounter < cyclesPerBitErrorConstant);
 
 			//cyclesForBit -= cyclesPerBit;
 			//cyclesLeftForBit = ceil(cyclesPerBit - cyclesForBit);

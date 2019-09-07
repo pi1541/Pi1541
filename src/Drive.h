@@ -96,6 +96,12 @@ private:
 		bitsInTrack = diskImage->BitsInTrack(headTrackPos);
 		headBitOffset %= bitsInTrack;
 		cyclesPerBit = CYCLES_16Mhz_PER_ROTATION / (float)bitsInTrack;
+#if defined(EXPERIMENTALZERO)
+		cyclesPerBitInt = cyclesPerBit;
+		cyclesPerBitErrorConstant = (unsigned int)((cyclesPerBit - ((float)cyclesPerBitInt)) * static_cast<float>(0xffffffff));
+		cyclesForBitErrorCounter = (unsigned int)(((cyclesForBit)-(int)(cyclesForBit)) * static_cast<float>(0xffffffff));
+#endif
+
 	}
 
 	inline void MoveHead(unsigned char headDirection)
@@ -118,6 +124,15 @@ private:
 
 	void DumpTrack(unsigned track); // Used for debugging disk images.
 
+#if defined(EXPERIMENTALZERO)
+	inline u32 AdvanceSectorPositionR(int& byteOffset)
+	{
+		if (++headBitOffset == bitsInTrack)
+			headBitOffset = 0;
+		byteOffset = headBitOffset >> 3;
+		return (~headBitOffset) & 7;
+	}
+#else
 	// No reason why I seperate these into individual read and write versions. I was just trying to get the bit stream to line up when rewriting over existing data.
 	inline u32 AdvanceSectorPositionR(int& byteOffset)
 	{
@@ -125,7 +140,7 @@ private:
 		byteOffset = headBitOffset >> 3;
 		return (~headBitOffset) & 7;
 	}
-
+#endif
 	inline u32 AdvanceSectorPositionW(int& byteOffset)
 	{
 		byteOffset = headBitOffset >> 3;
@@ -167,6 +182,9 @@ private:
 	unsigned int fluxReversalCyclesLeft;
 	unsigned int UE7Counter;
 	u32 writeShiftRegister;
+	unsigned int cyclesForBitErrorCounter;
+	unsigned int cyclesPerBitErrorConstant;
+	unsigned int cyclesPerBitInt;
 #else
 	int UE7Counter;
 	u8 writeShiftRegister;
