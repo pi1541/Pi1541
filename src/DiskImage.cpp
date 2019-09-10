@@ -151,7 +151,12 @@ void DiskImage::Close()
 
 void DiskImage::DumpTrack(unsigned track)
 {
+
+#if defined(EXPERIMENTALZERO)
+	unsigned char* src = &tracks[track << 13];
+#else
 	unsigned char* src = tracks[track];
+#endif
 	unsigned trackLength = trackLengths[track];
 	DEBUG_LOG("track = %d trackLength = %d\r\n", track, trackLength);
 	for (unsigned index = 0; index < trackLength; ++index)
@@ -205,7 +210,11 @@ bool DiskImage::OpenD64(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 	for (unsigned halfTrackIndex = 0; halfTrackIndex < last_track * 2; ++halfTrackIndex)
 	{
 		unsigned char track = (halfTrackIndex >> 1);
+#if defined(EXPERIMENTALZERO)
+		unsigned char* dest = &tracks[halfTrackIndex << 13];
+#else
 		unsigned char* dest = tracks[halfTrackIndex];
+#endif
 
 		trackLengths[halfTrackIndex] = SectorsPerTrack[track] * GCR_SECTOR_LENGTH;
 
@@ -800,7 +809,11 @@ bool DiskImage::OpenG64(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 				//DEBUG_LOG("trackLength = %d offset = %d\r\n", trackLength, offset);
 				trackData += 2;
 				trackLengths[track] = trackLength;
+#if defined(EXPERIMENTALZERO)
+				memcpy(&tracks[track << 13], trackData, trackLength);
+#else
 				memcpy(tracks[track], trackData, trackLength);
+#endif
 				trackUsed[track] = true;
 				//DEBUG_LOG("%d has data\r\n", track);
 			}
@@ -899,7 +912,11 @@ bool DiskImage::WriteG64(char* name)
 
 			gcr_track[0] = (BYTE)(track_len % 256);
 			gcr_track[1] = (BYTE)(track_len / 256);
+#if defined(EXPERIMENTALZERO)
+			memcpy(buffer, &tracks[track << 13], track_len);
+#else
 			memcpy(buffer, tracks[track], track_len);
+#endif
 
 			memcpy(gcr_track + 2, buffer, track_len);
 			bytesToWrite = G64_TRACK_MAXLEN + 2;
@@ -965,11 +982,19 @@ bool DiskImage::OpenNIB(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 
 			unsigned char* nibdata = diskImage + (t_index * NIB_TRACK_LENGTH) + 0x100;
 			int align;
+#if defined(EXPERIMENTALZERO)
+			trackLengths[track] = extract_GCR_track(&tracks[track << 13], nibdata, &align
+				//, ALIGN_GAP
+				, ALIGN_NONE
+				, capacity_min[trackDensity[track]],
+				capacity_max[trackDensity[track]]);
+#else
 			trackLengths[track] = extract_GCR_track(tracks[track], nibdata, &align
 				//, ALIGN_GAP
 				, ALIGN_NONE
 				, capacity_min[trackDensity[track]],
 				capacity_max[trackDensity[track]]);
+#endif
 
 			trackUsed[track] = true;
 
@@ -1031,7 +1056,11 @@ bool DiskImage::WriteNIB()
 			{
 				if (trackUsed[track])
 				{
+#if defined(EXPERIMENTALZERO)
+					if (f_write(&fp, &tracks[track << 13], bytesToWrite, &bytesWritten) != FR_OK || bytesToWrite != bytesWritten)
+#else
 					if (f_write(&fp, tracks[track], bytesToWrite, &bytesWritten) != FR_OK || bytesToWrite != bytesWritten)
+#endif
 					{
 						DEBUG_LOG("Cannot write track data.\r\n");
 					}
@@ -1250,10 +1279,18 @@ void DiskImage::DecodeBlock(unsigned track, int bitIndex, unsigned char* buf, in
 	unsigned char gcr[5];
 	unsigned char byte;
 	unsigned char* offset;
+#if defined(EXPERIMENTALZERO)
+	unsigned char* end = &tracks[track << 13] + trackLengths[track];
+#else
 	unsigned char* end = tracks[track] + trackLengths[track];
+#endif
 
 	shift = bitIndex & 7;
+#if defined(EXPERIMENTALZERO)
+	offset = &tracks[track << 13] + (bitIndex >> 3);
+#else
 	offset = tracks[track] + (bitIndex >> 3);
+#endif
 
 	byte = offset[0] << shift;
 	for (i = 0; i < num; i++, buf += 4)
@@ -1262,7 +1299,11 @@ void DiskImage::DecodeBlock(unsigned track, int bitIndex, unsigned char* buf, in
 		{
 			offset++;
 			if (offset >= end)
+#if defined(EXPERIMENTALZERO)
+				offset = &tracks[track << 13];
+#else
 				offset = tracks[track];
+#endif
 		
 			if (shift)
 			{
@@ -1282,7 +1323,11 @@ void DiskImage::DecodeBlock(unsigned track, int bitIndex, unsigned char* buf, in
 int DiskImage::FindSync(unsigned track, int bitIndex, int maxBits, int* syncStartIndex)
 {
 	int readShiftRegister = 0;
+#if defined(EXPERIMENTALZERO)
+	unsigned char byte = tracks[(track << 13) + (bitIndex >> 3)] << (bitIndex & 7);
+#else
 	unsigned char byte = tracks[track][bitIndex >> 3] << (bitIndex & 7);
+#endif
 	bool prevBitZero = true;
 
 	while (maxBits--)
@@ -1314,7 +1359,11 @@ int DiskImage::FindSync(unsigned track, int bitIndex, int maxBits, int* syncStar
 			bitIndex++;
 			if (bitIndex >= MAX_TRACK_LENGTH * 8)
 				bitIndex = 0;
+#if defined(EXPERIMENTALZERO)
+			byte = tracks[(track << 13)+(bitIndex >> 3)];
+#else
 			byte = tracks[track][bitIndex >> 3];
+#endif
 		}
 	}
 	return -1;

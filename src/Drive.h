@@ -148,12 +148,24 @@ private:
 		++headBitOffset %= bitsInTrack;
 		return bit;
 	}
-
+	unsigned cachedheadTrackPos = -1;
+	int cachedbyteOffset = -1;
+	unsigned char cachedByte = 0;
 	inline bool GetNextBit()
 	{
 		int byteOffset;
 		int bit = AdvanceSectorPositionR(byteOffset);
-		return diskImage->GetNextBit(headTrackPos, byteOffset, bit);
+
+		//Why is it faster to check both conditions here than to update the cache when moving the head?
+		if (byteOffset != cachedbyteOffset || cachedheadTrackPos != headTrackPos)
+		{
+			cachedByte = diskImage->GetNextByte(headTrackPos, byteOffset);
+			cachedbyteOffset = byteOffset;
+			cachedheadTrackPos = headTrackPos;
+			
+		}
+		return ((cachedByte >> bit) & 1) != 0;
+		//return diskImage->GetNextBit(headTrackPos, byteOffset, bit);
 	}
 
 	inline void SetNextBit(bool value)

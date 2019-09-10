@@ -776,7 +776,7 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 		}
 
 		m6502.Step();	// If the CPU reads or writes to the VIA then clk and data can change
-		
+
 		if (refreshOutsAfterCPUStep)
 			IEC_Bus::RefreshOuts1541();	// Now output all outputs.
 
@@ -829,16 +829,19 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 
 		prevButtonState = buttonState;
 
-		do		
+		do
 		{
 			ctAfter = read32(ARM_SYSTIMER_CLO);
-		} while (ctAfter == ctBefore);	// Sync to the 1MHz clock
+		} while (ctAfter == ctBefore); 	// Sync to the 1MHz clock
 	
 
 		ctBefore = ctAfter;		
 		IEC_Bus::ReadEmulationMode1541();
 
 		IEC_Bus::RefreshOuts1541();	// Now output all outputs.
+
+
+
 	}
 	return EXIT_UNKNOWN;
 }

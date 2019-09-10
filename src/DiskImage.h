@@ -78,19 +78,48 @@ public:
 
 	bool GetDecodedSector(u32 track, u32 sector, u8* buffer);
 
+	inline unsigned char GetNextByte(u32 track, u32 byte)
+	{
+#if defined(EXPERIMENTALZERO)
+		return tracks[(track << 13) + byte];
+#else
+		return tracks[track][byte];
+#endif
+	}
+
+
 	inline bool GetNextBit(u32 track, u32 byte, u32 bit)
 	{
 		//if (attachedImageSize == 0)
 		//	return 0;
 
+#if defined(EXPERIMENTALZERO)
+		return ((tracks[(track << 13) + byte] >> bit) & 1) != 0;
+#else
 		return ((tracks[track][byte] >> bit) & 1) != 0;
+#endif
 	}
+
 
 	inline void SetBit(u32 track, u32 byte, u32 bit, bool value)
 	{
 		if (attachedImageSize == 0)
 			return;
 
+#if defined(EXPERIMENTALZERO)
+		u8 dataOld = tracks[(track << 13) + byte];
+		u8 bitMask = 1 << bit;
+		if (value)
+		{
+			TestDirty(track, (dataOld & bitMask) == 0);
+			tracks[(track << 13) + byte] |= bitMask;
+		}
+		else
+		{
+			TestDirty(track, (dataOld & bitMask) != 0);
+			tracks[(track << 13) + byte] &= bitMask;
+		}
+#else
 		u8 dataOld = tracks[track][byte];
 		u8 bitMask = 1 << bit;
 		if (value)
@@ -103,6 +132,7 @@ public:
 			TestDirty(track, (dataOld & bitMask) != 0);
 			tracks[track][byte] &= ~bitMask;
 		}
+#endif
 	}
 
 	static const unsigned char SectorsPerTrack[42];
@@ -160,7 +190,11 @@ public:
 
 	union
 	{
+#if defined(EXPERIMENTALZERO)
+		unsigned char tracks[HALF_TRACK_COUNT * MAX_TRACK_LENGTH];
+#else
 		unsigned char tracks[HALF_TRACK_COUNT][MAX_TRACK_LENGTH];
+#endif
 		unsigned char tracksD81[HALF_TRACK_COUNT][2][MAX_TRACK_LENGTH];
 	};
 

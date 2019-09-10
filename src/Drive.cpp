@@ -662,9 +662,17 @@ void Drive::DriveLoopReadNoFlux()
 			{
 				ResetEncoderDecoder(18 * 16, /*20 * 16*/ 2 * 16);
 			}
+			if (cycles < UE7Counter)
+			{
+				UE7Counter -= cycles;
+				cyclesLeftForBit -= cycles;
+				return;
+			}
+			cyclesLeftForBit -= UE7Counter;
+			cycles -= UE7Counter;
 		}
 
-		if (UE7Counter == 0x0) // The count carry (bit 4) clocks UF4.
+		//if (UE7Counter == 0x0) // The count carry (bit 4) clocks UF4.
 		{
 			UE7Counter = 16 - CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6) ie preload the encoder/decoder clock for the current density settings.
 										// The decoder consists of UF4 and UE5A. The ecoder has two outputs, Pin 1 of UE5A is the serial data output and pin 2 of UF4 (output B) is the serial clock output.
@@ -749,6 +757,7 @@ void Drive::DriveLoopReadNoCycles()
 		}
 	};
 }
+
 void Drive::DriveLoopRead()
 {
 	unsigned int minCycles;
@@ -767,13 +776,8 @@ void Drive::DriveLoopRead()
 
 		if (cyclesLeftForBit == 0)
 		{
-			//which is faster? single loop ceil check or the 3 lines below?
 			cyclesForBitErrorCounter -= cyclesPerBitErrorConstant;
 			cyclesLeftForBit = cyclesPerBitInt + (cyclesForBitErrorCounter < cyclesPerBitErrorConstant);
-
-			//cyclesForBit -= cyclesPerBit;
-			//cyclesLeftForBit = ceil(cyclesPerBit - cyclesForBit);
-			//cyclesForBit += cyclesLeftForBit;
 
 			if (GetNextBit())
 			{

@@ -39,7 +39,9 @@ void InterruptSystemInitialize()
 	write32(ARM_IC_IRQ_PENDING_2, read32(ARM_IC_IRQ_PENDING_2));
 
 	DataMemBarrier();
-#ifndef EXPERIMENTALZERO
+#ifdef EXPERIMENTALZERO
+	DisableInterrupts();
+#else
 	EnableInterrupts();
 #endif
 }
