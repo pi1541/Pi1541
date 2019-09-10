@@ -341,6 +341,11 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 			if (y >= screenLCD->Height())
 				break;
 		}
+		while (y < screenLCD->Height()) {
+			memset(buffer, ' ',  screenLCD->Width()/screenLCD->GetFontWidth());
+			screenLCD->PrintText(false, x, y, buffer, BkColour, BkColour);
+			y += screenLCD->GetFontHeight();
+		}
 		screenLCD->SwapBuffers();
 	}
 }
