@@ -30,15 +30,17 @@ public:
 		: selectedIndex(0)
 #if not defined(EXPERIMENTALZERO)
 		, screen(0)
-		, screenLCD(0)
 #endif
+		, screenLCD(0)
 	{
 	}
-#if defined(EXPERIMENTALZERO)
-	void SetScreen() {  }
-#else
-	void SetScreen(Screen* screen, ScreenBase* screenLCD) { this->screen = screen; this->screenLCD = screenLCD; }
+	void SetScreen(Screen* screen, ScreenBase* screenLCD) 
+	{ 
+#if not defined(EXPERIMENTALZERO)
+		this->screen = screen;
 #endif
+		this->screenLCD = screenLCD; 
+	}
 
 	bool Empty();
 
@@ -46,6 +48,9 @@ public:
 
 	DiskImage* GetCurrentDisk()
 	{
+#if defined(EXPERIMENTALZERO)
+		Update();
+#endif
 		if (selectedIndex < disks.size())
 			return &disks[selectedIndex];
 
@@ -55,6 +60,7 @@ public:
 	DiskImage* NextDisk()
 	{
 		selectedIndex = (selectedIndex + 1) % (u32)disks.size();
+		auto ret = GetCurrentDisk();
 		return GetCurrentDisk();
 	}
 
@@ -108,8 +114,8 @@ private:
 	u32 oldCaddyIndex;
 #if not defined(EXPERIMENTALZERO)
 	ScreenBase* screen;
-	ScreenBase* screenLCD;
 #endif
+	ScreenBase* screenLCD;
 };
 
 #endif

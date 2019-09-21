@@ -53,7 +53,7 @@ bool DiskCaddy::Empty()
 				snprintf(buffer, 256, "Saving %s\r\n", disks[index].GetName());
 				screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			}
-
+#endif
 			if (screenLCD)
 			{
 				RGBA BkColour = RGBA(0, 0, 0, 0xFF);
@@ -68,7 +68,6 @@ bool DiskCaddy::Empty()
 				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 				screenLCD->SwapBuffers();
 			}
-#endif
 		}
 		disks[index].Close();
 	}
@@ -84,7 +83,7 @@ bool DiskCaddy::Empty()
 			snprintf(buffer, 256, "Saving Complete             \r\n");
 			screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 		}
-
+#endif
 		if (screenLCD)
 		{
 			RGBA BkColour = RGBA(0, 0, 0, 0xFF);
@@ -99,7 +98,6 @@ bool DiskCaddy::Empty()
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			screenLCD->SwapBuffers();
 		}
-#endif
 	}
 
 	disks.clear();
@@ -125,6 +123,7 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 			snprintf(buffer, 256, "Loading %s\r\n", fileInfo->fname);
 			screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 		}
+#endif
 
 		if (screenLCD)
 		{
@@ -140,7 +139,6 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			screenLCD->SwapBuffers();
 		}
-#endif
 		u32 bytesRead;
 		SetACTLed(true);
 		f_read(&fp, DiskImage::readBuffer, READBUFFER_SIZE, &bytesRead);
@@ -303,6 +301,8 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 		snprintf(buffer, 256, "*");
 		screen->PrintText(false, x, y, buffer, white, red);
 	}
+#endif
+
 	if (screenLCD)
 	{
 		unsigned numberOfImages = GetNumberOfImages();
@@ -351,7 +351,6 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 		}
 		screenLCD->SwapBuffers();
 	}
-#endif
 }
 
 bool DiskCaddy::Update()
@@ -368,15 +367,16 @@ bool DiskCaddy::Update()
 			y = screen->ScaleY(screenPosYCaddySelections) + 16 + 16 * oldCaddyIndex;
 			snprintf(buffer, 256, " ");
 			screen->PrintText(false, x, y, buffer, red, red);
-			oldCaddyIndex = caddyIndex;
-			ShowSelectedImage(oldCaddyIndex);
 		}
+#endif
+
+		oldCaddyIndex = caddyIndex;
+		ShowSelectedImage(oldCaddyIndex);
 
 		if (screenLCD)
 		{
 			
 		}
-#endif
 		return true;
 	}
 	return false;

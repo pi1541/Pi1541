@@ -93,7 +93,7 @@ extern u16 pc;
 u8 read6502_1581(u16 address)
 {
 	u8 value = 0;
-#if not defined(EXPERIMENTALZERO)
+#if defined(PI1581SUPPORT)
 	if (address & 0x8000)
 	{
 		value = roms.Read1581(address);
@@ -129,7 +129,7 @@ u8 peek6502_1581(u16 address)
 
 void write6502_1581(u16 address, const u8 value)
 {
-#if not defined(EXPERIMENTALZERO)
+#if defined(PI1581SUPPORT)
 	if (address & 0x8000)
 	{
 		return;

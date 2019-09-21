@@ -82,7 +82,6 @@ void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, b
 	if (entryIndex < list->entries.size())
 	{
 		FileBrowser::BrowsableList::Entry* entry = &list->entries[entryIndex];
-#if not defined(EXPERIMENTALZERO)
 		if (screen->IsLCD())
 		{
 			// pre-clear line on OLED
@@ -112,10 +111,8 @@ void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, b
 		{
 			snprintf(buffer2, 256, "%s", entry->filImage.fname);
 		}
-#endif
 		int len = strlen(buffer2 + highlightScrollOffset);
 		strncpy(buffer1, buffer2 + highlightScrollOffset, sizeof(buffer1));
-#if not defined(EXPERIMENTALZERO)
 		if (!screen->IsLCD())
 		{
 			// space pad the remainder of the line (but not on OLED)
@@ -123,56 +120,44 @@ void FileBrowser::BrowsableListView::RefreshLine(u32 entryIndex, u32 x, u32 y, b
 				buffer1[len++] = ' ';
 			buffer1[columnsMax] = 0;
 		}
-#endif
 		if (selected)
 		{
 			if (entry->filImage.fattrib & AM_DIR)
 			{
-#if not defined(EXPERIMENTALZERO)
 				screen->PrintText(false, x, y, buffer1, palette[VIC2_COLOUR_INDEX_LBLUE], RGBA(0xff, 0xff, 0xff, 0xff));
-#endif
 			}
 			else
 			{
 				colour = RGBA(0xff, 0, 0, 0xff);
 				if (entry->filImage.fattrib & AM_RDO)
 					colour = palette[VIC2_COLOUR_INDEX_RED];
-#if not defined(EXPERIMENTALZERO)
 				screen->PrintText(false, x, y, buffer1, colour, RGBA(0xff, 0xff, 0xff, 0xff));
-#endif
 			}
 		}
 		else
 		{
 			if (entry->filImage.fattrib & AM_DIR)
 			{
-#if not defined(EXPERIMENTALZERO)
 				screen->PrintText(false, x, y, buffer1, palette[VIC2_COLOUR_INDEX_LBLUE], BkColour);
-#endif
 			}
 			else
 			{
 				colour = palette[VIC2_COLOUR_INDEX_LGREY];
 				if (entry->filImage.fattrib & AM_RDO)
 					colour = palette[VIC2_COLOUR_INDEX_PINK];
-#if not defined(EXPERIMENTALZERO)
 				screen->PrintText(false, x, y, buffer1, colour, BkColour);
-#endif
 			}
 		}
 	}
 	else // line is blank, write spaces
 	{
 		memset(buffer1, ' ', columnsMax);
-#if not defined(EXPERIMENTALZERO)
 		screen->PrintText(false, x, y, buffer1, BkColour, BkColour);
-#endif
 	}
 }
 
 void FileBrowser::BrowsableListView::Refresh()
 {
-#if not defined(EXPERIMENTALZERO)
 	u32 index;
 	u32 entryIndex;
 	u32 x = positionX;
@@ -197,7 +182,6 @@ void FileBrowser::BrowsableListView::Refresh()
 	}
 
 	screen->SwapBuffers();
-#endif
 }
 
 void FileBrowser::BrowsableListView::RefreshHighlightScroll()
@@ -205,7 +189,6 @@ void FileBrowser::BrowsableListView::RefreshHighlightScroll()
 	char buffer2[256] = { 0 };
 
 	FileBrowser::BrowsableList::Entry* entry = list->current;
-#if not defined(EXPERIMENTALZERO)
 	if (screen->IsMonocrome())
 	{
 		if (entry->filImage.fattrib & AM_DIR)
@@ -268,7 +251,6 @@ void FileBrowser::BrowsableListView::RefreshHighlightScroll()
 
 		screen->RefreshRows(rowIndex, 1);
 	}
-#endif
 }
 
 bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
@@ -516,11 +498,14 @@ FileBrowser::FileBrowser(InputMappings* inputMappings, DiskCaddy* diskCaddy, ROM
 	, displayPNGIcons(displayPNGIcons)
 #if not defined(EXPERIMENTALZERO)
 	, screenMain(screenMain)
-	, screenLCD(screenLCD)
 #endif
+	, screenLCD(screenLCD)
 	, scrollHighlightRate(scrollHighlightRate)
 	, displayingDevices(false)
 {
+
+	folder.scrollHighlightRate = scrollHighlightRate;
+
 #if not defined(EXPERIMENTALZERO)
 	u32 columns = screenMain->ScaleX(80);
 	u32 rows = (int)(38.0f * screenMain->GetScaleY());
@@ -530,7 +515,6 @@ FileBrowser::FileBrowser(InputMappings* inputMappings, DiskCaddy* diskCaddy, ROM
 	if (rows < 1)
 		rows = 1;
 
-	folder.scrollHighlightRate = scrollHighlightRate;
 	folder.AddView(screenMain, inputMappings, columns, rows, positionX, positionY, false);
 
 	positionX = screenMain->ScaleX(1024 - 320);
@@ -538,17 +522,17 @@ FileBrowser::FileBrowser(InputMappings* inputMappings, DiskCaddy* diskCaddy, ROM
 	caddySelections.AddView(screenMain, inputMappings, columns, rows, positionX, positionY, false);
 
 
+#endif
 
 	if (screenLCD)
 	{
-		columns = screenLCD->Width() / 8;
-		rows = screenLCD->Height() / screenLCD->GetFontHeight();
-		positionX = 0;
-		positionY = 0;
+		u32 columns = screenLCD->Width() / 8;
+		u32 rows = screenLCD->Height() / screenLCD->GetFontHeight();
+		u32 positionX = 0;
+		u32 positionY = 0;
 
 		folder.AddView(screenLCD, inputMappings, columns, rows, positionX, positionY, true);
 	}
-#endif
 }
 
 u32 FileBrowser::Colour(int index)
@@ -709,7 +693,6 @@ void FileBrowser::DeviceSwitched()
 	m_IEC_Commands.SetDisplayingDevices(displayingDevices);
 	FolderChanged();
 }
-#if not defined(EXPERIMENTALZERO)
 /*
 void FileBrowser::RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* browsableList, int xOffset, bool showSelected)
 {
@@ -788,7 +771,6 @@ void FileBrowser::RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* brow
 	}
 }
 */
-#endif
 void FileBrowser::RefeshDisplay()
 {
 #if not defined(EXPERIMENTALZERO)
@@ -800,11 +782,9 @@ void FileBrowser::RefeshDisplay()
 		screenMain->DrawRectangle(0, 0, (int)screenMain->Width(), 17, bgColour);
 		screenMain->PrintText(false, 0, 0, buffer, textColour, bgColour);
 	}
-#if not defined(EXPERIMENTALZERO)
 	//u32 offsetX = screenMain->ScaleX(1024 - 320);
 	//RefeshDisplayForBrowsableList(&folder, 0);
 	//RefeshDisplayForBrowsableList(&caddySelections, offsetX, false);
-#endif
 	folder.RefreshViews();
 	caddySelections.RefreshViews();
 
@@ -816,14 +796,14 @@ void FileBrowser::RefeshDisplay()
 		u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y);
 		screenMain->PrintText(false, 0, y, folder.searchPrefix, textColour, bgColour);
 	}
+#else
+	folder.RefreshViews();
+	caddySelections.RefreshViews();
 #endif
 }
 
 bool FileBrowser::CheckForPNG(const char* filename, FILINFO& filIcon)
 {
-#if defined(EXPERIMENTALZERO)
-	return false;
-#else
 	bool foundValid = false;
 
 	filIcon.fname[0] = 0;
@@ -845,7 +825,6 @@ bool FileBrowser::CheckForPNG(const char* filename, FILINFO& filIcon)
 		}
 	}
 	return foundValid;
-#endif
 }
 
 void FileBrowser::DisplayPNG(FILINFO& filIcon, int x, int y)
@@ -1457,11 +1436,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 	char name[17] = { 0 };
 	unsigned char buffer[260] = { 0 };
 	int charIndex;
-#if defined(EXPERIMENTALZERO)
-	u32 fontHeight = 16;
-#else
 	u32 fontHeight = screenMain->GetFontHeightDirectoryDisplay();
-#endif
 	u32 x = 0;
 	u32 y = 0;
 	char bufferOut[128] = { 0 };

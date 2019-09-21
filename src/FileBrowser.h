@@ -63,9 +63,7 @@ public:
 		BrowsableListView(BrowsableList* list, InputMappings* inputMappings, ScreenBase* screen, u32 columns, u32 rows, u32 positionX, u32 positionY, bool lcdPgUpDown)
 			: list(list)
 			, inputMappings(inputMappings)
-#if not defined(EXPERIMENTALZERO)
 			, screen(screen)
-#endif
 			, columns(columns)
 			, rows(rows)
 			, positionX(positionX)
@@ -86,9 +84,7 @@ public:
 		BrowsableList* list;
 		u32 offset;
 		InputMappings* inputMappings;
-#if not defined(EXPERIMENTALZERO)
 		ScreenBase* screen;
-#endif
 		u32 columns;
 		u32 rows;
 		u32 positionX;
@@ -215,14 +211,10 @@ private:
 	void RefreshFolderEntries();
 
 	void UpdateInputFolders();
-#if not defined(EXPERIMENTALZERO)
 	//void UpdateInputDiskCaddy();
-#endif
 
 	void UpdateCurrentHighlight();
-#if not defined(EXPERIMENTALZERO)
 	//void RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* browsableList, int xOffset, bool showSelected = true);
-#endif
 	bool FillCaddyWithSelections();
 
 	bool AddToCaddy(FileBrowser::BrowsableList::Entry* current);
@@ -256,8 +248,8 @@ private:
 	BrowsableList caddySelections;
 #if not defined(EXPERIMENTALZERO)
 	ScreenBase* screenMain;
-	ScreenBase* screenLCD;
 #endif
+	ScreenBase* screenLCD;
 	float scrollHighlightRate;
 
 	bool displayingDevices;

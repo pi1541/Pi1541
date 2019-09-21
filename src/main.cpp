@@ -101,7 +101,7 @@ u8 s_u8Memory[0xc000];
 int numberOfUSBMassStorageDevices = 0;
 DiskCaddy diskCaddy;
 Pi1541 pi1541;
-#if not defined(EXPERIMENTALZERO)
+#if defined(PI1581SUPPORT)
 Pi1581 pi1581;
 #endif
 CEMMCDevice	m_EMMC;
@@ -250,7 +250,6 @@ void InitialiseHardware()
 
 void InitialiseLCD()
 {
-#if not defined(EXPERIMENTALZERO)
 	FILINFO filLcdIcon;
 
 	int i2cBusMaster = options.I2CBusMaster();
@@ -312,7 +311,6 @@ void InitialiseLCD()
 		screenLCD->RefreshScreen();
 	}
 	else
-#endif
 	{
 		screenLCD = 0;
 	}
@@ -612,7 +610,7 @@ EmulatingMode BeginEmulating(FileBrowser* fileBrowser, const char* filenameForIc
 	DiskImage* diskImage = diskCaddy.SelectFirstImage();
 	if (diskImage)
 	{
-#if not defined(EXPERIMENTALZERO)
+#if defined(PI1581SUPPORT)
 		if (diskImage->IsD81())
 		{
 			pi1581.Insert(diskImage);
@@ -673,7 +671,7 @@ void GlobalSetDeviceID(u8 id)
 	deviceID = id;
 	m_IEC_Commands.SetDeviceId(id);
 	pi1541.SetDeviceID(id);
-#if not defined(EXPERIMENTALZERO)
+#if defined(PI1581SUPPORT)
 	pi1581.SetDeviceID(id);
 #endif
 }
@@ -718,6 +716,8 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	unsigned numberOfImagesMax = numberOfImages;
 	if (numberOfImagesMax > 10)
 		numberOfImagesMax = 10;
+
+	diskCaddy.Display();
 
 	inputMappings->directDiskSwapRequest = 0;
 	// Force an update on all the buttons now before we start emulation mode. 
@@ -1053,8 +1053,9 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	}
 	return exitReason;
 }
+#endif
 
-
+#if defined(PI1581SUPPORT)
 EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 {
 	EXIT_TYPE exitReason = EXIT_UNKNOWN;
@@ -1251,11 +1252,7 @@ void emulator()
 
 	roms.lastManualSelectedROMIndex = 0;
 
-#if defined(EXPERIMENTALZERO)
-	diskCaddy.SetScreen();
-#else
 	diskCaddy.SetScreen(&screen, screenLCD);
-#endif
 	fileBrowser = new FileBrowser(inputMappings, &diskCaddy, &roms, &deviceID, options.DisplayPNGIcons(), &screen, screenLCD, options.ScrollHighlightRate());
 	fileBrowser->DisplayRoot();
 	pi1541.Initialise();
@@ -1405,7 +1402,7 @@ void emulator()
 		{
 			if (emulating == EMULATING_1541)
 				exitReason = Emulate1541(fileBrowser);
-#if not defined(EXPERIMENTALZERO)
+#if defined(PI1581SUPPORT)
 			else
 				exitReason = Emulate1581(fileBrowser);
 #endif
@@ -1865,8 +1862,14 @@ void DisplayMessage(int x, int y, bool LCD, const char* message, u32 textColour,
 		screenLCD->SwapBuffers();
 
 		core0RefreshingScreen.Release();
-
 	}
+#else
+	RGBA BkColour = RGBA(0, 0, 0, 0xFF);
+
+	screenLCD->Clear(BkColour);
+	screenLCD->PrintText(false, x, y, (char*)message, textColour, backgroundColour);
+	screenLCD->SwapBuffers();
+
 #endif
 }
 
@@ -1984,10 +1987,9 @@ extern "C"
 		pi1541.drive.SetVIA(&pi1541.VIA[1]);
 		pi1541.VIA[0].GetPortB()->SetPortOut(0, IEC_Bus::PortB_OnPortOut);
 		IEC_Bus::Initialise();
-#if not defined(EXPERIMENTALZERO)
 		if (screenLCD)
 			screenLCD->ClearInit(0);
-#endif
+
 #ifdef HAS_MULTICORE
 		start_core(3, _spin_core);
 		start_core(2, _spin_core);
