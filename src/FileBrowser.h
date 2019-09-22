@@ -84,7 +84,6 @@ public:
 		BrowsableList* list;
 		u32 offset;
 		InputMappings* inputMappings;
-
 		ScreenBase* screen;
 		u32 columns;
 		u32 rows;
@@ -215,9 +214,7 @@ private:
 	//void UpdateInputDiskCaddy();
 
 	void UpdateCurrentHighlight();
-
 	//void RefeshDisplayForBrowsableList(FileBrowser::BrowsableList* browsableList, int xOffset, bool showSelected = true);
-
 	bool FillCaddyWithSelections();
 
 	bool AddToCaddy(FileBrowser::BrowsableList::Entry* current);
@@ -249,10 +246,10 @@ private:
 	bool buttonChangedROMDevice;
 
 	BrowsableList caddySelections;
-
+#if not defined(EXPERIMENTALZERO)
 	ScreenBase* screenMain;
+#endif
 	ScreenBase* screenLCD;
-
 	float scrollHighlightRate;
 
 	bool displayingDevices;

@@ -138,6 +138,7 @@ enum PIGPIOMasks
 	PIGPIO_MASK_IN_BUTTON3 = 1 << PIGPIO_IN_BUTTON3,
 	PIGPIO_MASK_IN_BUTTON4 = 1 << PIGPIO_IN_BUTTON4,
 	PIGPIO_MASK_IN_BUTTON5 = 1 << PIGPIO_IN_BUTTON5,
+	PIGPIO_MASK_ANY_BUTTON = PIGPIO_MASK_IN_BUTTON1 | PIGPIO_MASK_IN_BUTTON2 | PIGPIO_MASK_IN_BUTTON3 | PIGPIO_MASK_IN_BUTTON4 | PIGPIO_MASK_IN_BUTTON5
 };
 
 static const unsigned ButtonPinFlags[5] = { PIGPIO_MASK_IN_BUTTON1, PIGPIO_MASK_IN_BUTTON2, PIGPIO_MASK_IN_BUTTON3, PIGPIO_MASK_IN_BUTTON4, PIGPIO_MASK_IN_BUTTON5 };
@@ -279,7 +280,7 @@ public:
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_SRQ, FS_OUTPUT);
 		}
 	
-
+#if not defined(EXPERIMENTALZERO)
 		// Set up audio.
 		write32(CM_PWMDIV, CM_PASSWORD + 0x2000);
 		write32(CM_PWMCTL, CM_PASSWORD + CM_ENAB + CM_SRC_OSCILLATOR);	// Use Default 100MHz Clock
@@ -287,7 +288,7 @@ public:
 		write32(PWM_RNG1, 0x1B4);	// 8bit 44100Hz Mono
 		write32(PWM_RNG2, 0x1B4);
 		write32(PWM_CTL, PWM_USEF2 + PWM_PWEN2 + PWM_USEF1 + PWM_PWEN1 + PWM_CLRF1);
-
+#endif
 
 		int buttonCount = sizeof(ButtonPinFlags) / sizeof(unsigned);
 		for (index = 0; index < buttonCount; ++index)
@@ -325,6 +326,13 @@ public:
 		SRQSetToOut = IEC_Bus::invertIECInputs;
 		RefreshOuts1581();
 	}
+
+#if defined(EXPERIMENTALZERO)
+	static inline bool AnyButtonPressed()
+	{
+		return ((gplev0 & PIGPIO_MASK_ANY_BUTTON) != PIGPIO_MASK_ANY_BUTTON);
+	}
+#endif
 
 	static inline void UpdateButton(int index, unsigned gplev0)
 	{

@@ -44,6 +44,7 @@ bool DiskCaddy::Empty()
 		if (disks[index].IsDirty())
 		{
 			anyDirty = true;
+#if not defined(EXPERIMENTALZERO)
 			if (screen)
 			{
 				x = screen->ScaleX(screenPosXCaddySelections);
@@ -52,7 +53,7 @@ bool DiskCaddy::Empty()
 				snprintf(buffer, 256, "Saving %s\r\n", disks[index].GetName());
 				screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			}
-
+#endif
 			if (screenLCD)
 			{
 				RGBA BkColour = RGBA(0, 0, 0, 0xFF);
@@ -73,6 +74,7 @@ bool DiskCaddy::Empty()
 
 	if (anyDirty)
 	{
+#if not defined(EXPERIMENTALZERO)
 		if (screen)
 		{
 			x = screen->ScaleX(screenPosXCaddySelections);
@@ -81,7 +83,7 @@ bool DiskCaddy::Empty()
 			snprintf(buffer, 256, "Saving Complete             \r\n");
 			screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 		}
-
+#endif
 		if (screenLCD)
 		{
 			RGBA BkColour = RGBA(0, 0, 0, 0xFF);
@@ -112,6 +114,7 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 	FRESULT res = f_open(&fp, fileInfo->fname, FA_READ);
 	if (res == FR_OK)
 	{
+#if not defined(EXPERIMENTALZERO)
 		if (screen)
 		{
 			x = screen->ScaleX(screenPosXCaddySelections);
@@ -120,6 +123,7 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 			snprintf(buffer, 256, "Loading %s\r\n", fileInfo->fname);
 			screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 		}
+#endif
 
 		if (screenLCD)
 		{
@@ -135,7 +139,6 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 			screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			screenLCD->SwapBuffers();
 		}
-
 		u32 bytesRead;
 		SetACTLed(true);
 		f_read(&fp, DiskImage::readBuffer, READBUFFER_SIZE, &bytesRead);
@@ -254,6 +257,7 @@ void DiskCaddy::Display()
 	unsigned caddyIndex;
 	int x;
 	int y;
+#if not defined(EXPERIMENTALZERO)
 	if (screen)
 	{
 		x = screen->ScaleX(screenPosXCaddySelections);
@@ -281,6 +285,7 @@ void DiskCaddy::Display()
 	//	RGBA BkColour = RGBA(0, 0, 0, 0xFF);
 	//	screenLCD->Clear(BkColour);
 	//}
+#endif
 	ShowSelectedImage(0);
 }
 
@@ -288,6 +293,7 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 {
 	u32 x;
 	u32 y;
+#if not defined(EXPERIMENTALZERO)
 	if (screen)
 	{
 		x = screen->ScaleX(screenPosXCaddySelections) - 16;
@@ -295,6 +301,8 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 		snprintf(buffer, 256, "*");
 		screen->PrintText(false, x, y, buffer, white, red);
 	}
+#endif
+
 	if (screenLCD)
 	{
 		unsigned numberOfImages = GetNumberOfImages();
@@ -352,21 +360,23 @@ bool DiskCaddy::Update()
 	u32 caddyIndex = GetSelectedIndex();
 	if (caddyIndex != oldCaddyIndex)
 	{
+#if not defined(EXPERIMENTALZERO)
 		if (screen)
 		{
 			x = screen->ScaleX(screenPosXCaddySelections) - 16;
 			y = screen->ScaleY(screenPosYCaddySelections) + 16 + 16 * oldCaddyIndex;
 			snprintf(buffer, 256, " ");
 			screen->PrintText(false, x, y, buffer, red, red);
-			oldCaddyIndex = caddyIndex;
-			ShowSelectedImage(oldCaddyIndex);
 		}
+#endif
+
+		oldCaddyIndex = caddyIndex;
+		ShowSelectedImage(oldCaddyIndex);
 
 		if (screenLCD)
 		{
 			
 		}
-
 		return true;
 	}
 	return false;
