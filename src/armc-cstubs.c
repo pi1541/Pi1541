@@ -236,7 +236,9 @@ int wait(int *status)
 
 void outbyte(char b)
 {
+#ifndef EXPERIMENTALZERO
   RPI_AuxMiniUartWrite(b);
+#endif
 }
 
 /* Write to a file. libc subroutines will use this system routine for output to

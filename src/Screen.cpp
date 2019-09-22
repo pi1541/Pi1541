@@ -129,21 +129,29 @@ void Screen::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth)
 
 void Screen::PlotPixel32(u32 pixel_offset, RGBA Colour)
 {
+#if not defined(EXPERIMENTALZERO)
 	*((volatile RGBA*)&framebuffer[pixel_offset]) = Colour;
+#endif
 }
 void Screen::PlotPixel24(u32 pixel_offset, RGBA Colour)
 {
+#if not defined(EXPERIMENTALZERO)
 	framebuffer[pixel_offset++] = BLUE(Colour);
 	framebuffer[pixel_offset++] = GREEN(Colour);
 	framebuffer[pixel_offset++] = RED(Colour);
+#endif
 }
 void Screen::PlotPixel16(u32 pixel_offset, RGBA Colour)
 {
+#if not defined(EXPERIMENTALZERO)
 	*(unsigned short*)&framebuffer[pixel_offset] = ((RED(Colour) >> 3) << 11) | ((GREEN(Colour) >> 2) << 5) | (BLUE(Colour) >> 3);
+#endif
 }
 void Screen::PlotPixel8(u32 pixel_offset, RGBA Colour)
 {
+#if not defined(EXPERIMENTALZERO)
 	framebuffer[pixel_offset++] = RED(Colour);
+#endif
 }
 
 void Screen::DrawRectangle(u32 x1, u32 y1, u32 x2, u32 y2, RGBA colour)

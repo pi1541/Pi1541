@@ -23,6 +23,17 @@
 #include "DiskImage.h"
 #include <stdlib.h>
 
+#if defined(EXPERIMENTALZERO)
+inline int ceil(float num) {
+	int inum = (int)num;
+	if (num == (float)inum) {
+		return inum;
+	}
+	return inum + 1;
+}
+#endif
+
+
 class Drive
 {
 public:
@@ -37,6 +48,14 @@ public:
 	static void OnPortOut(void*, unsigned char status);
 
 	bool Update();
+#if defined(EXPERIMENTALZERO)
+	void DriveLoopWrite();
+	void DriveLoopRead();
+	void DriveLoopReadNoFluxNoCycles();
+	void DriveLoopReadNoFlux();
+	void DriveLoopReadNoCycles();
+#endif
+
 	void Insert(DiskImage* diskImage);
 	inline const DiskImage* GetDiskImage() const { return diskImage; }
 	void Eject();
@@ -49,6 +68,16 @@ public:
 
 	inline unsigned char GetLastHeadDirection() const { return lastHeadDirection; } // For simulated head movement sounds
 private:
+#if defined(EXPERIMENTALZERO)
+	int32_t localSeed;
+	inline void ResetEncoderDecoder(unsigned int min, unsigned int /*max*/span)
+	{
+		UE7Counter = 16 - CLOCK_SEL_AB;	// A and B inputs of UE7 come from the VIA's CLOCK SEL A/B outputs (ie PB5/6)
+		UF4Counter = 0;
+		localSeed = ((localSeed * 1103515245) + 12345) & 0x7fffffff;
+		fluxReversalCyclesLeft = (span) * (localSeed >> 11) + min;
+	}
+#else
 	inline float GenerateRandomFluxReversalTime(float min, float max) { return ((max - min) * ((float)rand() / RAND_MAX)) + min; } // Inputs in micro seconds
 
 	inline void ResetEncoderDecoder(float min, float max)
@@ -57,6 +86,7 @@ private:
 		UF4Counter = 0;
 		randomFluxReversalTime = GenerateRandomFluxReversalTime(min, max);
 	}
+#endif
 	inline void UpdateHeadSectorPosition()
 	{
 		// Disk spins at 300rpm = 5rps so to calculate how many 16Mhz cycles one rotation takes;-
@@ -66,6 +96,12 @@ private:
 		bitsInTrack = diskImage->BitsInTrack(headTrackPos);
 		headBitOffset %= bitsInTrack;
 		cyclesPerBit = CYCLES_16Mhz_PER_ROTATION / (float)bitsInTrack;
+#if defined(EXPERIMENTALZERO)
+		cyclesPerBitInt = cyclesPerBit;
+		cyclesPerBitErrorConstant = (unsigned int)((cyclesPerBit - ((float)cyclesPerBitInt)) * static_cast<float>(0xffffffff));
+		cyclesForBitErrorCounter = (unsigned int)(((cyclesForBit)-(int)(cyclesForBit)) * static_cast<float>(0xffffffff));
+#endif
+
 	}
 
 	inline void MoveHead(unsigned char headDirection)
@@ -88,6 +124,15 @@ private:
 
 	void DumpTrack(unsigned track); // Used for debugging disk images.
 
+#if defined(EXPERIMENTALZERO)
+	inline u32 AdvanceSectorPositionR(int& byteOffset)
+	{
+		if (++headBitOffset == bitsInTrack)
+			headBitOffset = 0;
+		byteOffset = headBitOffset >> 3;
+		return (~headBitOffset) & 7;
+	}
+#else
 	// No reason why I seperate these into individual read and write versions. I was just trying to get the bit stream to line up when rewriting over existing data.
 	inline u32 AdvanceSectorPositionR(int& byteOffset)
 	{
@@ -95,7 +140,7 @@ private:
 		byteOffset = headBitOffset >> 3;
 		return (~headBitOffset) & 7;
 	}
-
+#endif
 	inline u32 AdvanceSectorPositionW(int& byteOffset)
 	{
 		byteOffset = headBitOffset >> 3;
@@ -103,12 +148,24 @@ private:
 		++headBitOffset %= bitsInTrack;
 		return bit;
 	}
-
+	unsigned cachedheadTrackPos = -1;
+	int cachedbyteOffset = -1;
+	unsigned char cachedByte = 0;
 	inline bool GetNextBit()
 	{
 		int byteOffset;
 		int bit = AdvanceSectorPositionR(byteOffset);
-		return diskImage->GetNextBit(headTrackPos, byteOffset, bit);
+
+		//Why is it faster to check both conditions here than to update the cache when moving the head?
+		if (byteOffset != cachedbyteOffset || cachedheadTrackPos != headTrackPos)
+		{
+			cachedByte = diskImage->GetNextByte(headTrackPos, byteOffset);
+			cachedbyteOffset = byteOffset;
+			cachedheadTrackPos = headTrackPos;
+			
+		}
+		return ((cachedByte >> bit) & 1) != 0;
+		//return diskImage->GetNextBit(headTrackPos, byteOffset, bit);
 	}
 
 	inline void SetNextBit(bool value)
@@ -132,13 +189,23 @@ private:
 	// CB2 (output)
 	//	- R/!W
 	m6522* m_pVIA;
-
+#if defined(EXPERIMENTALZERO)
+	unsigned int cyclesLeftForBit;
+	unsigned int fluxReversalCyclesLeft;
+	unsigned int UE7Counter;
+	u32 writeShiftRegister;
+	unsigned int cyclesForBitErrorCounter;
+	unsigned int cyclesPerBitErrorConstant;
+	unsigned int cyclesPerBitInt;
+#else
+	int UE7Counter;
+	u8 writeShiftRegister;
+#endif
 	float cyclesForBit;
 	u32 readShiftRegister;
 	unsigned headTrackPos;
 	u32 headBitOffset;
 	float randomFluxReversalTime;
-	int UE7Counter;
 	int UF4Counter;
 	int UE3Counter;
 	int CLOCK_SEL_AB;
@@ -148,6 +215,5 @@ private:
 	float cyclesPerBit;
 	bool motor;
 	bool LED;
-	u8 writeShiftRegister;
 };
 #endif

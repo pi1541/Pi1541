@@ -9,7 +9,7 @@ extern "C" {
 #include "bcm2835int.h"
 
 #define	EnableInterrupts()	__asm volatile ("cpsie i")
-#define	DisableInterrupts()	__asm volatile ("cpsid i")
+#define	DisableInterrupts()	__asm volatile ("cpsid ifa, #0x13")
 
 typedef void IRQHandler(void* param);
 
