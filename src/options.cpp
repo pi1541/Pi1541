@@ -156,6 +156,7 @@ Options::Options(void)
         , buttonDown(3)
         , buttonBack(4)
         , buttonInsert(5)
+	, rotaryEncoderEnable(0) //ROTARY:
 
 {
 	autoMountImageName[0] = 0;
@@ -245,6 +246,7 @@ void Options::Process(char* buffer)
 		ELSE_CHECK_DECIMAL_OPTION(buttonDown)
 		ELSE_CHECK_DECIMAL_OPTION(buttonBack)
 		ELSE_CHECK_DECIMAL_OPTION(buttonInsert)
+		ELSE_CHECK_DECIMAL_OPTION(rotaryEncoderEnable) //ROTARY:
 		else if ((strcasecmp(pOption, "AutoBaseName") == 0))
 		{
 			strncpy(autoBaseName, pValue, 255);

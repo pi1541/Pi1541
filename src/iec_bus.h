@@ -26,6 +26,9 @@
 #include "rpi-gpio.h"
 #include "rpiHardware.h"
 
+//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
+#include "dmRotary.h"
+
 #define INPUT_BUTTON_DEBOUNCE_THRESHOLD 20000
 #define INPUT_BUTTON_REPEAT_THRESHOLD 460000
 
@@ -309,6 +312,13 @@ public:
 		}
 		RPI_GpioBase->GPPUD = 0;
 		RPI_GpioBase->GPPUDCLK0 = 0;
+
+		//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
+		if (IEC_Bus::rotaryEncoderEnable == true)
+		{
+			IEC_Bus::rotaryEncoder.Initialize(RPI_GPIO22, RPI_GPIO23, RPI_GPIO27);
+		}
+
 	}
 
 	static inline void LetSRQBePulledHigh()
@@ -356,6 +366,47 @@ public:
 			inputRepeatPrev[index] = 0;
 		}
 	}
+
+	
+	//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
+	//
+	// Note: This method serves as a shim to allow the rotary encoder
+	//       logic to set a specific input button state (fooling the
+	//       original logic into thinking a button was pressed or
+	//       released).
+	//
+	static inline void SetButtonState(int index, bool state)
+	{
+
+		InputButtonPrev[index] = InputButton[index];
+		inputRepeatPrev[index] = inputRepeat[index];
+
+		if (state == true)
+		{
+
+			InputButton[index] = true;
+			validInputCount[index] = INPUT_BUTTON_DEBOUNCE_THRESHOLD;
+			inputRepeatThreshold[index] = INPUT_BUTTON_DEBOUNCE_THRESHOLD + INPUT_BUTTON_REPEAT_THRESHOLD;
+			inputRepeat[index]++;
+
+			validInputCount[index] = inputRepeatThreshold[index];
+			inputRepeat[index]++;
+			inputRepeatThreshold[index] += INPUT_BUTTON_REPEAT_THRESHOLD / inputRepeat[index];
+
+		}	
+		else
+		{
+
+			InputButton[index] = false;
+			validInputCount[index] = 0;
+			inputRepeatThreshold[index] = INPUT_BUTTON_REPEAT_THRESHOLD;
+			inputRepeat[index] = 0;
+			inputRepeatPrev[index] = 0;
+			
+		}
+
+	}
+
 
 	static void ReadBrowseMode(void);
 	static void ReadEmulationMode1541(void);
@@ -552,6 +603,12 @@ public:
 		ignoreReset = value;
 	}
 
+	//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
+	static inline void SetRotaryEncoderEnable(bool value)
+	{
+		rotaryEncoderEnable = value;
+	}
+
 	// CA1 input ATN
 	// If CA1 is ever set to output
 	//	- CA1 will start to drive pb7
@@ -615,5 +672,10 @@ private:
 	static u32 inputRepeatThreshold[5];
 	static u32 inputRepeat[5];
 	static u32 inputRepeatPrev[5];
+
+	//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
+	static RotaryEncoder rotaryEncoder;
+	static bool rotaryEncoderEnable;
+
 };
 #endif
