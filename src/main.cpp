@@ -32,6 +32,7 @@ extern "C"
 #include "rpi-mailbox-interface.h"
 #include "interrupt.h"
 #include <uspi.h>
+#include "rpi-mailbox.h"
 }
 #include "InputMappings.h"
 #include "options.h"
@@ -173,6 +174,24 @@ extern "C"
 			while (mailbox[6] & 0x40000000);
 		} while (((result = mailbox[0]) & 0xf) != 0);
 		return result == 0x80;
+	}
+
+	int GetTemperature(unsigned& value)
+	{
+		rpi_mailbox_property_t* mp;
+
+		RPI_PropertyInit();
+		RPI_PropertyAddTag(TAG_GET_TEMPERATURE);
+		RPI_PropertyProcess();
+
+		value = 0;
+		if ((mp = RPI_PropertyGet(TAG_GET_TEMPERATURE)))
+		{
+			value = mp->data.buffer_32[1];
+			return 1;
+		}
+
+		return 0;
 	}
 
 	void usDelay(unsigned nMicroSeconds)
@@ -342,6 +361,7 @@ void UpdateScreen()
 	u32 oldTrack = 0;
 	u32 textColour = COLOUR_BLACK;
 	u32 bgColour = COLOUR_WHITE;
+	u32 oldTemp = 0;
 
 	RGBA atnColour = COLOUR_YELLOW;
 	RGBA dataColour = COLOUR_GREEN;
@@ -498,6 +518,22 @@ void UpdateScreen()
 // black vertical line ahead of graph
 		if (options.GraphIEC())
 			screen.DrawLineV(graphX, top3, bottom, COLOUR_BLACK);
+
+		if (options.DisplayTemperature())
+		{
+			unsigned temp;
+			if (GetTemperature(temp))
+			{
+				temp /= 1000;
+				if (temp != oldTemp)
+				{
+					oldTemp = temp;
+					//DEBUG_LOG("%0x %d %d\r\n", temp, temp, temp / 1000);
+					snprintf(tempBuffer, tempBufferSize, "%02d", temp);
+					screen.PrintText(false, 43 * 8, y, tempBuffer, textColour, bgColour);
+				}
+			}
+		}
 
 		u32 track;
 		if (emulating == EMULATING_1541)

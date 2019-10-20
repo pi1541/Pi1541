@@ -78,6 +78,8 @@ public:
 	inline unsigned int AutoBootFB128() const { return autoBootFB128; }
 	inline const char* Get128BootSectorName() const { return C128BootSectorName; }
 
+	inline unsigned int DisplayTemperature() const { return displayTemperature; }
+
 	inline unsigned int LowercaseBrowseModeFilenames() const { return lowercaseBrowseModeFilenames; }
 	DiskImage::DiskType GetNewDiskType() const;
 
@@ -137,6 +139,8 @@ private:
 	unsigned int splitIECLines;
 	unsigned int ignoreReset;
 	unsigned int autoBootFB128;
+
+	unsigned int displayTemperature;
 
 	unsigned int lowercaseBrowseModeFilenames;
 

@@ -1383,7 +1383,11 @@ void FileBrowser::DisplayStatusBar()
 	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y);
 
 	char bufferOut[128];
-	snprintf(bufferOut, 128, "LED 0 Motor 0 Track 18.0 ATN 0 DAT 0 CLK 0");
+	if (options.DisplayTemperature())
+		snprintf(bufferOut, 128, "LED 0 Motor 0 Track 18.0 ATN 0 DAT 0 CLK 0 00%cC", 248);
+	else
+		snprintf(bufferOut, 128, "LED 0 Motor 0 Track 18.0 ATN 0 DAT 0 CLK 0");
+
 	screenMain->PrintText(false, x, y, bufferOut, RGBA(0, 0, 0, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
 #endif
 }
