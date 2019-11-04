@@ -117,7 +117,7 @@ public:
 		else
 		{
 			TestDirty(track, (dataOld & bitMask) != 0);
-			tracks[(track << 13) + byte] &= bitMask;
+			tracks[(track << 13) + byte] &= ~bitMask;
 		}
 #else
 		u8 dataOld = tracks[track][byte];
