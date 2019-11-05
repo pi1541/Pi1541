@@ -1550,7 +1550,7 @@ bool IEC_Commands::SendBuffer(Channel& channel, bool eoi)
 {
 	for (u32 i = 0; i < channel.cursor; ++i)
 	{
-		u8 finalbyte = eoi && (channel.bytesSent == (channel.filInfo.fsize - 1));
+		u8 finalbyte = eoi && (channel.bytesSent == (channel.fileSize - 1));
 		if (WriteIECSerialPort(channel.buffer[i], finalbyte))
 		{
 			return true;
@@ -1572,6 +1572,84 @@ void IEC_Commands::LoadFile()
 		FSIZE_t size = f_size(&channel.file);
 		FSIZE_t sizeRemaining = size;
 		u32 bytesRead;
+		channel.fileSize = (u32)channel.filInfo.fsize;
+
+		char* ext = strrchr((char*)channel.filInfo.fname, '.');
+		if (toupper((char)ext[1]) == 'P' && isdigit(ext[2]) && isdigit(ext[3]))
+		{
+			bool validP00 = false;
+
+			f_read(&channel.file, channel.buffer, 26, &bytesRead);
+			if (bytesRead > 0)
+			{
+				if (strncmp((const char*)channel.buffer, "C64File", 7) == 0)
+				{
+					validP00 = channel.buffer[0x19] == 0;
+					sizeRemaining -= bytesRead;
+					channel.bytesSent += bytesRead;
+				}
+
+				if (!validP00)
+					f_lseek(&channel.file, 0);
+			}
+		}
+		else if (toupper((char)ext[1]) == 'T' && ext[2] == '6' && ext[3] == '4')
+		{
+			bool validT64 = false;
+
+			f_read(&channel.file, channel.buffer, sizeof(channel.buffer), &bytesRead);
+
+			if (bytesRead > 0)
+			{
+				if ((memcmp(channel.buffer, "C64 tape image file", 20) == 0) || (memcmp(channel.buffer, "C64s tape image file", 21) == 0))
+				{
+					DEBUG_LOG("T64\r\n");
+					u16 version = channel.buffer[0x20] | (channel.buffer[0x21] << 8);
+					u16 entries = channel.buffer[0x22] | (channel.buffer[0x23] << 8);
+					u16 entriesUsed = channel.buffer[0x24] | (channel.buffer[0x25] << 8);
+					char name[25] = { 0 };
+					strncpy(name, (const char*)(channel.buffer + 0x28), 24);
+
+					DEBUG_LOG("%x %d %d %s\r\n", version, entries, entriesUsed, name);
+
+					u16 entryIndex;
+
+					for (entryIndex = 0; entryIndex < entriesUsed; ++entryIndex)
+					{
+						char nameEntry[17] = { 0 };
+						int offset = 0x40 + entryIndex * 32;
+						u8 type = channel.buffer[offset];
+						u8 fileType = channel.buffer[offset + 1];
+						u16 startAddress = channel.buffer[offset + 2] | (channel.buffer[offset + 3] << 8);
+						u16 endAddress = channel.buffer[offset + 4] | (channel.buffer[offset + 5] << 8);
+						u32 fileOffset = channel.buffer[offset + 8] | (channel.buffer[offset + 9] << 8) | (channel.buffer[offset + 10] << 16) | (channel.buffer[offset + 11] << 24);
+						strncpy(nameEntry, (const char*)(channel.buffer + offset + 0x10), 16);
+
+						DEBUG_LOG("%d %02x %04x %04x %0x8 %s\r\n", type, fileType, startAddress, endAddress, fileOffset, nameEntry);
+
+						channel.bytesSent = 0;
+						channel.buffer[0] = startAddress & 0xff;
+						channel.buffer[1] = (startAddress >> 8) & 0xff;
+	
+						validT64 = true;
+						sizeRemaining = endAddress - startAddress;
+						channel.fileSize = sizeRemaining + 2;
+						channel.bytesSent = 0;
+						channel.cursor = 2;
+
+						SendBuffer(channel, false);
+
+						f_lseek(&channel.file, fileOffset);
+
+						break; // For now only load the first file.
+					}
+				}
+
+				if (!validT64)
+					f_lseek(&channel.file, 0);
+			}
+		}
+
 		do
 		{
 			f_read(&channel.file, channel.buffer, sizeof(channel.buffer), &bytesRead);
@@ -1803,6 +1881,7 @@ void IEC_Commands::LoadDirectory()
 	channel.cursor = sizeof(DirectoryBlocksFree);
 	
 	channel.filInfo.fsize = channel.bytesSent + channel.cursor;
+	channel.fileSize = (u32)channel.filInfo.fsize;
 	SendBuffer(channel, true);
 }
 
@@ -1887,6 +1966,7 @@ void IEC_Commands::OpenFile()
 				channel.buffer[index++] = '2';
 				channel.buffer[index++] = '8';
 				channel.buffer[index++] = '\"';
+				channel.fileSize = 256;
 			}
 			if (C128BootSectorName)
 			{
@@ -1896,6 +1976,7 @@ void IEC_Commands::OpenFile()
 					f_read(&fpBS, channel.buffer, 256, &bytes);
 				else
 					memset(channel.buffer, 0, 256);
+				channel.fileSize = 256;
 			}
 
 			if (SendBuffer(channel, true))

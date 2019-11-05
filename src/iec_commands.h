@@ -124,6 +124,7 @@ protected:
 		u32 bytesSent;
 		u32 open : 1;
 		u32 writing : 1;
+		u32 fileSize;
 
 		void Close();
 		bool WriteFull() const { return cursor >= sizeof(buffer); }
