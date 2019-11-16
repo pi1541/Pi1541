@@ -172,6 +172,8 @@ protected:
 
 	u8 GetFilenameCharacter(u8 value);
 
+	int WriteNewDiskInRAM(char* filenameNew, bool automount, unsigned length);
+
 	UpdateAction updateAction;
 	u8 commandCode;
 	bool receivedCommand : 1;

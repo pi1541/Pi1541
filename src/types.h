@@ -24,4 +24,12 @@ typedef enum {
 	EXIT_AUTOLOAD
 } EXIT_TYPE;
 
+#ifndef Max
+#define Max(a,b)	(((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef Min
+#define Min(a,b)	(((a) < (b)) ? (a) : (b))
+#endif
+
 #endif

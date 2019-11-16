@@ -106,6 +106,7 @@ private:
 	bool InsertNIB(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly);
 	bool InsertNBZ(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly);
 	bool InsertD81(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly);
+	bool InsertT64(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly);
 
 	void ShowSelectedImage(u32 index);
 

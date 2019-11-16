@@ -163,6 +163,9 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 			case DiskImage::D81:
 				success = InsertD81(fileInfo, (unsigned char*)DiskImage::readBuffer, bytesRead, readOnly);
 				break;
+			case DiskImage::T64:
+				success = InsertT64(fileInfo, (unsigned char*)DiskImage::readBuffer, bytesRead, readOnly);
+				break;
 			default:
 				success = false;
 				break;
@@ -242,6 +245,19 @@ bool DiskCaddy::InsertD81(const FILINFO* fileInfo, unsigned char* diskImageData,
 {
 	DiskImage diskImage;
 	if (diskImage.OpenD81(fileInfo, diskImageData, size))
+	{
+		diskImage.SetReadOnly(readOnly);
+		disks.push_back(diskImage);
+		selectedIndex = disks.size() - 1;
+		return true;
+	}
+	return false;
+}
+
+bool DiskCaddy::InsertT64(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly)
+{
+	DiskImage diskImage;
+	if (diskImage.OpenT64(fileInfo, diskImageData, size))
 	{
 		diskImage.SetReadOnly(readOnly);
 		disks.push_back(diskImage);
