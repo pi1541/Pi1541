@@ -45,8 +45,6 @@
 #define VIC2_COLOUR_INDEX_LBLUE		14
 #define VIC2_COLOUR_INDEX_LGREY		15
 
-#define FILEBROWSER_MAX_PNG_SIZE	0x10000
-
 #define STATUS_BAR_POSITION_Y (40 * 16 + 10)
 
 #define KEYBOARD_SEARCH_BUFFER_SIZE 512
@@ -253,7 +251,5 @@ private:
 	float scrollHighlightRate;
 
 	bool displayingDevices;
-
-	char PNG[FILEBROWSER_MAX_PNG_SIZE];
 };
 #endif

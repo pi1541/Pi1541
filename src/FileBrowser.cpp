@@ -820,7 +820,7 @@ bool FileBrowser::CheckForPNG(const char* filename, FILINFO& filIcon)
 
 			strcat(fileName, ".png");
 
-			if (f_stat(fileName, &filIcon) == FR_OK && filIcon.fsize < FILEBROWSER_MAX_PNG_SIZE)
+			if (f_stat(fileName, &filIcon) == FR_OK)
 				foundValid = true;
 		}
 	}
@@ -829,7 +829,7 @@ bool FileBrowser::CheckForPNG(const char* filename, FILINFO& filIcon)
 
 void FileBrowser::DisplayPNG(FILINFO& filIcon, int x, int y)
 {
-	if (filIcon.fname[0] != 0 && filIcon.fsize < FILEBROWSER_MAX_PNG_SIZE)
+	if (filIcon.fname[0] != 0)
 	{
 		FIL fp;
 		FRESULT res;
@@ -837,28 +837,33 @@ void FileBrowser::DisplayPNG(FILINFO& filIcon, int x, int y)
 		res = f_open(&fp, filIcon.fname, FA_READ);
 		if (res == FR_OK)
 		{
-			u32 bytesRead;
-			SetACTLed(true);
-			f_read(&fp, PNG, FILEBROWSER_MAX_PNG_SIZE, &bytesRead);
-			SetACTLed(false);
-			f_close(&fp);
+			char* PNG = (char*)malloc(filIcon.fsize);
+			if (PNG)
+			{
+				u32 bytesRead;
+				SetACTLed(true);
+				f_read(&fp, PNG, filIcon.fsize, &bytesRead);
+				SetACTLed(false);
+				f_close(&fp);
 
-			int w;
-			int h;
-			int channels_in_file;
-			stbi_uc* image = stbi_load_from_memory((stbi_uc const*)PNG, bytesRead, &w, &h, &channels_in_file, 4);
+				int w;
+				int h;
+				int channels_in_file;
+				stbi_uc* image = stbi_load_from_memory((stbi_uc const*)PNG, bytesRead, &w, &h, &channels_in_file, 4);
 #if not defined(EXPERIMENTALZERO)
 
-			if (image && (w == PNG_WIDTH && h == PNG_HEIGHT))
-			{
-				//DEBUG_LOG("Opened PNG %s w = %d h = %d cif = %d\r\n", fileName, w, h, channels_in_file);
-				screenMain->PlotImage((u32*)image, x, y, w, h);
-			}
-			else
-			{
-				//DEBUG_LOG("Invalid PNG size %d x %d\r\n", w, h);
-			}
+				if (image && (w == PNG_WIDTH && h == PNG_HEIGHT))
+				{
+					//DEBUG_LOG("Opened PNG %s w = %d h = %d cif = %d\r\n", fileName, w, h, channels_in_file);
+					screenMain->PlotImage((u32*)image, x, y, w, h);
+				}
+				else
+				{
+					//DEBUG_LOG("Invalid PNG size %d x %d\r\n", w, h);
+				}
 #endif
+				free(PNG);
+			}
 		}
 	}
 	else
@@ -874,7 +879,7 @@ void FileBrowser::DisplayPNG()
 	{
 		FileBrowser::BrowsableList::Entry* current = folder.current;
 		u32 x = screenMain->ScaleX(1024) - PNG_WIDTH;
-		u32 y = screenMain->ScaleY(666) - PNG_HEIGHT;
+		u32 y = screenMain->ScaleY(616) - PNG_HEIGHT;
 		DisplayPNG(current->filIcon, x, y);
 	}
 #endif
