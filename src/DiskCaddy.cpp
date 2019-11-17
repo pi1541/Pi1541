@@ -41,7 +41,7 @@ bool DiskCaddy::Empty()
 
 	for (index = 0; index < (int)disks.size(); ++index)
 	{
-		if (disks[index].IsDirty())
+		if (disks[index]->IsDirty())
 		{
 			anyDirty = true;
 #if not defined(EXPERIMENTALZERO)
@@ -50,7 +50,7 @@ bool DiskCaddy::Empty()
 				x = screen->ScaleX(screenPosXCaddySelections);
 				y = screen->ScaleY(screenPosYCaddySelections);
 
-				snprintf(buffer, 256, "Saving %s\r\n", disks[index].GetName());
+				snprintf(buffer, 256, "Saving %s\r\n", disks[index]->GetName());
 				screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			}
 #endif
@@ -64,12 +64,13 @@ bool DiskCaddy::Empty()
 				snprintf(buffer, 256, "Saving");
 				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), BkColour);
 				y += screenLCD->GetFontHeight();
-				snprintf(buffer, 256, "%s                ", disks[index].GetName());
+				snprintf(buffer, 256, "%s                ", disks[index]->GetName());
 				screenLCD->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 				screenLCD->SwapBuffers();
 			}
 		}
-		disks[index].Close();
+		disks[index]->Close();
+		delete disks[index];
 	}
 
 	if (anyDirty)
@@ -119,6 +120,9 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 		{
 			x = screen->ScaleX(screenPosXCaddySelections);
 			y = screen->ScaleY(screenPosYCaddySelections);
+
+			snprintf(buffer, 256, "                                                        \r\n");
+			screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 
 			snprintf(buffer, 256, "Loading %s\r\n", fileInfo->fname);
 			screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
@@ -188,82 +192,88 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 
 bool DiskCaddy::InsertD64(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly)
 {
-	DiskImage diskImage;
-	if (diskImage.OpenD64(fileInfo, diskImageData, size))
+	DiskImage* diskImage = new DiskImage();
+	if (diskImage->OpenD64(fileInfo, diskImageData, size))
 	{
-		diskImage.SetReadOnly(readOnly);
+		diskImage->SetReadOnly(readOnly);
 		disks.push_back(diskImage);
 		selectedIndex = disks.size() - 1;
 		return true;
 	}
+	delete diskImage;
 	return false;
 }
 
 bool DiskCaddy::InsertG64(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly)
 {
-	DiskImage diskImage;
-	if (diskImage.OpenG64(fileInfo, diskImageData, size))
+	DiskImage* diskImage = new DiskImage();
+	if (diskImage->OpenG64(fileInfo, diskImageData, size))
 	{
-		diskImage.SetReadOnly(readOnly);
+		diskImage->SetReadOnly(readOnly);
 		disks.push_back(diskImage);
 		//DEBUG_LOG("Disks size = %d\r\n", disks.size());
 		selectedIndex = disks.size() - 1;
 		return true;
 	}
+	delete diskImage;
 	return false;
 }
 
 bool DiskCaddy::InsertNIB(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly)
 {
-	DiskImage diskImage;
-	if (diskImage.OpenNIB(fileInfo, diskImageData, size))
+	DiskImage* diskImage = new DiskImage();
+	if (diskImage->OpenNIB(fileInfo, diskImageData, size))
 	{
 		// At the moment we cannot write out NIB files.
-		diskImage.SetReadOnly(true);// readOnly);
+		diskImage->SetReadOnly(true);// readOnly);
 		disks.push_back(diskImage);
 		selectedIndex = disks.size() - 1;
 		return true;
 	}
+	delete diskImage;
 	return false;
 }
 
 bool DiskCaddy::InsertNBZ(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly)
 {
-	DiskImage diskImage;
-	if (diskImage.OpenNBZ(fileInfo, diskImageData, size))
+	DiskImage* diskImage = new DiskImage();
+	if (diskImage->OpenNBZ(fileInfo, diskImageData, size))
 	{
 		// At the moment we cannot write out NIB files.
-		diskImage.SetReadOnly(true);// readOnly);
+		diskImage->SetReadOnly(true);// readOnly);
 		disks.push_back(diskImage);
 		selectedIndex = disks.size() - 1;
 		return true;
 	}
+	delete diskImage;
 	return false;
 }
 
 bool DiskCaddy::InsertD81(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly)
 {
-	DiskImage diskImage;
-	if (diskImage.OpenD81(fileInfo, diskImageData, size))
+	DiskImage* diskImage = new DiskImage();
+	if (diskImage->OpenD81(fileInfo, diskImageData, size))
 	{
-		diskImage.SetReadOnly(readOnly);
+		diskImage->SetReadOnly(readOnly);
 		disks.push_back(diskImage);
 		selectedIndex = disks.size() - 1;
 		return true;
 	}
+	delete diskImage;
 	return false;
 }
 
 bool DiskCaddy::InsertT64(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly)
 {
-	DiskImage diskImage;
-	if (diskImage.OpenT64(fileInfo, diskImageData, size))
+	DiskImage* diskImage = new DiskImage();
+	if (diskImage->OpenT64(fileInfo, diskImageData, size))
 	{
-		diskImage.SetReadOnly(readOnly);
+		diskImage->SetReadOnly(readOnly);
 		disks.push_back(diskImage);
 		selectedIndex = disks.size() - 1;
 		return true;
 	}
+	delete diskImage;
 	return false;
 }
 

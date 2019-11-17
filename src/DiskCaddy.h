@@ -52,7 +52,7 @@ public:
 		Update();
 #endif
 		if (selectedIndex < disks.size())
-			return &disks[selectedIndex];
+			return disks[selectedIndex];
 
 		return 0;
 	}
@@ -60,24 +60,21 @@ public:
 	DiskImage* NextDisk()
 	{
 		selectedIndex = (selectedIndex + 1) % (u32)disks.size();
-		auto ret = GetCurrentDisk();
 		return GetCurrentDisk();
 	}
 
 	DiskImage* PrevDisk()
 	{
-		if (selectedIndex == 0u)
-			selectedIndex += (u32)disks.size()-1;
-		else
-			--selectedIndex;
-
+		--selectedIndex;
+		if ((int)selectedIndex < 0)
+			selectedIndex += (u32)disks.size();
 		return GetCurrentDisk();
 	}
 
 	u32 GetNumberOfImages() const { return disks.size(); }
 	u32 GetSelectedIndex() const { return selectedIndex; }
 
-	DiskImage* GetImage(unsigned index) { return &disks[index]; }
+	DiskImage* GetImage(unsigned index) { return disks[index]; }
 	DiskImage* SelectImage(unsigned index)
 	{
 		if (selectedIndex != index && index < disks.size())
@@ -110,7 +107,7 @@ private:
 
 	void ShowSelectedImage(u32 index);
 
-	std::vector<DiskImage> disks;
+	std::vector<DiskImage*> disks;
 	u32 selectedIndex;
 	u32 oldCaddyIndex;
 #if not defined(EXPERIMENTALZERO)
