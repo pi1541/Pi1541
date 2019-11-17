@@ -271,6 +271,11 @@ bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
 				offset++;
 			dirty = true;
 		}
+		else
+		{
+			list->currentIndex = 0;
+			dirty = true;
+		}
 	}
 	if (inputMappings->BrowseUp())
 	{
@@ -283,6 +288,11 @@ bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
 			}
 			if ((offset > 0) && (list->currentIndex < offset))
 				offset--;
+			dirty = true;
+		}
+		else
+		{
+			list->currentIndex = list->entries.size() - 1;
 			dirty = true;
 		}
 	}
