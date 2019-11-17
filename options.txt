@@ -63,7 +63,7 @@ GraphIEC = 1
 //SoundOnGPIODuration = 1000 // Length of buzz in micro seconds
 //SoundOnGPIOFreq = 1200 // Frequency of buzz in Hz
 
-// You can create 320x240 PNG files with the same name as your disk images. With this option turned on they will be displayed on the Pi's screen.
+// You can create 320x200 PNG files with the same name as your disk images. With this option turned on they will be displayed on the Pi's screen.
 //DisplayPNGIcons = 1
 
 // If you would like to specify what file will be loaded by LOAD"*" in browse mode then specify it here
