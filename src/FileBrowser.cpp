@@ -1473,6 +1473,55 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 
 	ClearScreen();
 
+	if (options.DisplayTracks())
+	{
+		for (track = 0; track < HALF_TRACK_COUNT; track += 2)
+		{
+			int yoffset = screenMain->ScaleY(400);
+			unsigned index;
+			unsigned length = diskImage->TrackLength(track);
+			unsigned countSync = 0;
+
+			u8 shiftReg = 0;
+			for (index = 0; index < length / 8; ++index)
+			{
+				RGBA colour;
+				unsigned count1s = 0;
+				bool sync = false;
+
+				int bit;
+
+				for (bit = 0; bit < 64; ++bit)
+				{
+					if (bit % 8 == 0)
+						shiftReg = diskImage->GetNextByte(track, index * 8 + bit / 8);
+
+					if (shiftReg & 0x80)
+					{
+						count1s++;
+						countSync++;
+						if (countSync == 10)
+							sync = true;
+					}
+					else
+					{
+						countSync = 0;
+					}
+					shiftReg <<= 1;
+				}
+
+				if (sync)
+					colour = RGBA(0xff, 0x00, 0x00, 0xFF);
+				else
+					colour = RGBA(0x00, (unsigned char)((float)count1s / 64.0f * 255.0f), 0x00, 0xFF);
+
+				screenMain->DrawRectangle(index, (track >> 1) * 4 + yoffset, index + 1, (track >> 1) * 4 + 4 + yoffset, colour);
+			}
+		}
+	}
+
+	track = 18;
+
 	if (diskImage->GetDecodedSector(track, sectorNo, buffer))
 	{
 		track = buffer[0];

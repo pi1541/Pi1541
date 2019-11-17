@@ -60,6 +60,7 @@ public:
 	inline unsigned int GetSupportUARTInput() const { return supportUARTInput; }
 
 	inline unsigned int GraphIEC() const { return graphIEC; }
+	inline unsigned int DisplayTracks() const { return displayTracks; }
 	inline unsigned int QuickBoot() const { return quickBoot; }
 	inline unsigned int ShowOptions() const { return showOptions; }
 	inline unsigned int DisplayPNGIcons() const { return displayPNGIcons; }
@@ -128,6 +129,7 @@ private:
 	unsigned int disableSD2IECCommands;
 	unsigned int supportUARTInput;
 	unsigned int graphIEC;
+	unsigned int displayTracks;
 	unsigned int quickBoot;
 	unsigned int showOptions;
 	unsigned int displayPNGIcons;
