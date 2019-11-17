@@ -44,6 +44,8 @@ OnResetChangeToStartingFolder = 1
 
 // If you use FB64 (CBMFileBrowser) and want to use a fast loader cartridge (AR6, EFL, FC3) to load it then use this option to automatically mount it. 
 //AutoMountImage = fb.d64 // You MUST have a disk image in \1541 with this filename
+// If you use FB64 (CBMFileBrowser) and want Pi1541 to send all file names as lower case.
+//LowercaseBrowseModeFilenames = 1
 
 // If you are using a FB128 in 128 mode you can get FB128 to auto boot using this option
 //AutoBootFB128 = 1
@@ -73,12 +75,15 @@ GraphIEC = 1
 // Names are formed automatically as autoname001.d64, autoname002.d64 etc...
 // change the base of the filename here
 //AutoBaseName = autoname
+// By default Alt-N creates a new D64 disk image.
+// If you rather it create a G64 then use this option.
+//NewDiskType = g64
 
 // If you are using a LCD screen then specify it here
 //LCDName = ssd1306_128x64
 //LCDName = ssd1306_128x32
 //LCDName = sh1106_128x64
-// If you are using a LCD screen and you would like PageUp and PageDown keys to work with it then specify this option
+// If you are using a LCD screen and you would like PageUp and PageDown keys to work with it (rather than the HDMI screen) then specify this option
 //KeyboardBrowseLCDScreen = 1
 
 // change startup logo on oled - 1541ii or 1541classic
@@ -132,3 +137,4 @@ GraphIEC = 1
 // This option will display the temperature of the Pi's CPU.
 // It should be about 52°C anything above 65°C is bad and there is something wrong with your hardware
 //DisplayTemperature = 1
+
