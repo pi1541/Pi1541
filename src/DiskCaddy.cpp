@@ -31,6 +31,10 @@ static const u32 screenPosYCaddySelections = 280;
 static char buffer[256] = { 0 };
 static u32 white = RGBA(0xff, 0xff, 0xff, 0xff);
 static u32 red = RGBA(0xff, 0, 0, 0xff);
+static u32 redDark = RGBA(0x88, 0, 0, 0xff);
+static u32 redMid = RGBA(0xcc, 0, 0, 0xff);
+static u32 grey = RGBA(0x88, 0x88, 0x88, 0xff);
+static u32 greyDark = RGBA(0x44, 0x44, 0x44, 0xff);
 
 bool DiskCaddy::Empty()
 {
@@ -289,8 +293,10 @@ void DiskCaddy::Display()
 		x = screen->ScaleX(screenPosXCaddySelections);
 		y = screen->ScaleY(screenPosYCaddySelections);
 
-		snprintf(buffer, 256, "Emulating\r\n");
-		screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+		snprintf(buffer, 256, "                                                        \r\n");
+		screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), redDark);
+		snprintf(buffer, 256, "  Emulating\r\n");
+		screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), redDark);
 		y += 16;
 
 		for (caddyIndex = 0; caddyIndex < numberOfImages; ++caddyIndex)
@@ -299,18 +305,14 @@ void DiskCaddy::Display()
 			const char* name = image->GetName();
 			if (name)
 			{
-				snprintf(buffer, 256, "%d %s\r\n", caddyIndex + 1, name);
-				screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
+				snprintf(buffer, 256, "                                                        \r\n");
+				screen->PrintText(false, x, y, buffer, grey, greyDark);
+				snprintf(buffer, 256, "  %d %s", caddyIndex + 1, name);
+				screen->PrintText(false, x, y, buffer, grey, greyDark);
 				y += 16;
 			}
 		}
 	}
-
-	//if (screenLCD)
-	//{
-	//	RGBA BkColour = RGBA(0, 0, 0, 0xFF);
-	//	screenLCD->Clear(BkColour);
-	//}
 #endif
 	ShowSelectedImage(0);
 }
@@ -322,9 +324,14 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 #if not defined(EXPERIMENTALZERO)
 	if (screen)
 	{
-		x = screen->ScaleX(screenPosXCaddySelections) - 16;
+		x = screen->ScaleX(screenPosXCaddySelections);
 		y = screen->ScaleY(screenPosYCaddySelections) + 16 + 16 * index;
-		snprintf(buffer, 256, "*");
+		DiskImage* image = GetImage(index);
+		const char* name = image->GetName();
+		if (name)
+		{
+			snprintf(buffer, 256, "* %d %s", index + 1, name);
+		}
 		screen->PrintText(false, x, y, buffer, white, red);
 	}
 #endif
@@ -394,10 +401,17 @@ bool DiskCaddy::Update()
 #if not defined(EXPERIMENTALZERO)
 		if (screen)
 		{
-			x = screen->ScaleX(screenPosXCaddySelections) - 16;
+			x = screen->ScaleX(screenPosXCaddySelections);
 			y = screen->ScaleY(screenPosYCaddySelections) + 16 + 16 * oldCaddyIndex;
-			snprintf(buffer, 256, " ");
-			screen->PrintText(false, x, y, buffer, red, red);
+			DiskImage* image = GetImage(oldCaddyIndex);
+			const char* name = image->GetName();
+			if (name)
+			{
+				snprintf(buffer, 256, "                                                        \r\n");
+				screen->PrintText(false, x, y, buffer, grey, greyDark);
+				snprintf(buffer, 256, "  %d %s", oldCaddyIndex + 1, name);
+				screen->PrintText(false, x, y, buffer, grey, greyDark);
+			}
 		}
 #endif
 
