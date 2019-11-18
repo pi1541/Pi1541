@@ -273,8 +273,12 @@ bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
 		}
 		else
 		{
-			list->currentIndex = 0;
-			dirty = true;
+			if (!pageOnly)
+			{
+				list->currentIndex = 0;
+				list->SetCurrent();
+				dirty = true;
+			}
 		}
 	}
 	if (inputMappings->BrowseUp())
@@ -292,8 +296,12 @@ bool FileBrowser::BrowsableListView::CheckBrowseNavigation(bool pageOnly)
 		}
 		else
 		{
-			list->currentIndex = list->entries.size() - 1;
-			dirty = true;
+			if (!pageOnly)
+			{
+				list->currentIndex = list->entries.size() - 1;
+				list->SetCurrent();
+				dirty = true;
+			}
 		}
 	}
 	if ((lcdPgUpDown && inputMappings->BrowsePageDownLCD()) || (!lcdPgUpDown && inputMappings->BrowsePageDown()))
