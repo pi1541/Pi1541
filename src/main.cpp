@@ -692,15 +692,16 @@ DMA_ControlBlock dmaSoundCB =
 	0, 0
 };
 #endif
+
+#if not defined(EXPERIMENTALZERO)
 static void PlaySoundDMA()
 {
-#if not defined(EXPERIMENTALZERO)
 	write32(PWM_DMAC, PWM_ENAB + 0x0001);
 	write32(DMA_ENABLE, 1);	// DMA_EN0
 	write32(DMA0_BASE + DMA_CONBLK_AD, (u32)&dmaSoundCB);
 	write32(DMA0_BASE + DMA_CS, DMA_ACTIVE);
-#endif
 }
+#endif
 
 void GlobalSetDeviceID(u8 id)
 {
@@ -733,156 +734,6 @@ void CheckAutoMountImage(EXIT_TYPE reset_reason , FileBrowser* fileBrowser)
 	}
 }
 
-#if defined(EXPERIMENTALZERO)
-EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
-{
-	bool oldLED = false;
-	unsigned ctBefore = 0;
-	unsigned ctAfter = 0;
-	int cycleCount = 0;
-	unsigned caddyIndex;
-	int headSoundCounter = 0;
-	int headSoundFreqCounter = 0;
-	//			const int headSoundFreq = 833;	// 1200Hz = 1/1200 * 10^6;
-	const int headSoundFreq = 1000000 / options.SoundOnGPIOFreq();	// 1200Hz = 1/1200 * 10^6;
-	unsigned char oldHeadDir;
-	int resetCount = 0;
-	bool refreshOutsAfterCPUStep = true;
-	unsigned numberOfImages = diskCaddy.GetNumberOfImages();
-	unsigned numberOfImagesMax = numberOfImages;
-	if (numberOfImagesMax > 10)
-		numberOfImagesMax = 10;
-
-	diskCaddy.Display();
-
-	inputMappings->directDiskSwapRequest = 0;
-	// Force an update on all the buttons now before we start emulation mode. 
-	IEC_Bus::ReadBrowseMode();
-
-	bool extraRAM = options.GetExtraRAM();
-	DataBusReadFn dataBusRead = extraRAM ? read6502ExtraRAM : read6502;
-	DataBusWriteFn dataBusWrite = extraRAM ? write6502ExtraRAM : write6502;
-	M6502& m6502 = pi1541.m6502;
-	m6502.SetBusFunctions(dataBusRead, dataBusWrite);
-
-	IEC_Bus::VIA = &pi1541.VIA[0];
-	IEC_Bus::port = pi1541.VIA[0].GetPortB();
-	pi1541.Reset();	// will call IEC_Bus::Reset();
-	IEC_Bus::OutputLED = false;
-	IEC_Bus::LetSRQBePulledHigh();
-	ctBefore = read32(ARM_SYSTIMER_CLO);
-
-	//resetWhileEmulating = false;
-	selectedViaIECCommands = false;
-
-	u32 hash = pi1541.drive.GetDiskImage()->GetHash();
-	// 0x42c02586 = maniac_mansion_s1[lucasfilm_1989](ntsc).g64
-	// 0x18651422 = aliens[electric_dreams_1987].g64
-	// 0x2a7f4b77 = zak_mckracken_boot[activision_1988](manual)(!).g64
-	if (hash == 0x42c02586 || hash == 0x18651422 || hash == 0x2a7f4b77)
-	{
-		refreshOutsAfterCPUStep = false;
-	}
-
-	while (cycleCount < FAST_BOOT_CYCLES)
-	{
-		m6502.Step();
-		pi1541.Update();
-		cycleCount++;
-		IEC_Bus::ReadEmulationMode1541();
-	}
-	bool buttonState = false;
-	bool prevButtonState = false;
-	while (true)
-	{
-
-		if (m6502.SYNC())	// About to start a new instruction.
-		{
-			pc = m6502.GetPC();
-			// See if the emulated cpu is executing CD:_ (ie back out of emulated image)
-			if (snoopIndex == 0 && (pc == SNOOP_CD_CBM || pc == SNOOP_CD_JIFFY_BOTH || pc == SNOOP_CD_JIFFY_DRIVEONLY)) snoopPC = pc;
-
-			if (pc == snoopPC)
-			{
-				if (Snoop(m6502.GetA()))
-				{
-					return EXIT_CD;
-				}
-			}
-		}
-
-		m6502.Step();	// If the CPU reads or writes to the VIA then clk and data can change
-
-		if (refreshOutsAfterCPUStep)
-			IEC_Bus::RefreshOuts1541();	// Now output all outputs.
-
-		IEC_Bus::OutputLED = pi1541.drive.IsLEDOn();
-		if (IEC_Bus::OutputLED ^ oldLED)
-		{
-			SetACTLed(IEC_Bus::OutputLED);
-			oldLED = IEC_Bus::OutputLED;
-		}
-
-		pi1541.Update();
-
-		if (__builtin_expect(IEC_Bus::IsReset(), false))
-			resetCount++;
-		else
-			resetCount = 0;
-
-		if ((resetCount > 10))
-		{
-			return EXIT_RESET;
-		}
-
-		buttonState = IEC_Bus::AnyButtonPressed();
-		if (__builtin_expect(buttonState, false))
-		{
-			IEC_Bus::ReadButtonsEmulationMode();
-			inputMappings->CheckButtonsEmulationMode();
-			if (numberOfImages > 1)
-			{
-				bool nextDisk = inputMappings->NextDisk();
-				bool prevDisk = inputMappings->PrevDisk();
-				if (nextDisk)
-				{
-					pi1541.drive.Insert(diskCaddy.PrevDisk());
-				}
-				if (prevDisk)
-				{
-					pi1541.drive.Insert(diskCaddy.NextDisk());
-				}
-			}
-			bool exitEmulation = inputMappings->Exit();
-			if (exitEmulation)
-				return EXIT_KEYBOARD;
-		}
-		else if (__builtin_expect(!buttonState & prevButtonState, false))
-		{
-			IEC_Bus::ReadButtonsEmulationMode();
-			inputMappings->CheckButtonsEmulationMode();
-		}
-
-		prevButtonState = buttonState;
-
-		do
-		{
-			ctAfter = read32(ARM_SYSTIMER_CLO);
-		} while (ctAfter == ctBefore); 	// Sync to the 1MHz clock
-	
-
-		ctBefore = ctAfter;		
-		IEC_Bus::ReadEmulationMode1541();
-
-		IEC_Bus::RefreshOuts1541();	// Now output all outputs.
-
-
-
-	}
-	return EXIT_UNKNOWN;
-}
-
-#else
 EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 {
 	EXIT_TYPE exitReason = EXIT_UNKNOWN;
@@ -903,9 +754,13 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	if (numberOfImagesMax > 10)
 		numberOfImagesMax = 10;
 
+#if not defined(EXPERIMENTALZERO)
 	core0RefreshingScreen.Acquire();
+#endif
 	diskCaddy.Display();
+#if not defined(EXPERIMENTALZERO)
 	core0RefreshingScreen.Release();
+#endif
 
 	inputMappings->directDiskSwapRequest = 0;
 	// Force an update on all the buttons now before we start emulation mode. 
@@ -975,6 +830,7 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 				oldLED = IEC_Bus::OutputLED;
 			}
 
+#if not defined(EXPERIMENTALZERO)
 			// Do head moving sound
 			unsigned char headDir = pi1541.drive.GetLastHeadDirection();
 			if (headDir ^ oldHeadDir)	// Need to start a new sound?
@@ -1001,13 +857,15 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 					IEC_Bus::OutputSound = !IEC_Bus::OutputSound;
 				}
 			}
-
+#endif
 		}
 
 		IEC_Bus::ReadButtonsEmulationMode();
 
 		// Other core will check the uart (as it is slow) (could enable uart irqs - will they execute on this core?)
+#if not defined(EXPERIMENTALZERO)
 		inputMappings->CheckKeyboardEmulationMode(numberOfImages, numberOfImagesMax);
+#endif
 		inputMappings->CheckButtonsEmulationMode();
 
 		bool exitEmulation = inputMappings->Exit();
@@ -1089,7 +947,6 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	}
 	return exitReason;
 }
-#endif
 
 #if defined(PI1581SUPPORT)
 EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
@@ -1112,9 +969,13 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 	if (numberOfImagesMax > 10)
 		numberOfImagesMax = 10;
 
+#if not defined(EXPERIMENTALZERO)
 	core0RefreshingScreen.Acquire();
+#endif
 	diskCaddy.Display();
+#if not defined(EXPERIMENTALZERO)
 	core0RefreshingScreen.Release();
+#endif
 
 	inputMappings->directDiskSwapRequest = 0;
 	// Force an update on all the buttons now before we start emulation mode. 
@@ -1170,6 +1031,7 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 				oldLED = IEC_Bus::OutputLED;
 			}
 
+#if not defined(EXPERIMENTALZERO)
 			// Do head moving sound
 			unsigned int track = pi1581.wd177x.GetCurrentTrack();
 			if (track != oldTrack)	// Need to start a new sound?
@@ -1185,6 +1047,7 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 					PlaySoundDMA();
 				}
 			}
+#endif
 		}
 
 		// Other core will check the uart (as it is slow) (could enable uart irqs - will they execute on this core?)
@@ -1232,6 +1095,7 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 		}
 		ctBefore = ctAfter;
 
+#if not defined(EXPERIMENTALZERO)
 		if (options.SoundOnGPIO() && headSoundCounter > 0)
 		{
 			headSoundFreqCounter--;		// Continue updating a GPIO non DMA sound.
@@ -1242,6 +1106,7 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 				IEC_Bus::OutputSound = !IEC_Bus::OutputSound;
 			}
 		}
+#endif
 
 		if (numberOfImages > 1)
 		{

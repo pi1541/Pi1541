@@ -418,6 +418,7 @@ bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 		dirty |= views[index].CheckBrowseNavigation(index != 0);
 	}
 
+#if not defined(EXPERIMENTALZERO)
 	// check for keys a-z and 0-9
 	char searchChar = inputMappings->getKeyboardNumLetter();
 	if (searchChar)
@@ -489,6 +490,7 @@ bool FileBrowser::BrowsableList::CheckBrowseNavigation()
 			dirty |= 1;
 		}
 	}
+#endif
 	return dirty;
 }
 
