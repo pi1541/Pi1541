@@ -1435,6 +1435,11 @@ void FileBrowser::ClearSelections()
 
 void FileBrowser::ShowDeviceAndROM()
 {
+	ShowDeviceAndROM( roms->ROMNames[roms->currentROMIndex] );
+}
+
+void FileBrowser::ShowDeviceAndROM( const char* ROMName )
+{
 	char buffer[256];
 	u32 textColour = RGBA(0, 0, 0, 0xff);
 	u32 bgColour = RGBA(0xff, 0xff, 0xff, 0xff);
@@ -1445,7 +1450,7 @@ void FileBrowser::ShowDeviceAndROM()
 	snprintf(buffer, 256, "Device %2d %*s\r\n"
 		, *deviceID
 		, roms->GetLongestRomNameLen()
-		, roms->ROMNames[roms->currentROMIndex]
+		, ROMName
 		);
 	screenMain->PrintText(false, x, y, buffer, textColour, bgColour);
 #endif

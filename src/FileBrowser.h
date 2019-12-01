@@ -187,6 +187,8 @@ public:
 	void ClearSelections();
 
 	void ShowDeviceAndROM();
+	void ShowDeviceAndROM( const char* ROMName );
+	
 
 	void ClearScreen();
 

@@ -651,7 +651,7 @@ EmulatingMode BeginEmulating(FileBrowser* fileBrowser, const char* filenameForIc
 		{
 			pi1581.Insert(diskImage);
 			fileBrowser->DisplayDiskInfo(diskImage, filenameForIcon);
-			fileBrowser->ShowDeviceAndROM();
+			fileBrowser->ShowDeviceAndROM( roms.ROMName1581 );
 			return EMULATING_1581;
 		}
 		else
