@@ -392,16 +392,9 @@ void IEC_Bus::RefreshOuts1541(void)
 	if (OutputSound) set |= 1 << PIGPIO_OUT_SOUND;
 	else clear |= 1 << PIGPIO_OUT_SOUND;
 #endif
-	if (oldClears != clear)
-	{
-		write32(ARM_GPIO_GPCLR0, clear);
-		oldClears = clear;
-	}
-	if (oldSets != set)
-	{
-		write32(ARM_GPIO_GPSET0, set);
-		oldSets = set;
-	}
+
+	write32(ARM_GPIO_GPCLR0, clear);
+	write32(ARM_GPIO_GPSET0, set);
 }
 
 void IEC_Bus::PortB_OnPortOut(void* pUserData, unsigned char status)
