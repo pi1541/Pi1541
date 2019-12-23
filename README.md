@@ -16,8 +16,11 @@ See www.pi1541.com for SD card and hardware configurations.
 Toolchain Installation
 ----------------------
 
-On Windows use GNU Tools ARM Embedded tool chain 5.4.1 using make.
-https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads/5-2016-q2-update
+On Windows use GNU Tools ARM Embedded tool chain 5.4:
+https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q2-update
+and Make:
+http://gnuwin32.sourceforge.net/packages/make.htm
+
 
 On dpkg based linux systems install:
 (Tested on osmc/rpi3)
