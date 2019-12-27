@@ -22,6 +22,7 @@
 #include <vector>
 #include "DiskImage.h"
 #include "Screen.h"
+#include "ROMs.h"
 
 class DiskCaddy
 {
@@ -32,14 +33,16 @@ public:
 		, screen(0)
 #endif
 		, screenLCD(0)
+		, roms(0)
 	{
 	}
-	void SetScreen(Screen* screen, ScreenBase* screenLCD) 
+	void SetScreen(Screen* screen, ScreenBase* screenLCD, ROMs* roms)
 	{ 
 #if not defined(EXPERIMENTALZERO)
 		this->screen = screen;
 #endif
-		this->screenLCD = screenLCD; 
+		this->screenLCD = screenLCD;
+		this->roms = roms;
 	}
 
 	bool Empty();
@@ -114,6 +117,7 @@ private:
 	ScreenBase* screen;
 #endif
 	ScreenBase* screenLCD;
+	ROMs* roms;
 };
 
 #endif

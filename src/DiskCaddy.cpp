@@ -26,6 +26,8 @@ extern "C"
 #include "rpi-gpio.h"	// For SetACTLed
 }
 
+extern u8 deviceID;
+
 static const u32 screenPosXCaddySelections = 240;
 static const u32 screenPosYCaddySelections = 280;
 static char buffer[256] = { 0 };
@@ -353,10 +355,12 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 		x = 0;
 		y = 0;
 
-		snprintf(buffer, 256, "        D %d/%d %c        "
+		snprintf(buffer, 256, "D%02d D%d/%d %c %s"
+			, deviceID
 			, index + 1
 			, numberOfImages
 			, GetImage(index)->GetReadOnly() ? 'R' : ' '
+			, roms ? roms->GetSelectedROMName() : ""
 			);
 		screenLCD->PrintText(false, x, y, buffer, 0, RGBA(0xff, 0xff, 0xff, 0xff));
 		y += screenLCD->GetFontHeight();

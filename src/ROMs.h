@@ -24,6 +24,11 @@
 class ROMs
 {
 public:
+	ROMs() :
+		currentROMIndex(0)
+	{
+	}
+
 	void SelectROM(const char* ROMName);
 
 	inline u8 Read(u16 address)
@@ -51,8 +56,12 @@ public:
 	unsigned lastManualSelectedROMIndex;
 
 	unsigned GetLongestRomNameLen() { return longestRomNameLen; }
-	unsigned UpdateLongestRomNameLen( unsigned maybeLongest );
+	unsigned UpdateLongestRomNameLen(unsigned maybeLongest);
 
+	const char* GetSelectedROMName() const
+	{
+		return ROMNames[currentROMIndex];
+	}
 protected:
 	unsigned longestRomNameLen;
 };

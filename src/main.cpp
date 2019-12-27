@@ -554,6 +554,7 @@ void UpdateScreen()
 
 					IEC_Bus::WaitMicroSeconds(100);
 
+					snprintf(tempBuffer, tempBufferSize, "D%02d %02d.%d", deviceID, (oldTrack >> 1) + 1, oldTrack & 1 ? 5 : 0);
 					screenLCD->PrintText(false, 0, 0, tempBuffer, 0, RGBA(0xff, 0xff, 0xff, 0xff));
 					//				screenLCD->SetContrast(255.0/79.0*track);
 					screenLCD->RefreshRows(0, 1);
@@ -1176,7 +1177,7 @@ void emulator()
 
 	roms.lastManualSelectedROMIndex = 0;
 
-	diskCaddy.SetScreen(&screen, screenLCD);
+	diskCaddy.SetScreen(&screen, screenLCD, &roms);
 	fileBrowser = new FileBrowser(inputMappings, &diskCaddy, &roms, &deviceID, options.DisplayPNGIcons(), &screen, screenLCD, options.ScrollHighlightRate());
 	pi1541.Initialise();
 

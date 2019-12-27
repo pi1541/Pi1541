@@ -1438,7 +1438,7 @@ void FileBrowser::ClearSelections()
 
 void FileBrowser::ShowDeviceAndROM()
 {
-	ShowDeviceAndROM( roms->ROMNames[roms->currentROMIndex] );
+	ShowDeviceAndROM(roms->GetSelectedROMName());
 }
 
 void FileBrowser::ShowDeviceAndROM( const char* ROMName )
@@ -1447,16 +1447,31 @@ void FileBrowser::ShowDeviceAndROM( const char* ROMName )
 	u32 textColour = RGBA(0, 0, 0, 0xff);
 	u32 bgColour = RGBA(0xff, 0xff, 0xff, 0xff);
 	u32 x = 0; // 43 * 8
-#if not defined(EXPERIMENTALZERO)
-	u32 y = screenMain->ScaleY(STATUS_BAR_POSITION_Y) - 20;
+	u32 y;
 
-	snprintf(buffer, 256, "Device %2d %*s\r\n"
+#if not defined(EXPERIMENTALZERO)
+	y = screenMain->ScaleY(STATUS_BAR_POSITION_Y) - 20;
+
+	snprintf(buffer, 256, "Device %2d %*s"
 		, *deviceID
 		, roms->GetLongestRomNameLen()
 		, ROMName
 		);
+
 	screenMain->PrintText(false, x, y, buffer, textColour, bgColour);
 #endif
+	if (screenLCD)
+	{
+		x = 0;
+		y = 0;
+
+		snprintf(buffer, 256, "D%2d %s"
+			, *deviceID
+			, ROMName
+			);
+		screenLCD->PrintText(false, x, y, buffer, textColour, bgColour);
+		screenLCD->SwapBuffers();
+	}
 }
 
 void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForIcon)
