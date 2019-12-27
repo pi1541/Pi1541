@@ -43,6 +43,11 @@ bool DiskCaddy::Empty()
 	int index;
 	bool anyDirty = false;
 
+#if not defined(EXPERIMENTALZERO)
+	if (screen)
+		screen->Clear(RGBA(0x40, 0x31, 0x8D, 0xFF));
+#endif
+
 	for (index = 0; index < (int)disks.size(); ++index)
 	{
 		if (disks[index]->IsDirty())
@@ -54,7 +59,7 @@ bool DiskCaddy::Empty()
 				x = screen->ScaleX(screenPosXCaddySelections);
 				y = screen->ScaleY(screenPosYCaddySelections);
 
-				snprintf(buffer, 256, "Saving %s\r\n", disks[index]->GetName());
+				snprintf(buffer, 256, "Saving %s", disks[index]->GetName());
 				screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 			}
 #endif
@@ -85,7 +90,7 @@ bool DiskCaddy::Empty()
 			x = screen->ScaleX(screenPosXCaddySelections);
 			y = screen->ScaleY(screenPosYCaddySelections);
 
-			snprintf(buffer, 256, "Saving Complete             \r\n");
+			snprintf(buffer, 256, "                     Saving Complete                    ");
 			screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 		}
 #endif
@@ -107,6 +112,7 @@ bool DiskCaddy::Empty()
 
 	disks.clear();
 	selectedIndex = 0;
+	oldCaddyIndex = 0;
 	return anyDirty;
 }
 
@@ -125,10 +131,10 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 			x = screen->ScaleX(screenPosXCaddySelections);
 			y = screen->ScaleY(screenPosYCaddySelections);
 
-			snprintf(buffer, 256, "                                                        \r\n");
+			snprintf(buffer, 256, "                                                        ");
 			screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 
-			snprintf(buffer, 256, "Loading %s\r\n", fileInfo->fname);
+			snprintf(buffer, 256, "Loading %s", fileInfo->fname);
 			screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), red);
 		}
 #endif
@@ -293,9 +299,9 @@ void DiskCaddy::Display()
 		x = screen->ScaleX(screenPosXCaddySelections);
 		y = screen->ScaleY(screenPosYCaddySelections);
 
-		snprintf(buffer, 256, "                                                        \r\n");
+		snprintf(buffer, 256, "                                                        ");
 		screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), redDark);
-		snprintf(buffer, 256, "  Emulating\r\n");
+		snprintf(buffer, 256, "  Emulating");
 		screen->PrintText(false, x, y, buffer, RGBA(0xff, 0xff, 0xff, 0xff), redDark);
 		y += 16;
 
@@ -305,7 +311,7 @@ void DiskCaddy::Display()
 			const char* name = image->GetName();
 			if (name)
 			{
-				snprintf(buffer, 256, "                                                        \r\n");
+				snprintf(buffer, 256, "                                                        ");
 				screen->PrintText(false, x, y, buffer, grey, greyDark);
 				snprintf(buffer, 256, "  %d %s", caddyIndex + 1, name);
 				screen->PrintText(false, x, y, buffer, grey, greyDark);
@@ -407,7 +413,7 @@ bool DiskCaddy::Update()
 			const char* name = image->GetName();
 			if (name)
 			{
-				snprintf(buffer, 256, "                                                        \r\n");
+				snprintf(buffer, 256, "                                                        ");
 				screen->PrintText(false, x, y, buffer, grey, greyDark);
 				snprintf(buffer, 256, "  %d %s", oldCaddyIndex + 1, name);
 				screen->PrintText(false, x, y, buffer, grey, greyDark);

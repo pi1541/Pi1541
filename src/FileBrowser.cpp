@@ -553,6 +553,9 @@ FileBrowser::FileBrowser(InputMappings* inputMappings, DiskCaddy* diskCaddy, ROM
 
 		folder.AddView(screenLCD, inputMappings, columns, rows, positionX, positionY, true);
 	}
+
+	f_chdir("/1541");
+	RefreshFolderEntries();
 }
 
 u32 FileBrowser::Colour(int index)

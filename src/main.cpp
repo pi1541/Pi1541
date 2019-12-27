@@ -596,7 +596,13 @@ void UpdateScreen()
 		if (emulating != IEC_COMMANDS)
 		{
 			//refreshUartStatusDisplay =
-				diskCaddy.Update();
+#if not defined(EXPERIMENTALZERO)
+			core0RefreshingScreen.Acquire();
+#endif
+			diskCaddy.Update();
+#if not defined(EXPERIMENTALZERO)
+			core0RefreshingScreen.Release();
+#endif
 		}
 
 		//if (options.GetSupportUARTInput())
@@ -1172,7 +1178,6 @@ void emulator()
 
 	diskCaddy.SetScreen(&screen, screenLCD);
 	fileBrowser = new FileBrowser(inputMappings, &diskCaddy, &roms, &deviceID, options.DisplayPNGIcons(), &screen, screenLCD, options.ScrollHighlightRate());
-	fileBrowser->DisplayRoot();
 	pi1541.Initialise();
 
 	m_IEC_Commands.SetAutoBootFB128(options.AutoBootFB128());
@@ -1283,7 +1288,6 @@ void emulator()
 							break;
 						case IEC_Commands::POP_DIR:
 							fileBrowser->PopFolder();
-							fileBrowser->RefeshDisplay();
 							break;
 						case IEC_Commands::POP_TO_ROOT:
 							fileBrowser->DisplayRoot();
@@ -1329,19 +1333,23 @@ void emulator()
 
 			// Clearing the caddy now
 			//	- will write back all changed/dirty/written to disk images now
-			//		- TDOO: need to display the image names as they write back
-			//	- pass in a call back function?
+#if not defined(EXPERIMENTALZERO)
+			core0RefreshingScreen.Acquire();
+#endif
 			if (diskCaddy.Empty())
 				IEC_Bus::WaitMicroSeconds(2 * 1000000);
 
 			IEC_Bus::WaitUntilReset();
-			//DEBUG_LOG("6502 resetting\r\n");
 			emulating = IEC_COMMANDS;
-
+	
 			if ((exitReason == EXIT_RESET) && (options.GetOnResetChangeToStartingFolder() || selectedViaIECCommands))
 				fileBrowser->DisplayRoot(); // TO CHECK
 
 			inputMappings->WaitForClearButtons();
+
+#if not defined(EXPERIMENTALZERO)
+			core0RefreshingScreen.Release();
+#endif
 		}
 	}
 	delete fileBrowser;
