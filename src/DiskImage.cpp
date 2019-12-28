@@ -176,6 +176,7 @@ void DiskImage::Close()
 			memset(tracks, 0x55, sizeof(tracks));
 		break;
 		default:
+			memset(tracks, 0x55, sizeof(tracks));
 		break;
 	}
 	memset(trackLengths, 0, sizeof(trackLengths));
@@ -1295,6 +1296,40 @@ void DiskImage::CloseT64()
 	attachedImageSize = 0;
 }
 
+bool DiskImage::OpenPRG(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size)
+{
+	bool success = false;
+
+	Close();
+
+	this->fileInfo = fileInfo;
+
+	attachedImageSize = size;
+
+	unsigned char* newDiskImage = (unsigned char*)malloc(READBUFFER_SIZE);
+
+	if (newDiskImage)
+	{
+		unsigned length = DiskImage::CreateNewDiskInRAM(fileInfo->fname, "00", newDiskImage);
+
+		if (length)
+		{
+			bool addFileSuccess = AddFileToRAMD64(newDiskImage, fileInfo->fname, diskImage, size);
+
+			if (addFileSuccess && OpenD64(fileInfo, newDiskImage, length))
+			{
+				success = true;
+				DEBUG_LOG("Success\r\n");
+				diskType = PRG;
+			}
+		}
+
+		free(newDiskImage);
+	}
+
+	return success;
+}
+
 bool DiskImage::GetDecodedSector(u32 track, u32 sector, u8* buffer)
 {
 	if (track > 0)
@@ -1327,6 +1362,8 @@ DiskImage::DiskType DiskImage::GetDiskImageTypeViaExtention(const char* diskImag
 			return LST;
 		else if (toupper((char)ext[1]) == 'D' && ext[2] == '8' && ext[3] == '1')
 			return D81;
+		else if (toupper((char)ext[1]) == 'P' && toupper((char)ext[2]) == 'R' && toupper((char)ext[3]) == 'G')
+			return PRG;
 	}
 	return NONE;
 }

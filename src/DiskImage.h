@@ -63,6 +63,7 @@ public:
 		D71,
 		D81,
 		T64,
+		PRG,
 		RAW
 	};
 
@@ -77,6 +78,7 @@ public:
 	bool OpenD71(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size);
 	bool OpenD81(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size);
 	bool OpenT64(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size);
+	bool OpenPRG(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size);
 
 	void Close();
 

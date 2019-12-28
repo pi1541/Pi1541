@@ -182,6 +182,9 @@ bool DiskCaddy::Insert(const FILINFO* fileInfo, bool readOnly)
 			case DiskImage::T64:
 				success = InsertT64(fileInfo, (unsigned char*)DiskImage::readBuffer, bytesRead, readOnly);
 				break;
+			case DiskImage::PRG:
+				success = InsertPRG(fileInfo, (unsigned char*)DiskImage::readBuffer, bytesRead, readOnly);
+				break;
 			default:
 				success = false;
 				break;
@@ -279,6 +282,20 @@ bool DiskCaddy::InsertT64(const FILINFO* fileInfo, unsigned char* diskImageData,
 {
 	DiskImage* diskImage = new DiskImage();
 	if (diskImage->OpenT64(fileInfo, diskImageData, size))
+	{
+		diskImage->SetReadOnly(readOnly);
+		disks.push_back(diskImage);
+		selectedIndex = disks.size() - 1;
+		return true;
+	}
+	delete diskImage;
+	return false;
+}
+
+bool DiskCaddy::InsertPRG(const FILINFO* fileInfo, unsigned char* diskImageData, unsigned size, bool readOnly)
+{
+	DiskImage* diskImage = new DiskImage();
+	if (diskImage->OpenPRG(fileInfo, diskImageData, size))
 	{
 		diskImage->SetReadOnly(readOnly);
 		disks.push_back(diskImage);
