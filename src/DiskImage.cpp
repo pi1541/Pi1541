@@ -1903,6 +1903,8 @@ bool DiskImage::AddFileToRAMD64(unsigned char* ramD64, const char* name, const u
 		{
 			int blocks;
 
+			success = true;
+
 			for (blocks = 0; blocks < numberOfSectorsRequired; ++blocks)
 			{
 				int track;
