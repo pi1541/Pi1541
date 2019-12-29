@@ -276,8 +276,6 @@ void IEC_Bus::ReadEmulationMode1581(void)
 	IOPort* portB = 0;
 	gplev0 = read32(ARM_GPIO_GPLEV0);
 
-	ReadGPIOUserInput(3);//check less button states, save time
-
 	portB = port;
 
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
