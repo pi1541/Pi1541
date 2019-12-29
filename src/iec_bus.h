@@ -142,6 +142,7 @@ enum PIGPIOMasks
 };
 
 static const unsigned ButtonPinFlags[5] = { PIGPIO_MASK_IN_BUTTON1, PIGPIO_MASK_IN_BUTTON2, PIGPIO_MASK_IN_BUTTON3, PIGPIO_MASK_IN_BUTTON4, PIGPIO_MASK_IN_BUTTON5 };
+static int buttonCount = sizeof(ButtonPinFlags) / sizeof(unsigned);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Original Non-split lines
@@ -290,7 +291,6 @@ public:
 		write32(PWM_CTL, PWM_USEF2 + PWM_PWEN2 + PWM_USEF1 + PWM_PWEN1 + PWM_CLRF1);
 #endif
 
-		int buttonCount = sizeof(ButtonPinFlags) / sizeof(unsigned);
 		for (index = 0; index < buttonCount; ++index)
 		{
 			InputButton[index] = false;
@@ -409,8 +409,8 @@ public:
 
 
 	static void ReadBrowseMode(void);
+	static void ReadGPIOUserInput(int buttonCount);
 	static void ReadEmulationMode1541(void);
-	static void ReadButtonsEmulationMode(void);
 	static void ReadEmulationMode1581(void);
 
 	static void WaitUntilReset(void)

@@ -868,7 +868,7 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 #endif
 		}
 
-		IEC_Bus::ReadButtonsEmulationMode();
+		IEC_Bus::ReadGPIOUserInput(3);
 
 		// Other core will check the uart (as it is slow) (could enable uart irqs - will they execute on this core?)
 #if not defined(EXPERIMENTALZERO)
@@ -1074,8 +1074,12 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 #endif
 		}
 
+		IEC_Bus::ReadGPIOUserInput(3);
+
 		// Other core will check the uart (as it is slow) (could enable uart irqs - will they execute on this core?)
+#if not defined(EXPERIMENTALZERO)
 		inputMappings->CheckKeyboardEmulationMode(numberOfImages, numberOfImagesMax);
+#endif
 		inputMappings->CheckButtonsEmulationMode();
 
 		bool exitEmulation = inputMappings->Exit();
