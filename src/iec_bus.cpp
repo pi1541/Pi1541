@@ -20,8 +20,6 @@
 
 //#define REAL_XOR 1
 
-static int buttonCount = sizeof(ButtonPinFlags) / sizeof(unsigned);
-
 u32 IEC_Bus::oldClears = 0;
 u32 IEC_Bus::oldSets = 0;
 u32 IEC_Bus::PIGPIO_MASK_IN_ATN = 1 << PIGPIO_ATN;
@@ -77,14 +75,12 @@ unsigned IEC_Bus::gplev0;
 RotaryEncoder IEC_Bus::rotaryEncoder;
 bool IEC_Bus::rotaryEncoderEnable;
 
-//ROTARY: Modified for rotary encoder support - 09/05/2019 by Geo...
-void IEC_Bus::ReadBrowseMode(void)
-{
-	gplev0 = read32(ARM_GPIO_GPLEV0);
 
+void IEC_Bus::ReadGPIOUserInput( int buttonCount)
+{
+	//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
 	if (IEC_Bus::rotaryEncoderEnable == true)
 	{
-
 		int indexEnter = 0;
 		int indexUp = 1;
 		int indexDown = 2;
@@ -124,7 +120,6 @@ void IEC_Bus::ReadBrowseMode(void)
 
 		UpdateButton(indexBack, gplev0);
 		UpdateButton(indexInsert, gplev0);
-
 	}
 	else // Unmolested original logic
 	{
@@ -136,6 +131,14 @@ void IEC_Bus::ReadBrowseMode(void)
 		}
 
 	}
+}
+
+
+//ROTARY: Modified for rotary encoder support - 09/05/2019 by Geo...
+void IEC_Bus::ReadBrowseMode(void)
+{
+	gplev0 = read32(ARM_GPIO_GPLEV0);
+	ReadGPIOUserInput(buttonCount);
 
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
 	if (PI_Atn != ATNIn)
@@ -170,15 +173,6 @@ void IEC_Bus::ReadBrowseMode(void)
 	}
 
 	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
-}
-
-void IEC_Bus::ReadButtonsEmulationMode(void)
-{
-	int buttonIndex;
-	for (buttonIndex = 0; buttonIndex < 3; ++buttonIndex)
-	{
-		UpdateButton(buttonIndex, gplev0);
-	}
 }
 
 void IEC_Bus::ReadEmulationMode1541(void)
@@ -282,7 +276,7 @@ void IEC_Bus::ReadEmulationMode1581(void)
 	IOPort* portB = 0;
 	gplev0 = read32(ARM_GPIO_GPLEV0);
 
-	ReadButtonsEmulationMode();
+	ReadGPIOUserInput(3);//check less button states, save time
 
 	portB = port;
 
