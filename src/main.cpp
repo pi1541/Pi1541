@@ -1810,12 +1810,13 @@ extern "C"
 
 		m_EMMC.Initialize();
 
-		disk_setEMM(&m_EMMC);
-		f_mount(&fileSystemSD, "SD:", 1);
-
 #if not defined(EXPERIMENTALZERO)
 		RPI_AuxMiniUartInit(115200, 8);
 #endif
+
+		disk_setEMM(&m_EMMC);
+		f_mount(&fileSystemSD, "SD:", 1);
+
 		LoadOptions();
 
 		InitialiseHardware();

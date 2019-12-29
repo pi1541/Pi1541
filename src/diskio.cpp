@@ -101,9 +101,9 @@ DSTATUS disk_initialize (
 )
 {
 	//DSTATUS stat;
-	//int result;
+	int result;
 
-	//switch (pdrv) {
+	switch (pdrv) {
 	////case DEV_RAM :
 	////	result = RAM_disk_initialize();
 
@@ -111,12 +111,12 @@ DSTATUS disk_initialize (
 
 	////	return stat;
 
-	////case DEV_MMC :
-	////	result = MMC_disk_initialize();
+	case DEV_MMC :
+		result = pEMMC->Initialize();
 
-	////	// translate the reslut code here
+		// translate the reslut code here
 
-	////	return stat;
+		break;
 
 	////case DEV_USB :
 	////	result = USB_disk_initialize();
@@ -124,7 +124,7 @@ DSTATUS disk_initialize (
 	////	// translate the reslut code here
 
 	////	return stat;
-	//}
+	}
 	//return STA_NOINIT;
 	return 0;
 }

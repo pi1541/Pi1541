@@ -442,7 +442,7 @@ bool CEMMCDevice::Initialize(void)
 	PowerOn();
 	//if (PowerOn() == false)
 	//{
-	//	DEBUG_LOG("BCM2708 controller did not power on successfully");
+	//	DEBUG_LOG("BCM2708 controller did not power on successfully\r\n");
 	//	return false;
 	//}
 
@@ -461,7 +461,7 @@ bool CEMMCDevice::Initialize(void)
 	m_hci_ver = sdversion;
 	if (m_hci_ver < 2)
 	{
-		DEBUG_LOG("Only SDHCI versions >= 3.0 are supported");
+		DEBUG_LOG("Only SDHCI versions >= 3.0 are supported\r\n");
 		return false;
 	}
 
@@ -556,7 +556,7 @@ bool CEMMCDevice::PowerOn(void)
 	{
 		u32 state = buf->data.buffer_32[0];
 
-		//DEBUG_LOG("state = %x\r\n, state");
+		//DEBUG_LOG("state = %x\r\n, state\r\n");
 		//DEBUG_LOG("state = %x %x %x\r\n", buf->data.buffer_32[0], buf->data.buffer_32[1], buf->data.buffer_32[2]);
 
 		if ((state & POWER_STATE_DEVICE_DOESNT_EXIST) || ((state & 1) == POWER_STATE_OFF))
@@ -660,7 +660,7 @@ u32 CEMMCDevice::GetClockDivider(u32 base_clock, u32 target_rate)
 	}
 	else
 	{
-		DEBUG_LOG("Unsupported host version");
+		DEBUG_LOG("Unsupported host version\r\n");
 
 		return SD_GET_CLOCK_DIVIDER_FAIL;
 	}
@@ -716,7 +716,7 @@ int CEMMCDevice::ResetCmd(void)
 
 	if (TimeoutWait(EMMC_CONTROL1, SD_RESET_CMD, 0, 1000000) < 0)
 	{
-		DEBUG_LOG("CMD line did not reset properly");
+		DEBUG_LOG("CMD line did not reset properly\r\n");
 
 		return -1;
 	}
@@ -731,7 +731,7 @@ int CEMMCDevice::ResetDat(void)
 
 	if (TimeoutWait(EMMC_CONTROL1, SD_RESET_DAT, 0, 1000000) < 0)
 	{
-		DEBUG_LOG("DAT line did not reset properly");
+		DEBUG_LOG("DAT line did not reset properly\r\n");
 
 		return -1;
 	}
@@ -801,7 +801,7 @@ void CEMMCDevice::IssueCommandInt(u32 cmd_reg, u32 argument, int timeout)
 	if ((irpts & 0xffff0001) != 1)
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("Error occured whilst waiting for command complete interrupt");
+		DEBUG_LOG("Error occured whilst waiting for command complete interrupt\r\n");
 #endif
 		m_last_error = irpts & 0xffff0000;
 		m_last_interrupt = irpts;
@@ -845,7 +845,7 @@ void CEMMCDevice::IssueCommandInt(u32 cmd_reg, u32 argument, int timeout)
 #ifdef EMMC_DEBUG2
 		if (m_blocks_to_transfer > 1)
 		{
-			DEBUG_LOG("Multi block transfer");
+			DEBUG_LOG("Multi block transfer\r\n");
 		}
 #endif
 		TimeoutWait(EMMC_INTERRUPT, wr_irpt | 0x8000, 1, timeout);
@@ -855,7 +855,7 @@ void CEMMCDevice::IssueCommandInt(u32 cmd_reg, u32 argument, int timeout)
 		if ((irpts &(0xffff0000 | wr_irpt)) != wr_irpt)
 		{
 #ifdef EMMC_DEBUG
-			DEBUG_LOG("Error occured whilst waiting for data ready interrupt");
+			DEBUG_LOG("Error occured whilst waiting for data ready interrupt\r\n");
 #endif
 			m_last_error = irpts & 0xffff0000;
 			m_last_interrupt = irpts;
@@ -887,7 +887,7 @@ void CEMMCDevice::IssueCommandInt(u32 cmd_reg, u32 argument, int timeout)
 		}
 
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("Block transfer complete");
+		DEBUG_LOG("Block transfer complete\r\n");
 #endif
 	}
 
@@ -914,7 +914,7 @@ void CEMMCDevice::IssueCommandInt(u32 cmd_reg, u32 argument, int timeout)
 			    &&((irpts & 0xffff0002) != 0x100002))
 			{
 #ifdef EMMC_DEBUG
-				DEBUG_LOG("Error occured whilst waiting for transfer complete interrupt");
+				DEBUG_LOG("Error occured whilst waiting for transfer complete interrupt\r\n");
 #endif
 				m_last_error = irpts & 0xffff0000;
 				m_last_interrupt = irpts;
@@ -937,7 +937,7 @@ void CEMMCDevice::HandleCardInterrupt(void)
 #ifdef EMMC_DEBUG2
 	u32 status = read32(EMMC_STATUS);
 
-	DEBUG_LOG("Card interrupt");
+	DEBUG_LOG("Card interrupt\r\n");
 	DEBUG_LOG("controller status: %08x\r\n", status);
 #endif
 
@@ -948,7 +948,7 @@ void CEMMCDevice::HandleCardInterrupt(void)
 		if (FAIL)
 		{
 #ifdef EMMC_DEBUG
-			DEBUG_LOG("Unable to get card status");
+			DEBUG_LOG("Unable to get card status\r\n");
 #endif
 		}
 		else
@@ -961,7 +961,7 @@ void CEMMCDevice::HandleCardInterrupt(void)
 	else
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("no card currently selected");
+		DEBUG_LOG("no card currently selected\r\n");
 #endif
 	}
 }
@@ -974,7 +974,7 @@ void CEMMCDevice::HandleInterrupts(void)
 	if (irpts & SD_COMMAND_COMPLETE)
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("spurious command complete interrupt");
+		DEBUG_LOG("spurious command complete interrupt\r\n");
 #endif
 		reset_mask |= SD_COMMAND_COMPLETE;
 	}
@@ -982,7 +982,7 @@ void CEMMCDevice::HandleInterrupts(void)
 	if (irpts & SD_TRANSFER_COMPLETE)
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("spurious transfer complete interrupt");
+		DEBUG_LOG("spurious transfer complete interrupt\r\n");
 #endif
 		reset_mask |= SD_TRANSFER_COMPLETE;
 	}
@@ -990,7 +990,7 @@ void CEMMCDevice::HandleInterrupts(void)
 	if (irpts & SD_BLOCK_GAP_EVENT)
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("spurious block gap event interrupt");
+		DEBUG_LOG("spurious block gap event interrupt\r\n");
 #endif
 		reset_mask |= SD_BLOCK_GAP_EVENT;
 	}
@@ -998,7 +998,7 @@ void CEMMCDevice::HandleInterrupts(void)
 	if (irpts & SD_DMA_INTERRUPT)
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("spurious DMA interrupt");
+		DEBUG_LOG("spurious DMA interrupt\r\n");
 #endif
 		reset_mask |= SD_DMA_INTERRUPT;
 	}
@@ -1006,7 +1006,7 @@ void CEMMCDevice::HandleInterrupts(void)
 	if (irpts & SD_BUFFER_WRITE_READY)
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("spurious buffer write ready interrupt");
+		DEBUG_LOG("spurious buffer write ready interrupt\r\n");
 #endif
 		reset_mask |= SD_BUFFER_WRITE_READY;
 		ResetDat();
@@ -1015,7 +1015,7 @@ void CEMMCDevice::HandleInterrupts(void)
 	if (irpts & SD_BUFFER_READ_READY)
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("spurious buffer read ready interrupt");
+		DEBUG_LOG("spurious buffer read ready interrupt\r\n");
 #endif
 		reset_mask |= SD_BUFFER_READ_READY;
 		ResetDat();
@@ -1024,7 +1024,7 @@ void CEMMCDevice::HandleInterrupts(void)
 	if (irpts & SD_CARD_INSERTION)
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("card insertion detected");
+		DEBUG_LOG("card insertion detected\r\n");
 #endif
 		reset_mask |= SD_CARD_INSERTION;
 	}
@@ -1032,7 +1032,7 @@ void CEMMCDevice::HandleInterrupts(void)
 	if (irpts & SD_CARD_REMOVAL)
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("card removal detected");
+		DEBUG_LOG("card removal detected\r\n");
 #endif
 		reset_mask |= SD_CARD_REMOVAL;
 		m_card_removal = 1;
@@ -1041,7 +1041,7 @@ void CEMMCDevice::HandleInterrupts(void)
 	if (irpts & SD_CARD_INTERRUPT)
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("card interrupt detected");
+		DEBUG_LOG("card interrupt detected\r\n");
 #endif
 		HandleCardInterrupt();
 		reset_mask |= SD_CARD_INTERRUPT;
@@ -1124,7 +1124,7 @@ bool CEMMCDevice::IssueCommand(u32 command, u32 argument, int timeout)
 
 		if (m_last_error == 0)
 		{
-			DEBUG_LOG("TIMEOUT");
+			DEBUG_LOG("TIMEOUT\r\n");
 		}
 		else
 		{
@@ -1139,7 +1139,7 @@ bool CEMMCDevice::IssueCommand(u32 command, u32 argument, int timeout)
 	}
 	else
 	{
-		DEBUG_LOG("command completed successfully");
+		DEBUG_LOG("command completed successfully\r\n");
 	}
 #endif
 
@@ -1149,7 +1149,7 @@ bool CEMMCDevice::IssueCommand(u32 command, u32 argument, int timeout)
 int CEMMCDevice::CardReset(void)
 {
 #ifdef EMMC_DEBUG2
-	DEBUG_LOG("Resetting controller");
+	DEBUG_LOG("Resetting controller\r\n");
 #endif
 
 	u32 control1 = read32(EMMC_CONTROL1);
@@ -1160,7 +1160,7 @@ int CEMMCDevice::CardReset(void)
 	write32(EMMC_CONTROL1, control1);
 	if (TimeoutWait(EMMC_CONTROL1, 7 << 24, 0, 1000000) < 0)
 	{
-		DEBUG_LOG("Controller did not reset properly");
+		DEBUG_LOG("Controller did not reset properly\r\n");
 
 		return -1;
 	}
@@ -1171,13 +1171,13 @@ int CEMMCDevice::CardReset(void)
 
 	// Check for a valid card
 #ifdef EMMC_DEBUG2
-	DEBUG_LOG("checking for an inserted card");
+	DEBUG_LOG("checking for an inserted card\r\n");
 #endif
 	TimeoutWait(EMMC_STATUS, 1 << 16, 1, 500000);
 	u32 status_reg = read32(EMMC_STATUS);
 	if ((status_reg &(1 << 16)) == 0)
 	{
-		DEBUG_LOG("no card inserted");
+		DEBUG_LOG("no card inserted\r\n");
 
 		return -1;
 	}
@@ -1192,13 +1192,13 @@ int CEMMCDevice::CardReset(void)
 	u32 base_clock = get_clock_rate(CLOCK_ID_EMMC);
 	if (base_clock == 0)
 	{
-		DEBUG_LOG("assuming clock rate to be 100MHz");
+		DEBUG_LOG("assuming clock rate to be 100MHz\r\n");
 		base_clock = 100000000;
 	}
 
 	// Set clock rate to something slow
 #ifdef EMMC_DEBUG2
-	DEBUG_LOG("setting clock rate");
+	DEBUG_LOG("setting clock rate\r\n");
 #endif
 	control1 = read32(EMMC_CONTROL1);
 	control1 |= 1;			// enable clock
@@ -1207,7 +1207,7 @@ int CEMMCDevice::CardReset(void)
 	u32 f_id = GetClockDivider(base_clock, SD_CLOCK_ID);
 	if (f_id == SD_GET_CLOCK_DIVIDER_FAIL)
 	{
-		DEBUG_LOG("unable to get a valid clock divider for ID frequency");
+		DEBUG_LOG("unable to get a valid clock divider for ID frequency\r\n");
 
 		return -1;
 	}
@@ -1221,7 +1221,7 @@ int CEMMCDevice::CardReset(void)
 
 	if (TimeoutWait(EMMC_CONTROL1, 2, 1, 1000000) < 0)
 	{
-		DEBUG_LOG("Clock did not stabilise within 1 second");
+		DEBUG_LOG("Clock did not stabilise within 1 second\r\n");
 
 		return -1;
 	}
@@ -1232,7 +1232,7 @@ int CEMMCDevice::CardReset(void)
 
 	// Enable the SD clock
 #ifdef EMMC_DEBUG2
-	DEBUG_LOG("enabling SD clock");
+	DEBUG_LOG("enabling SD clock\r\n");
 #endif
 	delay_us(2000);
 	control1 = read32(EMMC_CONTROL1);
@@ -1288,7 +1288,7 @@ int CEMMCDevice::CardReset(void)
 	// Send CMD0 to the card(reset to idle state)
 	if (!IssueCommand(GO_IDLE_STATE, 0))
 	{
-		DEBUG_LOG("no CMD0 response");
+		DEBUG_LOG("no CMD0 response\r\n");
 
 		return -1;
 	}
@@ -1297,7 +1297,7 @@ int CEMMCDevice::CardReset(void)
 	// Voltage supplied = 0x1 = 2.7-3.6V(standard)
 	// Check pattern = 10101010b(as per PLSS 4.3.13) = 0xAA
 #ifdef EMMC_DEBUG2
-	DEBUG_LOG("Note a timeout error on the following command(CMD8) is normal and expected if the SD card version is less than 2.0");
+	DEBUG_LOG("Note a timeout error on the following command(CMD8) is normal and expected if the SD card version is less than 2.0\r\n");
 #endif
 	IssueCommand(SEND_IF_COND, 0x1aa);
 	int v2_later = 0;
@@ -1324,7 +1324,7 @@ int CEMMCDevice::CardReset(void)
 	{
 		if ((m_last_r0 & 0xfff) != 0x1aa)
 		{
-			DEBUG_LOG("unusable card");
+			DEBUG_LOG("unusable card\r\n");
 #ifdef EMMC_DEBUG
 			DEBUG_LOG("CMD8 response %08x\r\n", m_last_r0);
 #endif
@@ -1340,7 +1340,7 @@ int CEMMCDevice::CardReset(void)
 	// Here we are supposed to check the response to CMD5(HCSS 3.6)
 	// It only returns if the card is a SDIO card
 #ifdef EMMC_DEBUG2
-	DEBUG_LOG("Note that a timeout error on the following command(CMD5) is normal and expected if the card is not a SDIO card.");
+	DEBUG_LOG("Note that a timeout error on the following command(CMD5) is normal and expected if the card is not a SDIO card.\r\n");
 #endif
 	IssueCommand(IO_SET_OP_COND, 0, 10000);
 	if (!TIMEOUT)
@@ -1356,7 +1356,7 @@ int CEMMCDevice::CardReset(void)
 		}
 		else
 		{
-			DEBUG_LOG("SDIO card detected - not currently supported");
+			DEBUG_LOG("SDIO card detected - not currently supported\r\n");
 #ifdef EMMC_DEBUG2
 			DEBUG_LOG("CMD5 returned %08x\r\n", m_last_r0);
 #endif
@@ -1367,11 +1367,11 @@ int CEMMCDevice::CardReset(void)
 
 	// Call an inquiry ACMD41(voltage window = 0) to get the OCR
 #ifdef EMMC_DEBUG2
-	DEBUG_LOG("sending inquiry ACMD41");
+	DEBUG_LOG("sending inquiry ACMD41\r\n");
 #endif
 	if (!IssueCommand(ACMD(41), 0))
 	{
-		DEBUG_LOG("Inquiry ACMD41 failed");
+		DEBUG_LOG("Inquiry ACMD41 failed\r\n");
 		return -1;
 	}
 #ifdef EMMC_DEBUG2
@@ -1403,7 +1403,7 @@ int CEMMCDevice::CardReset(void)
 
 		if (!IssueCommand(ACMD(41), 0x00ff8000 | v2_flags))
 		{
-			DEBUG_LOG("Error issuing ACMD41");
+			DEBUG_LOG("Error issuing ACMD41\r\n");
 
 			return -1;
 		}
@@ -1426,7 +1426,7 @@ int CEMMCDevice::CardReset(void)
 		{
 			// Card is still busy
 #ifdef EMMC_DEBUG2
-			DEBUG_LOG("Card is busy, retrying");
+			DEBUG_LOG("Card is busy, retrying\r\n");
 #endif
 			delay_us(500000);
 		}
@@ -1447,7 +1447,7 @@ int CEMMCDevice::CardReset(void)
 	if (m_card_supports_18v)
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("switching to 1.8V mode");
+		DEBUG_LOG("switching to 1.8V mode\r\n");
 #endif
 		// As per HCSS 3.6.1
 
@@ -1455,7 +1455,7 @@ int CEMMCDevice::CardReset(void)
 		if (!IssueCommand(VOLTAGE_SWITCH, 0))
 		{
 #ifdef EMMC_DEBUG
-			DEBUG_LOG("error issuing VOLTAGE_SWITCH");
+			DEBUG_LOG("error issuing VOLTAGE_SWITCH\r\n");
 #endif
 			m_failed_voltage_switch = 1;
 			PowerOff();
@@ -1474,7 +1474,7 @@ int CEMMCDevice::CardReset(void)
 		if (dat30 != 0)
 		{
 #ifdef EMMC_DEBUG
-			DEBUG_LOG("DAT[3:0] did not settle to 0");
+			DEBUG_LOG("DAT[3:0] did not settle to 0\r\n");
 #endif
 			m_failed_voltage_switch = 1;
 			PowerOff();
@@ -1495,7 +1495,7 @@ int CEMMCDevice::CardReset(void)
 		if (((control0 >> 8) & 1) == 0)
 		{
 #ifdef EMMC_DEBUG
-			DEBUG_LOG("controller did not keep 1.8V signal enable high");
+			DEBUG_LOG("controller did not keep 1.8V signal enable high\r\n");
 #endif
 			m_failed_voltage_switch = 1;
 			PowerOff();
@@ -1525,14 +1525,14 @@ int CEMMCDevice::CardReset(void)
 		}
 
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("voltage switch complete");
+		DEBUG_LOG("voltage switch complete\r\n");
 #endif
 	}
 
 	// Send CMD2 to get the cards CID
 	if (!IssueCommand(ALL_SEND_CID, 0))
 	{
-		DEBUG_LOG("error sending ALL_SEND_CID");
+		DEBUG_LOG("error sending ALL_SEND_CID\r\n");
 
 		return -1;
 	}
@@ -1548,7 +1548,7 @@ int CEMMCDevice::CardReset(void)
 	// Send CMD3 to enter the data state
 	if (!IssueCommand(SEND_RELATIVE_ADDR, 0))
 	{
-		DEBUG_LOG("error sending SEND_RELATIVE_ADDR");
+		DEBUG_LOG("error sending SEND_RELATIVE_ADDR\r\n");
 
 		return -1;
 	}
@@ -1567,28 +1567,28 @@ int CEMMCDevice::CardReset(void)
 
 	if (crc_error)
 	{
-		DEBUG_LOG("CRC error");
+		DEBUG_LOG("CRC error\r\n");
 
 		return -1;
 	}
 
 	if (illegal_cmd)
 	{
-		DEBUG_LOG("illegal command");
+		DEBUG_LOG("illegal command\r\n");
 
 		return -1;
 	}
 
 	if (error)
 	{
-		DEBUG_LOG("generic error");
+		DEBUG_LOG("generic error\r\n");
 
 		return -1;
 	}
 
 	if (!ready)
 	{
-		DEBUG_LOG("not ready for data");
+		DEBUG_LOG("not ready for data\r\n");
 
 		return -1;
 	}
@@ -1600,7 +1600,7 @@ int CEMMCDevice::CardReset(void)
 	// Now select the card(toggles it to transfer state)
 	if (!IssueCommand(SELECT_CARD, m_card_rca << 16))
 	{
-		DEBUG_LOG("error sending CMD7");
+		DEBUG_LOG("error sending CMD7\r\n");
 
 		return -1;
 	}
@@ -1620,7 +1620,7 @@ int CEMMCDevice::CardReset(void)
 	{
 		if (!IssueCommand(SET_BLOCKLEN, SD_BLOCK_SIZE))
 		{
-			DEBUG_LOG("Error sending SET_BLOCKLEN");
+			DEBUG_LOG("Error sending SET_BLOCKLEN\r\n");
 
 			return -1;
 		}
@@ -1638,7 +1638,7 @@ int CEMMCDevice::CardReset(void)
 	m_block_size = SD_BLOCK_SIZE;
 	if (FAIL)
 	{
-		DEBUG_LOG("Error sending SEND_SCR");
+		DEBUG_LOG("Error sending SEND_SCR\r\n");
 
 		return -1;
 	}
@@ -1689,7 +1689,7 @@ int CEMMCDevice::CardReset(void)
 		// See HCSS 3.4 for the algorithm
 #ifdef SD_4BIT_DATA
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("Switching to 4-bit data mode");
+		DEBUG_LOG("Switching to 4-bit data mode\r\n");
 #endif
 
 		// Disable card interrupt in host
@@ -1700,7 +1700,7 @@ int CEMMCDevice::CardReset(void)
 		// Send ACMD6 to change the card's bit mode
 		if (!IssueCommand(SET_BUS_WIDTH, 2))
 		{
-			DEBUG_LOG("Switch to 4-bit data mode failed");
+			DEBUG_LOG("Switch to 4-bit data mode failed\r\n");
 		}
 		else
 		{
@@ -1713,7 +1713,7 @@ int CEMMCDevice::CardReset(void)
 			write32(EMMC_IRPT_MASK, old_irpt_mask);
 
 #ifdef EMMC_DEBUG2
-			DEBUG_LOG("switch to 4-bit complete");
+			DEBUG_LOG("switch to 4-bit complete\r\n");
 #endif
 		}
 #endif
@@ -1748,7 +1748,7 @@ int CEMMCDevice::EnsureDataMode(void)
 
 	if (!IssueCommand(SEND_STATUS, m_card_rca << 16))
 	{
-		DEBUG_LOG("EnsureDataMode() error sending CMD13");
+		DEBUG_LOG("EnsureDataMode() error sending CMD13\r\n");
 		m_card_rca = 0;
 
 		return -1;
@@ -1764,7 +1764,7 @@ int CEMMCDevice::EnsureDataMode(void)
 		// Currently in the stand-by state - select it
 		if (!IssueCommand(SELECT_CARD, m_card_rca << 16))
 		{
-			DEBUG_LOG("EnsureDataMode() no response from CMD17");
+			DEBUG_LOG("EnsureDataMode() no response from CMD17\r\n");
 			m_card_rca = 0;
 
 			return -1;
@@ -1775,7 +1775,7 @@ int CEMMCDevice::EnsureDataMode(void)
 		// In the data transfer state - cancel the transmission
 		if (!IssueCommand(STOP_TRANSMISSION, 0))
 		{
-			DEBUG_LOG("EnsureDataMode() no response from CMD12");
+			DEBUG_LOG("EnsureDataMode() no response from CMD12\r\n");
 			m_card_rca = 0;
 
 			return -1;
@@ -1798,11 +1798,11 @@ int CEMMCDevice::EnsureDataMode(void)
 	if (cur_state != 4)
 	{
 #ifdef EMMC_DEBUG2
-		DEBUG_LOG("EnsureDataMode() rechecking status: ");
+		DEBUG_LOG("EnsureDataMode() rechecking status: \r\n");
 #endif
 		if (!IssueCommand(SEND_STATUS, m_card_rca << 16))
 		{
-			DEBUG_LOG("EnsureDataMode() no response from CMD13");
+			DEBUG_LOG("EnsureDataMode() no response from CMD13\r\n");
 			m_card_rca = 0;
 
 			return -1;
@@ -1890,11 +1890,11 @@ int CEMMCDevice::DoDataCommand(int is_write, u8 *buf, size_t buf_size, u32 block
 
 			if (++retry_count < max_retries)
 			{
-				DEBUG_LOG("Retrying");
+				DEBUG_LOG("Retrying\r\n");
 			}
 			else
 			{
-				DEBUG_LOG("Giving up");
+				DEBUG_LOG("Giving up\r\n");
 			}
 		}
 	}
@@ -1947,7 +1947,7 @@ int CEMMCDevice::DoRead(u8 *buf, size_t buf_size, u32 block_no)
 	//}
 
 #ifdef EMMC_DEBUG2
-	DEBUG_LOG("Data read successful");
+	DEBUG_LOG("Data read successful\r\n");
 #endif
 
 	return buf_size;
@@ -1971,7 +1971,7 @@ int CEMMCDevice::DoWrite(u8 *buf, size_t buf_size, u32 block_no)
 	}
 
 #ifdef EMMC_DEBUG2
-	DEBUG_LOG("Data write successful");
+	DEBUG_LOG("Data write successful\r\n");
 #endif
 
 	return buf_size;
