@@ -344,6 +344,8 @@ void DiskCaddy::Display()
 
 void DiskCaddy::ShowSelectedImage(u32 index)
 {
+	DiskImage* image = GetImage(index);
+	
 	u32 x;
 	u32 y;
 #if not defined(EXPERIMENTALZERO)
@@ -351,7 +353,6 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 	{
 		x = screen->ScaleX(screenPosXCaddySelections);
 		y = screen->ScaleY(screenPosYCaddySelections) + 16 + 16 * index;
-		DiskImage* image = GetImage(index);
 		const char* name = image->GetName();
 		if (name)
 		{
@@ -377,7 +378,7 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 			, index + 1
 			, numberOfImages
 			, GetImage(index)->GetReadOnly() ? 'R' : ' '
-			, roms ? roms->GetSelectedROMName() : ""
+			, roms ? (image->IsD81() ? roms->ROMName1581 : roms->GetSelectedROMName()) : ""
 			);
 		screenLCD->PrintText(false, x, y, buffer, 0, RGBA(0xff, 0xff, 0xff, 0xff));
 		y += screenLCD->GetFontHeight();
