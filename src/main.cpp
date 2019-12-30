@@ -596,14 +596,15 @@ void UpdateScreen()
 		}
 		if (emulating != IEC_COMMANDS)
 		{
-			//refreshUartStatusDisplay =
-#if not defined(EXPERIMENTALZERO)
-			core0RefreshingScreen.Acquire();
-#endif
+			// Putting the semaphore around diskCaddy.Update() keeps this core awake and this breaks emulation on option B hardware.
+			// Don't know why. Disabling for now.
+//#if not defined(EXPERIMENTALZERO)
+//			core0RefreshingScreen.Acquire();
+//#endif
 			diskCaddy.Update();
-#if not defined(EXPERIMENTALZERO)
-			core0RefreshingScreen.Release();
-#endif
+//#if not defined(EXPERIMENTALZERO)
+//			core0RefreshingScreen.Release();
+//#endif
 		}
 
 		//if (options.GetSupportUARTInput())
