@@ -2011,10 +2011,13 @@ void IEC_Commands::OpenFile()
 				char cwd[1024];
 				if (f_getcwd(cwd, 1024) == FR_OK)
 				{
-					if (strcasecmp(cwd, "/1541") == 0)
+					const char* folder = strstr(cwd, "/");
+					if (folder)
 					{
-						//DEBUG_LOG("use star %s\r\n", starFileName);
-						strncpy(filename, starFileName, sizeof(filename) - 1);
+						if (strcasecmp(folder, "/1541") == 0)
+						{
+							strncpy(filename, starFileName, sizeof(filename) - 1);
+						}
 					}
 				}
 			}
