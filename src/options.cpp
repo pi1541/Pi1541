@@ -367,7 +367,10 @@ const char* Options::GetRomName(int index) const
 
 const char* Options::GetRomName1581() const
 {
-	return ROMName1581;
+	if (ROMName1581[0] == 0)
+		return "1581-rom.318045-02.bin";
+	else
+		return ROMName1581;
 }
 
 DiskImage::DiskType Options::GetNewDiskType() const
