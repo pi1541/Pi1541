@@ -62,8 +62,8 @@ GraphIEC = 1
 
 // If you have hardware with a peizo buzzer (the type without a generator) then you can use this option to hear the head step
 //SoundOnGPIO = 1
-//SoundOnGPIODuration = 1000 // Length of buzz in micro seconds
-//SoundOnGPIOFreq = 1200 // Frequency of buzz in Hz
+//SoundOnGPIODuration = 100 // Length of buzz in micro seconds
+//SoundOnGPIOFreq = 200 // Frequency of buzz in Hz
 
 // You can create 320x200 PNG files with the same name as your disk images. With this option turned on they will be displayed on the Pi's screen.
 //DisplayPNGIcons = 1
