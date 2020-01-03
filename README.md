@@ -10,7 +10,9 @@ to see the necessary hardware changes.
 
 The software should work with all Raspberrys heretofore.
 The limitations of the Raspberry 1 are the same as for a Raspberry Zero.
+
 Overclocking the Raspberry to 900MHz is necessary, a heatsink is recomended.
+----
 *************************************************************************************************************************
 
 Commodore 1541/1581 emulator for the Raspberry Pi
