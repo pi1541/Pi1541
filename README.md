@@ -1,4 +1,17 @@
-# Pi1541
+# Pi1541-RPI-1B-26GPIO
+------------------------------------------------------------------------------------------------------------
+This is the expantion of the Pi1541 software (See www.pi1541.com) for an old Raspberry 1B with only 26GPI/Os and the 7406 drivers
+look at 
+makefile.rules for the build changes
+and
+iec_bus.h
+rpi_gpio.h
+to see the necessary hardware changes.
+The software should work with all Raspberrys heretofore.
+
+The limitations of the Raspberry 1 are the same as for a Raspberry Zero.
+Overclocking the Raspberry to 900MHz is necessary, a heatsink is recomended.
+-------------------------------------------------------------------------------------------------------------
 
 Commodore 1541/1581 emulator for the Raspberry Pi
 
