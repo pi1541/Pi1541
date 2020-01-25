@@ -20,7 +20,9 @@
 #define USE_HW_MAILBOX
 
 // Indicates we want to make active use of multiple cores
+#if defined(RPI3)
 #define USE_MULTICORE
+#endif
 
 // Needs to match kernel_old setting in config.txt
 //#define KERNEL_OLD
