@@ -327,14 +327,17 @@ void DiskCaddy::Display()
 		for (caddyIndex = 0; caddyIndex < numberOfImages; ++caddyIndex)
 		{
 			DiskImage* image = GetImage(caddyIndex);
-			const char* name = image->GetName();
-			if (name)
+			if (image)
 			{
-				snprintf(buffer, 256, "                                                        ");
-				screen->PrintText(false, x, y, buffer, grey, greyDark);
-				snprintf(buffer, 256, "  %d %s", caddyIndex + 1, name);
-				screen->PrintText(false, x, y, buffer, grey, greyDark);
-				y += 16;
+				const char* name = image->GetName();
+				if (name)
+				{
+					snprintf(buffer, 256, "                                                        ");
+					screen->PrintText(false, x, y, buffer, grey, greyDark);
+					snprintf(buffer, 256, "  %d %s", caddyIndex + 1, name);
+					screen->PrintText(false, x, y, buffer, grey, greyDark);
+					y += 16;
+				}
 			}
 		}
 	}
@@ -346,6 +349,10 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 {
 	DiskImage* image = GetImage(index);
 	
+	if (image == 0)
+	{
+		return;
+	}
 	u32 x;
 	u32 y;
 #if not defined(EXPERIMENTALZERO)
@@ -398,17 +405,20 @@ void DiskCaddy::ShowSelectedImage(u32 index)
 		for (; caddyIndex < numberOfImages; ++caddyIndex)
 		{
 			DiskImage* image = GetImage(caddyIndex);
-			const char* name = image->GetName();
-			if (name)
+			if (image)
 			{
-				memset(buffer, ' ',  screenLCD->Width()/screenLCD->GetFontWidth());
-				screenLCD->PrintText(false, x, y, buffer, BkColour, BkColour);
-				snprintf(buffer, 256, "%d %s", caddyIndex + 1, name);
-				screenLCD->PrintText(false, x, y, buffer, 0, caddyIndex == index ? RGBA(0xff, 0xff, 0xff, 0xff) : BkColour);
-				y += screenLCD->GetFontHeight();
+				const char* name = image->GetName();
+				if (name)
+				{
+					memset(buffer, ' ', screenLCD->Width() / screenLCD->GetFontWidth());
+					screenLCD->PrintText(false, x, y, buffer, BkColour, BkColour);
+					snprintf(buffer, 256, "%d %s", caddyIndex + 1, name);
+					screenLCD->PrintText(false, x, y, buffer, 0, caddyIndex == index ? RGBA(0xff, 0xff, 0xff, 0xff) : BkColour);
+					y += screenLCD->GetFontHeight();
+				}
+				if (y >= screenLCD->Height())
+					break;
 			}
-			if (y >= screenLCD->Height())
-				break;
 		}
 		while (y < screenLCD->Height()) {
 			memset(buffer, ' ',  screenLCD->Width()/screenLCD->GetFontWidth());
@@ -432,13 +442,16 @@ bool DiskCaddy::Update()
 			x = screen->ScaleX(screenPosXCaddySelections);
 			y = screen->ScaleY(screenPosYCaddySelections) + 16 + 16 * oldCaddyIndex;
 			DiskImage* image = GetImage(oldCaddyIndex);
-			const char* name = image->GetName();
-			if (name)
+			if (image)
 			{
-				snprintf(buffer, 256, "                                                        ");
-				screen->PrintText(false, x, y, buffer, grey, greyDark);
-				snprintf(buffer, 256, "  %d %s", oldCaddyIndex + 1, name);
-				screen->PrintText(false, x, y, buffer, grey, greyDark);
+				const char* name = image->GetName();
+				if (name)
+				{
+					snprintf(buffer, 256, "                                                        ");
+					screen->PrintText(false, x, y, buffer, grey, greyDark);
+					snprintf(buffer, 256, "  %d %s", oldCaddyIndex + 1, name);
+					screen->PrintText(false, x, y, buffer, grey, greyDark);
+				}
 			}
 		}
 #endif
