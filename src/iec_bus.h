@@ -74,7 +74,7 @@
 // SRQ is a little bit different.
 // The 1581 does not pull it high. Only the 128 pulls it high.
 // 
-
+#if defined(HAS_40PINS)
 enum PIGPIO
 {
 	// Original Non-split lines
@@ -116,6 +116,55 @@ enum PIGPIO
 	PIGPIO_IN_CLOCK = 26,	// 37
 	PIGPIO_IN_BUTTON1 = 27	// 13 Common
 };
+#else
+//Added GPIO bindings for Raspberry 1B (only 26 I/O ports)
+enum PIGPIO
+{
+	// Original Non-split lines
+	PIGPIO_ATN = 2,			// 3
+	PIGPIO_DATA = 18,		// 12
+	PIGPIO_CLOCK = 17,		// 11
+	PIGPIO_SRQ = 19,		// 35  not connected yet
+	PIGPIO_RESET = 3,		// 5
+
+
+	// Pinout for those that want to split the lines (and the common ones like buttons, sound and LED)
+	// Funktion = 	GPIO	// Hardware PIN
+	// 0 IDSC				// 28
+	// 1 IDSD				// 27
+	// 2 I2C_SDA			// 3
+	// 3 I2C_CLK			// 5
+	PIGPIO_IN_BUTTON4 = 4,	// 07 Common
+	//GPIO = 5,				// 29 Common
+	//PIGPIO_OUT_RESET = 6,	// 31
+	PIGPIO_OUT_SPI0_RS = 6,	// 31 not connected yet
+	// 7 SPI0_CS1			// 26
+	PIGPIO_IN_BUTTON5 =  8,	// 24 changed for Raspberry 1 A.Buch 02.Jan.2020
+	PIGPIO_IN_RESET = 9,	// 21 changed for Raspberry 1 A.Buch 02.Jan.2020
+	PIGPIO_IN_CLOCK = 10,	// 19 changed for Raspberry 1 A.Buch 02.Jan.2020
+	PIGPIO_OUT_LED = 11,	// 23 changed for Raspberry 1 A.Buch 02.Jan.2020
+	PIGPIO_OUT_ATN = 12,	// 32 not connected yet
+	PIGPIO_OUT_SOUND = 13,  // 33 GPIO 13 is not connected at all with Raspberry 1 Layout
+	// 14 TX				// 8
+	// 15 RX  				// 10
+	//GPIO = 16,			// 36 Common
+	PIGPIO_OUT_CLOCK = 17,	// 11
+	PIGPIO_OUT_DATA = 18,	// 12
+	PIGPIO_OUT_SRQ = 19,	// 35 not connected yet
+	//GPIO 20,				// 38
+	PIGPIO_IN_SRQ = 21,		// 40 not connected yet
+	PIGPIO_IN_BUTTON2 = 22,	// 15 Common
+	PIGPIO_IN_BUTTON3 = 23,	// 16 Common
+	PIGPIO_IN_ATN = 24,		// 18
+	PIGPIO_IN_DATA = 25,	// 22
+	//GPIO 26,				// 37
+	PIGPIO_IN_BUTTON1 = 27	// 13 Common
+	//PIGPIO_OUT_SOUND = 45 // ToDo internal GPIO connected with audio out left. To change for sound with Raspberry 1 A.Buch
+							// gives yet an overflow A.Buch 03. Jan. 2020. Sound is still disabled by EXPERIMENTALZERO
+};
+#endif
+
+
 
 enum PIGPIOMasks
 {
