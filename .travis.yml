@@ -12,7 +12,7 @@ matrix:
   include:
     - env: RASPPI=0
     - env: RASPPI=1
-    - env: RASPPI=1+
+    - env: RASPPI=1Plus
     - env: RASPPI=2 
     - env: RASPPI=3
 
