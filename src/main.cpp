@@ -812,7 +812,8 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	// 0x18651422 = aliens[electric_dreams_1987].g64
 	// 0x2a7f4b77 = zak_mckracken_boot[activision_1988](manual)(!).g64
 	// 0x97732c3e = maniac_mansion_s1[activision_1987](!).g64
-	if (hash == 0x42c02586 || hash == 0x18651422 || hash == 0x2a7f4b77 || hash == 0x97732c3e)
+	// 0x63f809d2 = 4x4_offroad_racing_s1[epyx_1988](ntsc)(!).g64
+	if (hash == 0x42c02586 || hash == 0x18651422 || hash == 0x2a7f4b77 || hash == 0x97732c3e || hash == 0x63f809d2)
 	{
 		refreshOutsAfterCPUStep = false;
 	}
