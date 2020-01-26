@@ -19,6 +19,7 @@
 #ifndef IEC_BUS_H
 #define IEC_BUS_H
 
+#include "defs.h"
 #include "debug.h"
 #include "m6522.h"
 #include "m8520.h"
