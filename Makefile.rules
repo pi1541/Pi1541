@@ -3,8 +3,9 @@ ifneq ($(V),1)
 Q		:= @
 endif
 
-#use RASPPI = 1 Raspberry 1B (26 IOports)
-#use RASPPI = 1Plus to Raspberry 1B+ (40 I/OPorts)
+#use RASPPI = 1Br1 Raspberry Pi 1B Rev 1 (26 IOports) (GPIO0/1)
+#use RASPPI = 1Br2 Raspberry Pi 1B Rev 2 (26 IOports) (GPIO2/3)
+#use RASPPI = 1BPlus to Raspberry Pi 1B+ (40 I/OPorts)
 
 RASPPI	?= 3
 PREFIX	?= arm-none-eabi-
@@ -16,22 +17,25 @@ LD	= $(PREFIX)ld
 AR	= $(PREFIX)ar
 
 ifeq ($(strip $(RASPPI)),0)
-ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPIZERO=1 -DEXPERIMENTALZERO=1
-CFLAGS	+= -DRPIZERO=1 -DRASPPI=1
-else ifeq ($(strip $(RASPPI)),1)
-ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DEXPERIMENTALZERO=1
-CFLAGS	+= -DRASPPI=1
-else ifeq ($(strip $(RASPPI)),1Plus)
-ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPIBPLUS=1 -DEXPERIMENTALZERO=1
-CFLAGS	+= -DRPIBPLUS=1 -DRASPPI=1
+	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPIZERO=1 -DEXPERIMENTALZERO=1
+	CFLAGS	+= -DRPIZERO=1 -DRASPPI=1
+else ifeq ($(strip $(RASPPI)),1Br1)
+	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPI1BR1 -DEXPERIMENTALZERO=1
+	CFLAGS	+= -DRPI1BR1 -DRASPPI=1
+else ifeq ($(strip $(RASPPI)),1Br2)
+	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPI1BR2 -DEXPERIMENTALZERO=1
+	CFLAGS	+= -DRPI1BR2 -DRASPPI=1
+else ifeq ($(strip $(RASPPI)),1BPlus)
+	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPIBPLUS=1 -DEXPERIMENTALZERO=1
+	CFLAGS	+= -DRPIBPLUS=1 -DRASPPI=1
 else ifeq ($(strip $(RASPPI)),2)
-ARCH	?= -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -marm -DRPI2=1 -DEXPERIMENTALZERO=1
-CFLAGS	+= -DRPI2=1
+	ARCH	?= -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -marm -DRPI2=1 -DEXPERIMENTALZERO=1
+	CFLAGS	+= -DRPI2=1
 else ifeq ($(strip $(RASPPI)),3)
-ARCH	?= -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8 -mfloat-abi=hard -marm -DRPI3=1
-CFLAGS	+= -DRPI3=1
+	ARCH	?= -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8 -mfloat-abi=hard -marm -DRPI3=1
+	CFLAGS	+= -DRPI3=1
 else
-$(error RASPPI must be one of: 0, 1, 1Plus, 2, 3)
+	$(error RASPPI must be one of: 0, 1Br1, 1Br2, 1BPlus, 2, 3)
 endif
 
 AFLAGS	 += $(ARCH)

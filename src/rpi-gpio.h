@@ -37,7 +37,7 @@
 //#define GPSET1		(RPI_GPIO_BASE + 0x20)
 //#define GPCLR1		(RPI_GPIO_BASE + 0x2c)
 
-#if defined(RPIZERO) || defined(RPIBPLUS) || defined(RPI2) || defined(RPI3)
+#if defined(RPIZERO) || defined(RPI1BPLUS) || defined(RPI2) || defined(RPI3)
     #define LED_GPIO_BIT    15
     #define LED_ON()        do { RPI_GpioBase->GPCLR0[1] = (1 << LED_GPIO_BIT); } while(0)
     #define LED_OFF()       do { RPI_GpioBase->GPSET0[1] = (1 << LED_GPIO_BIT); } while(0)

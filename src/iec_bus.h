@@ -66,7 +66,7 @@
 //	- VIA's DATA IN will automatically set high and hence the DATA line will be pulled low (activated)
 // If ATN and ATNA are in sync
 //	- the output from the XOR gate will be low and the output of its inverter will go high
-//		- when this occurs the DATA line must be still able to be pulled low via the PC or VIA's inverted PB1 (DATA OUT)
+//	- when this occurs the DATA line must be still able to be pulled low via the PC or VIA's inverted PB1 (DATA OUT)
 //
 // Therefore in the same vein if PB7 is set to output it could cause the input of the XOR to be pulled low
 //
@@ -118,16 +118,21 @@ enum PIGPIO
 	PIGPIO_IN_BUTTON1 = 27	// 13 Common
 };
 #else
-//Added GPIO bindings for Raspberry 1B (only 26 I/O ports)
+//Added GPIO bindings for Raspberry Pi 1B Rev 1/2 (only 26 I/O ports)
 enum PIGPIO
 {
 	// Original Non-split lines
+	// Raspberry Pi 1B Rev 2 has GPIO0/1 in place of GPIO2/3
+#if defined(RPI1BR1)	
+	PIGPIO_ATN = 0,			// 3
+	PIGPIO_RESET = 1,		// 5
+#else
 	PIGPIO_ATN = 2,			// 3
+	PIGPIO_RESET = 3,		// 5
+#endif
 	PIGPIO_DATA = 18,		// 12
 	PIGPIO_CLOCK = 17,		// 11
 	PIGPIO_SRQ = 19,		// 35  not connected yet
-	PIGPIO_RESET = 3,		// 5
-
 
 	// Pinout for those that want to split the lines (and the common ones like buttons, sound and LED)
 	// Funktion = 	GPIO	// Hardware PIN
