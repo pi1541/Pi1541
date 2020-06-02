@@ -41,9 +41,9 @@
     #define LED_GPIO_BIT    15
     #define LED_ON()        do { RPI_GpioBase->GPCLR0[1] = (1 << LED_GPIO_BIT); } while(0)
     #define LED_OFF()       do { RPI_GpioBase->GPSET0[1] = (1 << LED_GPIO_BIT); } while(0)
-#elif defined(RPI3)
-// Added LED for Rasberry 1B (26 I/OPorts) according to enum PIGPIO in iec_bus.h A.Buch 02 Jan. 2020
-#elif defined(RASPPI)
+
+// Added LED for Raspberry Pi 1B Rev1/2 (26 I/OPorts) according to enum PIGPIO in iec_bus.h A.Buch 02 Jan. 2020
+#elif defined(RPI1BREV1) || defined (RPI1BREV2)
     #define LED_GPIO_BIT    11
     #define LED_ON()        do { RPI_GpioBase->GPSET0[1] = (1 << LED_GPIO_BIT); } while(0)
     #define LED_OFF()       do { RPI_GpioBase->GPCLR0[0] = (1 << LED_GPIO_BIT); } while(0)
@@ -52,6 +52,7 @@
     #define LED_ON()        do { RPI_GpioBase->GPSET0[1] = (1 << LED_GPIO_BIT); } while(0)
     #define LED_OFF()       do { RPI_GpioBase->GPCLR0[0] = (1 << LED_GPIO_BIT); } while(0)
 #endif
+
 
 typedef enum
 {

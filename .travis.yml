@@ -11,8 +11,8 @@ addons:
 matrix:
   include:
     - env: RASPPI=0
-    - env: RASPPI=1Br1
-    - env: RASPPI=1Br2
+    - env: RASPPI=1BRev1
+    - env: RASPPI=1BRev2
     - env: RASPPI=1BPlus
     - env: RASPPI=2 
     - env: RASPPI=3
