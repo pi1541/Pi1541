@@ -135,8 +135,8 @@ GraphIEC = 1
 //    Updated to address issue #185 and allow for inversion of rotary operation
 //    for certain encoders. - 08/13/2020 by Geo...
 //
-RotaryEncoderEnable = 1
-RotaryEncoderInvert = 1
+//RotaryEncoderEnable = 1
+//RotaryEncoderInvert = 1
 
 // This option will display the temperature of the Pi's CPU.
 // It should be about 52�C anything above 65�C is bad and there is something wrong with your hardware
