@@ -109,6 +109,8 @@ public:
 
 	//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
 	inline unsigned int RotaryEncoderEnable() const { return rotaryEncoderEnable; }
+	//ROTARY: Added for rotary encoder inversion (Issue#185) - 08/13/2020 by Geo...
+	inline unsigned int RotaryEncoderInvert() const { return rotaryEncoderInvert; }
 
 	// Page up and down will jump a different amount based on the maximum number rows displayed.
 	// Perhaps we should use some keyboard modifier to the the other screen?
@@ -191,6 +193,8 @@ private:
 
 	//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
 	unsigned int rotaryEncoderEnable;
+	//ROTARY: Added for rotary encoder inversion (Issue#185) - 08/13/2020 by Geo...
+	unsigned int rotaryEncoderInvert;
 
 };
 #endif

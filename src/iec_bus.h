@@ -366,7 +366,15 @@ public:
 		//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
 		if (IEC_Bus::rotaryEncoderEnable == true)
 		{
-			IEC_Bus::rotaryEncoder.Initialize(RPI_GPIO22, RPI_GPIO23, RPI_GPIO27);
+			//ROTARY: Added for rotary encoder inversion (Issue#185) - 08/13/2020 by Geo...
+			if (IEC_Bus::rotaryEncoderInvert == true)
+			{
+				IEC_Bus::rotaryEncoder.Initialize(RPI_GPIO23, RPI_GPIO22, RPI_GPIO27);
+			}
+			else
+			{
+				IEC_Bus::rotaryEncoder.Initialize(RPI_GPIO22, RPI_GPIO23, RPI_GPIO27);
+			}
 		}
 
 	}
@@ -661,6 +669,12 @@ public:
 		rotaryEncoderEnable = value;
 	}
 
+	//ROTARY: Added for rotary encoder inversion (Issue#185) - 08/13/2020 by Geo...
+	static inline void SetRotaryEncoderInvert(bool value)
+	{
+		rotaryEncoderInvert = value;
+	}
+
 	// CA1 input ATN
 	// If CA1 is ever set to output
 	//	- CA1 will start to drive pb7
@@ -728,6 +742,8 @@ private:
 	//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
 	static RotaryEncoder rotaryEncoder;
 	static bool rotaryEncoderEnable;
+	//ROTARY: Added for rotary encoder inversion (Issue#185) - 08/13/2020 by Geo...
+	static bool rotaryEncoderInvert;
 
 };
 #endif
