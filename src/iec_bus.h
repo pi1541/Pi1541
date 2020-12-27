@@ -66,7 +66,7 @@
 //	- VIA's DATA IN will automatically set high and hence the DATA line will be pulled low (activated)
 // If ATN and ATNA are in sync
 //	- the output from the XOR gate will be low and the output of its inverter will go high
-//		- when this occurs the DATA line must be still able to be pulled low via the PC or VIA's inverted PB1 (DATA OUT)
+//	- when this occurs the DATA line must be still able to be pulled low via the PC or VIA's inverted PB1 (DATA OUT)
 //
 // Therefore in the same vein if PB7 is set to output it could cause the input of the XOR to be pulled low
 //
@@ -80,8 +80,8 @@ enum PIGPIO
 {
 	// Original Non-split lines
 	PIGPIO_ATN = 2,			// 3
-	PIGPIO_DATA = 18,		// 12
 	PIGPIO_CLOCK = 17,		// 11
+	PIGPIO_DATA = 18,		// 12
 	PIGPIO_SRQ = 19,		// 35
 	PIGPIO_RESET = 3,		// 5
 
@@ -118,16 +118,21 @@ enum PIGPIO
 	PIGPIO_IN_BUTTON1 = 27	// 13 Common
 };
 #else
-//Added GPIO bindings for Raspberry 1B (only 26 I/O ports)
+//Added GPIO bindings for Raspberry Pi 1B Rev 1/2 (only 26 I/O ports)
 enum PIGPIO
 {
 	// Original Non-split lines
+	// Raspberry Pi 1B Rev 2 has GPIO0/1 in place of GPIO2/3
+#if defined(RPI1BREV1)	
+	PIGPIO_ATN = 0,			// 3
+	PIGPIO_RESET = 1,		// 5
+#else
 	PIGPIO_ATN = 2,			// 3
-	PIGPIO_DATA = 18,		// 12
-	PIGPIO_CLOCK = 17,		// 11
-	PIGPIO_SRQ = 19,		// 35  not connected yet
 	PIGPIO_RESET = 3,		// 5
-
+#endif
+	PIGPIO_CLOCK = 17,		// 11
+	PIGPIO_DATA = 18,		// 12
+	PIGPIO_SRQ = 19,		// 35  not connected yet
 
 	// Pinout for those that want to split the lines (and the common ones like buttons, sound and LED)
 	// Funktion = 	GPIO	// Hardware PIN
@@ -140,12 +145,12 @@ enum PIGPIO
 	//PIGPIO_OUT_RESET = 6,	// 31
 	PIGPIO_OUT_SPI0_RS = 6,	// 31 not connected yet
 	// 7 SPI0_CS1			// 26
-	PIGPIO_IN_BUTTON5 =  8,	// 24 changed for Raspberry 1 A.Buch 02.Jan.2020
-	PIGPIO_IN_RESET = 9,	// 21 changed for Raspberry 1 A.Buch 02.Jan.2020
-	PIGPIO_IN_CLOCK = 10,	// 19 changed for Raspberry 1 A.Buch 02.Jan.2020
-	PIGPIO_OUT_LED = 11,	// 23 changed for Raspberry 1 A.Buch 02.Jan.2020
+	PIGPIO_IN_BUTTON5 =  9,	// 21
+	PIGPIO_IN_RESET = 20,	// 38
+	PIGPIO_IN_CLOCK = 10,	// 19
+	PIGPIO_OUT_LED = 7,	    // 26
 	PIGPIO_OUT_ATN = 12,	// 32 not connected yet
-	PIGPIO_OUT_SOUND = 13,  // 33 GPIO 13 is not connected at all with Raspberry 1 Layout
+	PIGPIO_OUT_SOUND = 11,  // 23
 	// 14 TX				// 8
 	// 15 RX  				// 10
 	//GPIO = 16,			// 36 Common
@@ -159,9 +164,11 @@ enum PIGPIO
 	PIGPIO_IN_ATN = 24,		// 18
 	PIGPIO_IN_DATA = 25,	// 22
 	//GPIO 26,				// 37
+#if defined(RPI1BREV1)
+	PIGPIO_IN_BUTTON1 = 21	// 13 Common
+#else
 	PIGPIO_IN_BUTTON1 = 27	// 13 Common
-	//PIGPIO_OUT_SOUND = 45 // ToDo internal GPIO connected with audio out left. To change for sound with Raspberry 1 A.Buch
-							// gives yet an overflow A.Buch 03. Jan. 2020. Sound is still disabled by EXPERIMENTALZERO
+#endif
 };
 #endif
 
@@ -300,11 +307,13 @@ public:
 			// This means that when any pin is turn to output it will output a 0 and pull lines low (ie an activation state on the IEC bus)
 			// Note: on the IEC bus you never output a 1 you simply tri state and it will be pulled up to a 1 (ie inactive state on the IEC bus) if no one else is pulling it low.
 
-			myOutsGPFSEL0 = read32(ARM_GPIO_GPFSEL0);
-			myOutsGPFSEL1 = read32(ARM_GPIO_GPFSEL1);
+			//myOutsGPFSEL0 = read32(ARM_GPIO_GPFSEL0);
+			//myOutsGPFSEL1 = read32(ARM_GPIO_GPFSEL1);
 
-			myOutsGPFSEL1 |= (1 << ((PIGPIO_OUT_LED - 10) * 3));
-			myOutsGPFSEL1 |= (1 << ((PIGPIO_OUT_SOUND - 10) * 3));
+			//myOutsGPFSEL1 |= (1 << ((PIGPIO_OUT_LED - 10) * 3));
+			//myOutsGPFSEL1 |= (1 << ((PIGPIO_OUT_SOUND - 10) * 3));
+			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_SOUND, FS_OUTPUT);
+			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_LED, FS_OUTPUT);
 		}
 		else
 		{

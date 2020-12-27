@@ -5,7 +5,7 @@
 #define PI1581SUPPORT 1
 // Indicates a Pi with the 40 pin GPIO connector
 // so that additional functionality (e.g. test pins) can be enabled
-#if defined(RPIZERO) || defined(RPIBPLUS) || defined(RPI2) || defined(RPI3)
+#if defined(RPIZERO) || defined(RPI1BPLUS) || defined(RPI2) || defined(RPI3)
 #define HAS_40PINS
 #endif
 
