@@ -1527,7 +1527,7 @@ int DiskImage::FindSync(unsigned track, int bitIndex, int maxBits, int* syncStar
 		else
 		{
 			bitIndex++;
-			if (bitIndex >= MAX_TRACK_LENGTH * 8)
+			if (bitIndex >= int(BitsInTrack(track)))
 				bitIndex = 0;
 #if defined(EXPERIMENTALZERO)
 			byte = tracks[(track << 13)+(bitIndex >> 3)];
