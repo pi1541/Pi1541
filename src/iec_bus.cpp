@@ -74,7 +74,8 @@ unsigned IEC_Bus::gplev0;
 //ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
 RotaryEncoder IEC_Bus::rotaryEncoder;
 bool IEC_Bus::rotaryEncoderEnable;
-
+//ROTARY: Added for rotary encoder inversion (Issue#185) - 08/13/2020 by Geo...
+bool IEC_Bus::rotaryEncoderInvert;
 
 void IEC_Bus::ReadGPIOUserInput( int buttonCount)
 {

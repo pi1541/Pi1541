@@ -1940,6 +1940,8 @@ extern "C"
 		IEC_Bus::SetIgnoreReset(options.IgnoreReset());
 		//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
 		IEC_Bus::SetRotaryEncoderEnable(options.RotaryEncoderEnable());
+		//ROTARY: Added for rotary encoder inversion (Issue#185) - 08/13/2020 by Geo...
+		IEC_Bus::SetRotaryEncoderInvert(options.RotaryEncoderInvert());
 #if not defined(EXPERIMENTALZERO)
 		if (!options.SoundOnGPIO())
 		{
