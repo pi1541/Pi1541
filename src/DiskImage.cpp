@@ -72,7 +72,7 @@ static const unsigned short SECTOR_LENGTH_WITH_CHECKSUM = 260;
 static const unsigned char GCR_SYNC_BYTE = 0xff;
 static const unsigned char GCR_GAP_BYTE = 0x55;
 static const int SECTOR_HEADER_LENGTH = 8;
-static const unsigned MAX_D64_SIZE = 0x30000;
+static const unsigned MAX_D64_SIZE = 0x32200 + 768;
 static const unsigned MAX_D71_SIZE = 0x55600 + 1366;
 static const unsigned MAX_D81_SIZE = 822400;
 
@@ -141,6 +141,7 @@ DiskImage::DiskImage()
 	, fileInfo(0)
 {
 	memset(tracks, 0x55, sizeof(tracks));
+	memset(trackUsed, 0, sizeof(trackUsed));
 }
 
 void DiskImage::Close()
@@ -180,6 +181,7 @@ void DiskImage::Close()
 		break;
 	}
 	memset(trackLengths, 0, sizeof(trackLengths));
+	memset(trackUsed, 0, sizeof(trackUsed));
 	diskType = NONE;
 	fileInfo = 0;
 	hash = 0;
@@ -204,7 +206,7 @@ void DiskImage::DumpTrack(unsigned track)
 bool DiskImage::OpenD64(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size)
 {
 	unsigned char errorinfo[MAXBLOCKSONDISK];
-	unsigned last_track = MAXBLOCKSONDISK;
+	unsigned last_track;
 	unsigned sector_ref;
 	unsigned char error;
 
@@ -314,11 +316,11 @@ bool DiskImage::WriteD64(char* name)
 			return false;
 		}
 		d64ptr = d64data;
-		for (track = 0; track <= 40 * 2; track += 2)
+		for (track = 0; track < HALF_TRACK_COUNT; track += 2)
 		{
 			if (trackUsed[track])
 			{
-				//printf("Track %d\n", track);
+				//printf("Track %d\r\n", track);
 
 				for (sector = 0; sector < SectorsPerTrack[track / 2]; sector++)
 				{
