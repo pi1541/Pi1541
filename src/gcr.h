@@ -28,9 +28,9 @@
 
 /* D64 constants */
 #define BLOCKSONDISK (17*21 + 7*19 + 6*18 + 5*17)
-#define BLOCKSEXTRA (5*17)
+#define BLOCKSEXTRA (5*17 + 2*17)
 #define MAXBLOCKSONDISK (BLOCKSONDISK+BLOCKSEXTRA)
-#define MAX_TRACK_D64 40
+#define MAX_TRACK_D64 42
 
 /* G64 constants (only needed for current VICE support */
 #define G64_TRACK_MAXLEN 7928

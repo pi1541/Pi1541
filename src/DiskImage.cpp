@@ -240,7 +240,7 @@ bool DiskImage::OpenD64(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 			break;
 
 		default:  // non-standard images, attempt to load anyway
-			last_track = 40;
+			last_track = MAX_TRACK_D64;
 			break;
 	}
 
