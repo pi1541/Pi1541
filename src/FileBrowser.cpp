@@ -1615,7 +1615,7 @@ void FileBrowser::DisplayDiskInfo(DiskImage* diskImage, const char* filenameForI
 				blocksFree += buffer[bamOffset + bamTrack * BAM_ENTRY_SIZE];
 
 			y_px = 0;
-			for (int bit = 0; bit < DiskImage::SectorsPerTrack[bamTrack]; bit++)
+			for (u32 bit = 0; bit < DiskImage::SectorsPerTrackD64(bamTrack); bit++)
 			{
 				u32 bits = buffer[bamOffset + 1 + (bit >> 3) + bamTrack * BAM_ENTRY_SIZE];
 

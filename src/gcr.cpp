@@ -398,14 +398,14 @@ convert_GCR_sector(BYTE * gcr_start, BYTE * gcr_cycle, BYTE * d64_sector,
 
 void
 convert_sector_to_GCR(BYTE * buffer, BYTE * ptr,
-  int track, int sector, BYTE * diskID, int error)
+  int track, int sector, BYTE * diskID, int error, int sectorSize)
 {
 	int i;
 	BYTE buf[4], databuf[0x104], chksum;
 	BYTE tempID[3];
 
 	memcpy(tempID, diskID, 3);
-	memset(ptr, 0x55, 361);	/* 'unformat' GCR sector */
+	memset(ptr, 0x55, sectorSize);	/* 'unformat' GCR sector */
 
 	if (error == SYNC_NOT_FOUND)
 		return;
@@ -472,10 +472,6 @@ convert_sector_to_GCR(BYTE * buffer, BYTE * ptr,
 		convert_4bytes_to_GCR(databuf + (4 * i), ptr);
 		ptr += 5;
 	}
-
-	/* 7 0x55 gap bytes in my reference disk */
-	memset(ptr, 0x55, 7);	/* Gap before next sector */
-	ptr += 7;
 }
 
 size_t

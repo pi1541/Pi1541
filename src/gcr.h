@@ -135,7 +135,7 @@ size_t find_nondos_track_cycle(BYTE ** cycle_start, BYTE ** cycle_stop,
 BYTE convert_GCR_sector(BYTE * gcr_start, BYTE * gcr_end,
   BYTE * d64_sector, int track, int sector, BYTE * id);
 void convert_sector_to_GCR(BYTE * buffer, BYTE * ptr,
-  int track, int sector, BYTE * diskID, int error);
+  int track, int sector, BYTE * diskID, int error, int sectorSize);
 BYTE * find_sector_gap(BYTE * work_buffer, int tracklen, size_t * p_sectorlen);
 BYTE * find_sector0(BYTE * work_buffer, int tracklen, size_t * p_sectorlen);
 int extract_GCR_track(BYTE * destination, BYTE * source, int * align,

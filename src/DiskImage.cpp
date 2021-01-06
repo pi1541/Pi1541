@@ -42,7 +42,7 @@ extern u32 HashBuffer(const void* pBuffer, u32 length);
 
 #define DIRECTRY_ENTRY_FILE_TYPE_PRG 0x82
 
-static u8 blankD64DIRBAM[] =
+static const u8 blankD64DIRBAM[] =
 {
 	0x12, 0x01, 0x41, 0x00, 0x15, 0xff, 0xff, 0x1f, 0x15, 0xff, 0xff, 0x1f, 0x15, 0xff, 0xff, 0x1f,
 	0x15, 0xff, 0xff, 0x1f, 0x15, 0xff, 0xff, 0x1f, 0x15, 0xff, 0xff, 0x1f, 0x15, 0xff, 0xff, 0x1f,
@@ -76,6 +76,11 @@ static const unsigned MAX_D64_SIZE = 0x32200 + 768;
 static const unsigned MAX_D71_SIZE = 0x55600 + 1366;
 static const unsigned MAX_D81_SIZE = 822400;
 
+static const unsigned short GCR_SYNC_LENGTH = 5;
+static const unsigned short GCR_HEADER_LENGTH = 10;
+static const unsigned short GCR_HEADER_GAP_LENGTH = 9;
+static const unsigned short GCR_SECTOR_DATA_LENGTH = 325;
+
 // CRC-16-CCITT
 // CRC(x) = x^16 + x^12 + x^5 + x^0
 unsigned short DiskImage::CRC1021[256] =
@@ -98,6 +103,11 @@ unsigned short DiskImage::CRC1021[256] =
 	0xef1f,0xff3e,0xcf5d,0xdf7c,0xaf9b,0xbfba,0x8fd9,0x9ff8,0x6e17,0x7e36,0x4e55,0x5e74,0x2e93,0x3eb2,0x0ed1,0x1ef0
 };
 
+static const unsigned trackSize[4] = { 6250, 6666, 7142, 7692 };
+static const unsigned sectorsPerTrack[4] = { 17, 18, 19, 21 };
+static const unsigned gapSize[4] = { 9, 12, 17, 8 };
+
+
 void DiskImage::CRC(unsigned short& runningCRC, unsigned char data)
 {
 	runningCRC = CRC1021[(runningCRC >> 8) ^ data] ^ (runningCRC << 8);
@@ -119,20 +129,15 @@ void DiskImage::OutputD81DataByte(unsigned char*& src, unsigned char*& dest)
 	CRC(crc, data);
 }
 
+unsigned DiskImage::SectorsPerTrackD64(unsigned track)
+{
+	return sectorsPerTrack[GetSpeedZoneIndexD64(track)];
+}
+
 
 #define NIB_HEADER_SIZE 0xFF
 
 int gap_match_length = 7;	// Used by gcr.cpp
-
-const unsigned char DiskImage::SectorsPerTrack[42] =
-{
-	21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, //  1 - 17
-	19, 19, 19, 19, 19, 19, 19,				// 18 - 24
-	18, 18, 18, 18, 18, 18,					// 25 - 30
-	17, 17, 17, 17, 17, 17, 17, 17, 17, 17,	// 31 - 40
-	17, 17									// 41 - 42
-	// total 683-768 sectors
-};
 
 DiskImage::DiskImage()
 	: readOnly(false)
@@ -208,6 +213,9 @@ bool DiskImage::OpenD64(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 	unsigned char errorinfo[MAXBLOCKSONDISK];
 	unsigned last_track;
 	unsigned sector_ref;
+	unsigned sectors;
+	unsigned speedZoneIndex;
+	unsigned sectorSize;
 	unsigned char error;
 
 	Close();
@@ -254,7 +262,7 @@ bool DiskImage::OpenD64(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 		unsigned char* dest = tracks[halfTrackIndex];
 #endif
 
-		trackLengths[halfTrackIndex] = SectorsPerTrack[track] * GCR_SECTOR_LENGTH;
+	trackLengths[halfTrackIndex] = trackSize[GetSpeedZoneIndexD64(track)];
 
 		if ((halfTrackIndex & 1) == 0)
 		{
@@ -262,13 +270,15 @@ bool DiskImage::OpenD64(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 			{
 				trackUsed[halfTrackIndex] = true;
 				//DEBUG_LOG("Track %d used\r\n", halfTrackIndex);
-				for (unsigned sectorNo = 0; sectorNo < SectorsPerTrack[track]; ++sectorNo)
+				speedZoneIndex = GetSpeedZoneIndexD64(track);
+				sectors = sectorsPerTrack[speedZoneIndex];
+				sectorSize = GCR_SYNC_LENGTH + GCR_HEADER_LENGTH + GCR_HEADER_GAP_LENGTH + GCR_SYNC_LENGTH + GCR_SECTOR_DATA_LENGTH + gapSize[speedZoneIndex];
+
+				for (unsigned sectorNo = 0; sectorNo < sectors; ++sectorNo)
 				{
 					error = errorinfo[sector_ref++];
-
-					convert_sector_to_GCR(diskImage + offset, dest, track + 1, sectorNo, diskImage + 0x165A2, error);
-					dest += 361;
-
+					convert_sector_to_GCR(diskImage + offset, dest, track + 1, sectorNo, diskImage + 0x165A2, error, sectorSize);
+					dest += sectorSize;
 					offset += SECTOR_LENGTH;
 				}
 			}
@@ -291,8 +301,16 @@ bool DiskImage::OpenD64(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 
 bool DiskImage::WriteD64(char* name)
 {
+	BYTE id[3];
+
 	if (readOnly)
 		return true;
+
+	if (!GetID(34, id))
+	{
+		DEBUG_LOG("Cannot find directory sector.\r\n");
+		return false;
+	}
 
 	FIL fp;
 	FRESULT res = f_open(&fp, fileInfo ? fileInfo->fname : name, FA_CREATE_ALWAYS | FA_WRITE);
@@ -301,8 +319,7 @@ bool DiskImage::WriteD64(char* name)
 		u32 bytesToWrite;
 		u32 bytesWritten;
 
-		int track, sector;
-		BYTE id[3];
+		unsigned track, sector, sectors;
 		BYTE d64data[MAXBLOCKSONDISK * 256], *d64ptr;
 		int blocks_to_save = 0;
 
@@ -310,11 +327,6 @@ bool DiskImage::WriteD64(char* name)
 
 		memset(d64data, 0, sizeof(d64data));
 
-		if (!GetID(34, id))
-		{
-			DEBUG_LOG("Cannot find directory sector.\r\n");
-			return false;
-		}
 		d64ptr = d64data;
 		for (track = 0; track < HALF_TRACK_COUNT; track += 2)
 		{
@@ -322,7 +334,8 @@ bool DiskImage::WriteD64(char* name)
 			{
 				//printf("Track %d\r\n", track);
 
-				for (sector = 0; sector < SectorsPerTrack[track / 2]; sector++)
+				sectors = sectorsPerTrack[GetSpeedZoneIndexD64(track >> 1)];
+				for (sector = 0; sector < sectors; sector++)
 				{
 					ConvertSector(track, sector, d64ptr);
 					d64ptr += 256;
@@ -369,6 +382,14 @@ void DiskImage::CloseD64()
 
 bool DiskImage::OpenD71(const FILINFO* fileInfo, unsigned char* diskImage, unsigned size)
 {
+	unsigned char errorinfo[MAXBLOCKSONDISK * 2];
+	unsigned last_track;
+	unsigned sector_ref;
+	unsigned sectors;
+	unsigned speedZoneIndex;
+	unsigned sectorSize;
+	unsigned char error;
+
 	Close();
 
 	this->fileInfo = fileInfo;
@@ -380,43 +401,67 @@ bool DiskImage::OpenD71(const FILINFO* fileInfo, unsigned char* diskImage, unsig
 
 	attachedImageSize = size;
 
-	for (unsigned headIndex = 0; headIndex < 2; ++headIndex)
+	memset(errorinfo, SECTOR_OK, sizeof(errorinfo));
+
+	switch (size)
 	{
-		for (unsigned halfTrackIndex = 0; halfTrackIndex < D71_HALF_TRACK_COUNT; ++halfTrackIndex)
+		case (BLOCKSONDISK * 2 * 257):		// 70 track image with errorinfo
+			memcpy(errorinfo, diskImage + (BLOCKSONDISK * 2 * 256), BLOCKSONDISK * 2);
+			/* FALLTHROUGH */
+		case (BLOCKSONDISK * 2 * 256):		// 70 track image w/o errorinfo
+			last_track = 70;
+			break;
+
+		//case (MAXBLOCKSONDISK * 2 * 257):	// 80 track image with errorinfo
+		//	memcpy(errorinfo, diskImage + (MAXBLOCKSONDISK * 2 * 256), MAXBLOCKSONDISK * 2);
+		//	/* FALLTHROUGH */
+		//case (MAXBLOCKSONDISK * 2 * 256):	// 40 track image w/o errorinfo
+		//	last_track = 80;
+		//	break;
+
+		default:  // non-standard images, attempt to load anyway
+			last_track = MAX_TRACK_D64 * 2;
+			break;
+	}
+
+	sector_ref = 0;
+	for (unsigned halfTrackIndex = 0; halfTrackIndex < last_track * 2; ++halfTrackIndex)
+	{
+		unsigned char track = (halfTrackIndex >> 1);
+#if defined(EXPERIMENTALZERO)
+		unsigned char* dest = &tracks[halfTrackIndex << 13];
+#else
+		unsigned char* dest = tracks[halfTrackIndex];
+#endif
+
+		trackLengths[halfTrackIndex] = trackSize[GetSpeedZoneIndexD64(track)];
+
+		if ((halfTrackIndex & 1) == 0)
 		{
-			unsigned char track = (halfTrackIndex >> 1);
-			unsigned char* dest = tracksD81[halfTrackIndex][headIndex];
-
-			trackLengths[halfTrackIndex] = SectorsPerTrack[track] * GCR_SECTOR_LENGTH;
-
-			if ((halfTrackIndex & 1) == 0)
+			if (offset < size)
 			{
-				if (offset < size)	// This will allow for >35 tracks.
+				trackUsed[halfTrackIndex] = true;
+				speedZoneIndex = GetSpeedZoneIndexD64(track);
+				sectors = sectorsPerTrack[speedZoneIndex];
+				sectorSize = GCR_SYNC_LENGTH + GCR_HEADER_LENGTH + GCR_HEADER_GAP_LENGTH + GCR_SYNC_LENGTH + GCR_SECTOR_DATA_LENGTH + gapSize[speedZoneIndex];
+				for (unsigned sectorNo = 0; sectorNo < sectors; ++sectorNo)
 				{
-					trackUsed[halfTrackIndex] = true;
-					//DEBUG_LOG("Track %d used\r\n", halfTrackIndex);
-					for (unsigned sectorNo = 0; sectorNo < SectorsPerTrack[track]; ++sectorNo)
-					{
-						convert_sector_to_GCR(diskImage + offset, dest, track + 1, sectorNo, diskImage + 0x165A2, 0);
-						dest += 361;
-
-						offset += SECTOR_LENGTH;
-					}
-				}
-				else
-				{
-					trackUsed[halfTrackIndex] = false;
-					//DEBUG_LOG("Track %d not used\r\n", halfTrackIndex);
+					error = errorinfo[sector_ref++];
+					convert_sector_to_GCR(diskImage + offset, dest, track + 1, sectorNo, diskImage + 0x165A2, error, sectorSize);
+					dest += sectorSize;
+					offset += SECTOR_LENGTH;
 				}
 			}
 			else
 			{
 				trackUsed[halfTrackIndex] = false;
-				//DEBUG_LOG("Track %d not used\r\n", halfTrackIndex);
 			}
 		}
+		else
+		{
+			trackUsed[halfTrackIndex] = false;
+		}
 	}
-
 	diskType = D71;
 	return true;
 }
@@ -1659,7 +1704,7 @@ int DiskImage::RAMD64GetSectorOffset(int track, int sector)
 
 	for (index = 0; index < (track - 1); ++index)
 	{
-		sectorOffset += SectorsPerTrack[index];
+		sectorOffset += sectorsPerTrack[GetSpeedZoneIndexD64(index)];
 	}
 	sectorOffset += sector;
 	return sectorOffset;
@@ -1807,8 +1852,9 @@ bool DiskImage::RAMD64FindFreeSector(bool searchForwards, unsigned char* ramD64,
 {
 	unsigned char* ptr;
 	int sectorOffset = RAMD64GetSectorOffset(18, 0);
-	int trackIndex;
-	int sectorIndex;
+	unsigned trackIndex;
+	unsigned sectorIndex;
+	unsigned sectors;
 	int stripAmount = 10;
 
 	track = 0;
@@ -1822,7 +1868,7 @@ bool DiskImage::RAMD64FindFreeSector(bool searchForwards, unsigned char* ramD64,
 
 		for (; trackIndex < 35; ++trackIndex)
 		{
-			if (lastTrackUsed != (trackIndex + 1))
+			if ((unsigned)lastTrackUsed != (trackIndex + 1))
 			{
 				lastSectorUsed = 0;
 				stripAmount = 0;
@@ -1835,9 +1881,10 @@ bool DiskImage::RAMD64FindFreeSector(bool searchForwards, unsigned char* ramD64,
 			ptr = 4 + ramD64 + sectorOffset * 256 + 4 * trackIndex;
 			if (*ptr != 0)
 			{
-				for (sectorIndex = 0; sectorIndex < SectorsPerTrack[trackIndex]; ++sectorIndex)
+				sectors = sectorsPerTrack[GetSpeedZoneIndexD64(trackIndex)];
+				for (sectorIndex = 0; sectorIndex < sectors; ++sectorIndex)
 				{
-					int sectorStripped = (sectorIndex + lastSectorUsed + stripAmount) % SectorsPerTrack[trackIndex];
+					int sectorStripped = (sectorIndex + lastSectorUsed + stripAmount) % sectors;
 					if (RAMD64AllocateSector(ramD64, trackIndex + 1, sectorStripped))
 					{
 						track = trackIndex + 1;
@@ -1856,7 +1903,7 @@ bool DiskImage::RAMD64FindFreeSector(bool searchForwards, unsigned char* ramD64,
 			trackIndex = lastTrackUsed - 1;
 		for (; trackIndex >= 0; --trackIndex)
 		{
-			if (lastTrackUsed != (trackIndex + 1))
+			if ((unsigned)lastTrackUsed != (trackIndex + 1))
 			{
 				lastSectorUsed = 0;
 				stripAmount = 0;
@@ -1870,9 +1917,10 @@ bool DiskImage::RAMD64FindFreeSector(bool searchForwards, unsigned char* ramD64,
 			ptr = 4 + ramD64 + sectorOffset * 256 + 4 * trackIndex;
 			if (*ptr != 0)
 			{
-				for (sectorIndex = 0; sectorIndex < SectorsPerTrack[trackIndex]; ++sectorIndex)
+				sectors = sectorsPerTrack[GetSpeedZoneIndexD64(trackIndex)];
+				for (sectorIndex = 0; sectorIndex < sectors; ++sectorIndex)
 				{
-					int sectorStripped = (sectorIndex + lastSectorUsed + stripAmount) % SectorsPerTrack[trackIndex];
+					int sectorStripped = (sectorIndex + lastSectorUsed + stripAmount) % sectors;
 					if (RAMD64AllocateSector(ramD64, trackIndex + 1, sectorStripped))
 					{
 

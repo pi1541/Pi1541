@@ -125,7 +125,7 @@ private:
 	void DumpTrack(unsigned track); // Used for debugging disk images.
 
 #if defined(EXPERIMENTALZERO)
-	inline u32 AdvanceSectorPositionR(int& byteOffset)
+	inline u32 AdvanceSectorPosition(int& byteOffset)
 	{
 		if (++headBitOffset == bitsInTrack)
 			headBitOffset = 0;
@@ -133,28 +133,20 @@ private:
 		return (~headBitOffset) & 7;
 	}
 #else
-	// No reason why I seperate these into individual read and write versions. I was just trying to get the bit stream to line up when rewriting over existing data.
-	inline u32 AdvanceSectorPositionR(int& byteOffset)
+	inline u32 AdvanceSectorPosition(int& byteOffset)
 	{
 		++headBitOffset %= bitsInTrack;
 		byteOffset = headBitOffset >> 3;
 		return (~headBitOffset) & 7;
 	}
 #endif
-	inline u32 AdvanceSectorPositionW(int& byteOffset)
-	{
-		byteOffset = headBitOffset >> 3;
-		u32 bit = (~headBitOffset) & 7;
-		++headBitOffset %= bitsInTrack;
-		return bit;
-	}
 	unsigned cachedheadTrackPos = -1;
 	int cachedbyteOffset = -1;
 	unsigned char cachedByte = 0;
 	inline bool GetNextBit()
 	{
 		int byteOffset;
-		int bit = AdvanceSectorPositionR(byteOffset);
+		int bit = AdvanceSectorPosition(byteOffset);
 
 		//Why is it faster to check both conditions here than to update the cache when moving the head?
 		if (byteOffset != cachedbyteOffset || cachedheadTrackPos != headTrackPos)
@@ -171,7 +163,7 @@ private:
 	inline void SetNextBit(bool value)
 	{
 		int byteOffset;
-		int bit = AdvanceSectorPositionW(byteOffset);
+		int bit = AdvanceSectorPosition(byteOffset);
 		diskImage->SetBit(headTrackPos, byteOffset, bit, value);
 	}
 
