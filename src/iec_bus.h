@@ -199,7 +199,6 @@ enum PIGPIOMasks
 };
 
 static const unsigned ButtonPinFlags[5] = { PIGPIO_MASK_IN_BUTTON1, PIGPIO_MASK_IN_BUTTON2, PIGPIO_MASK_IN_BUTTON3, PIGPIO_MASK_IN_BUTTON4, PIGPIO_MASK_IN_BUTTON5 };
-static int buttonCount = sizeof(ButtonPinFlags) / sizeof(unsigned);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Original Non-split lines
@@ -401,7 +400,7 @@ public:
 	}
 #endif
 
-	static inline void UpdateButton(int index, unsigned gplev0)
+	static void UpdateButton(int index, unsigned gplev0)
 	{
 		bool inputcurrent = (gplev0 & ButtonPinFlags[index]) == 0;
 
@@ -476,7 +475,7 @@ public:
 
 
 	static void ReadBrowseMode(void);
-	static void ReadGPIOUserInput(int buttonCount);
+	static void ReadGPIOUserInput(void);
 	static void ReadEmulationMode1541(void);
 	static void ReadEmulationMode1581(void);
 
@@ -738,6 +737,8 @@ private:
 	static bool ClockSetToOut;
 	static bool SRQSetToOut;
 	static bool Resetting;
+
+	static int buttonCount;
 
 	static u32 myOutsGPFSEL0;
 	static u32 myOutsGPFSEL1;

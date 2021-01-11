@@ -17,8 +17,11 @@
 // along with Pi1541. If not, see <http://www.gnu.org/licenses/>.
 
 #include "iec_bus.h"
+#include "InputMappings.h"
 
 //#define REAL_XOR 1
+
+int IEC_Bus::buttonCount = sizeof(ButtonPinFlags) / sizeof(unsigned);
 
 u32 IEC_Bus::oldClears = 0;
 u32 IEC_Bus::oldSets = 0;
@@ -77,16 +80,16 @@ bool IEC_Bus::rotaryEncoderEnable;
 //ROTARY: Added for rotary encoder inversion (Issue#185) - 08/13/2020 by Geo...
 bool IEC_Bus::rotaryEncoderInvert;
 
-void IEC_Bus::ReadGPIOUserInput( int buttonCount)
+void IEC_Bus::ReadGPIOUserInput()
 {
 	//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
 	if (IEC_Bus::rotaryEncoderEnable == true)
 	{
-		int indexEnter = 0;
-		int indexUp = 1;
-		int indexDown = 2;
-		int indexBack = 3;
-		int indexInsert = 4;
+		int indexEnter = InputMappings::INPUT_BUTTON_ENTER;
+		int indexUp = InputMappings::INPUT_BUTTON_UP;
+		int indexDown = InputMappings::INPUT_BUTTON_DOWN;
+		int indexBack = InputMappings::INPUT_BUTTON_BACK;
+		int indexInsert = InputMappings::INPUT_BUTTON_INSERT;
 
 		//Poll the rotary encoder
 		//
@@ -139,7 +142,7 @@ void IEC_Bus::ReadGPIOUserInput( int buttonCount)
 void IEC_Bus::ReadBrowseMode(void)
 {
 	gplev0 = read32(ARM_GPIO_GPLEV0);
-	ReadGPIOUserInput(buttonCount);
+	ReadGPIOUserInput();
 
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
 	if (PI_Atn != ATNIn)

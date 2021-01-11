@@ -34,6 +34,12 @@ unsigned InputMappings::directDiskSwapRequest = 0;
 //volatile unsigned InputMappings::uartFlags = 0;
 //unsigned InputMappings::escapeSequenceIndex = 0;
 
+u8 InputMappings::INPUT_BUTTON_ENTER = 0;
+u8 InputMappings::INPUT_BUTTON_UP = 1;
+u8 InputMappings::INPUT_BUTTON_DOWN = 2;
+u8 InputMappings::INPUT_BUTTON_BACK = 3;
+u8 InputMappings::INPUT_BUTTON_INSERT = 4;
+
 InputMappings::InputMappings()
 	: keyboardBrowseLCDScreen(false)
 	, insertButtonPressedPrev(false)

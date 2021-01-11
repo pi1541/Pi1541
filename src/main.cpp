@@ -904,7 +904,7 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 
 #endif
 
-		IEC_Bus::ReadGPIOUserInput(3);
+		IEC_Bus::ReadGPIOUserInput();
 
 		// Other core will check the uart (as it is slow) (could enable uart irqs - will they execute on this core?)
 #if not defined(EXPERIMENTALZERO)
@@ -1120,7 +1120,7 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 		}
 #endif
 
-		IEC_Bus::ReadGPIOUserInput(3);
+		IEC_Bus::ReadGPIOUserInput();
 
 		// Other core will check the uart (as it is slow) (could enable uart irqs - will they execute on this core?)
 #if not defined(EXPERIMENTALZERO)
