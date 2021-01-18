@@ -177,7 +177,7 @@ public:
 
 	inline bool BrowseInsert()
 	{
-		return KeyboardFlag(INSERT_FLAG)/* | UartFlag(INSERT_FLAG)*/ | ButtonFlag(INSERT_FLAG);
+		return KeyboardFlag(INSERT_FLAG)/* | UartFlag(INSERT_FLAG)*/;
 	}
 
 	inline bool BrowseFunction()
@@ -185,7 +185,7 @@ public:
 		return KeyboardFlag(FUNCTION_FLAG) | ButtonFlag(FUNCTION_FLAG);
 	}
 
-	inline bool BrowseNewD64() { return KeyboardFlag(NEWD64_FLAG); }
+	inline bool BrowseNewD64() { return KeyboardFlag(NEWD64_FLAG) | ButtonFlag(INSERT_FLAG); }
 
 	inline bool BrowseAutoLoad() { return KeyboardFlag(AUTOLOAD_FLAG); }
 
