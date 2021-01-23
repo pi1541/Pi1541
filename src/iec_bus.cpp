@@ -384,10 +384,9 @@ void IEC_Bus::RefreshOuts1541(void)
 
 	if (OutputLED) set |= 1 << PIGPIO_OUT_LED;
 	else clear |= 1 << PIGPIO_OUT_LED;
-#if not defined(EXPERIMENTALZERO)
+
 	if (OutputSound) set |= 1 << PIGPIO_OUT_SOUND;
 	else clear |= 1 << PIGPIO_OUT_SOUND;
-#endif
 
 	write32(ARM_GPIO_GPCLR0, clear);
 	write32(ARM_GPIO_GPSET0, set);

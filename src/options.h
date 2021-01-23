@@ -64,11 +64,7 @@ public:
 	inline unsigned int QuickBoot() const { return quickBoot; }
 	inline unsigned int ShowOptions() const { return showOptions; }
 	inline unsigned int DisplayPNGIcons() const { return displayPNGIcons; }
-#if defined(EXPERIMENTALZERO)
-	inline unsigned int SoundOnGPIO() const { return false; }
-#else
 	inline unsigned int SoundOnGPIO() const { return soundOnGPIO; }
-#endif
 	inline unsigned int SoundOnGPIODuration() const { return soundOnGPIODuration; }
 	inline unsigned int SoundOnGPIOFreq() const { return soundOnGPIOFreq; }
 	inline unsigned int SplitIECLines() const { return splitIECLines; }

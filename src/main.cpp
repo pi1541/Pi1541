@@ -133,6 +133,8 @@ unsigned int screenHeight = 768;
 const char* termainalTextRed = "\E[31m";
 const char* termainalTextNormal = "\E[0m";
 
+int headSoundFreq;
+int headSoundCounterDuration;
 
 // Hooks required for USPi library
 extern "C"
@@ -785,8 +787,6 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 	unsigned caddyIndex;
 	int headSoundCounter = 0;
 	int headSoundFreqCounter = 0;
-	//			const int headSoundFreq = 833;	// 1200Hz = 1/1200 * 10^6;
-	const int headSoundFreq = 1000000 / options.SoundOnGPIOFreq();	// 1200Hz = 1/1200 * 10^6;
 	unsigned char oldHeadDir = 0;
 	int resetCount = 0;
 	bool refreshOutsAfterCPUStep = true;
@@ -898,7 +898,6 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 		}
 #endif
 
-#if not defined(EXPERIMENTALZERO)
 		// Do head moving sound
 		unsigned char headDir = pi1541.drive.GetLastHeadDirection();
 		if (headDir != oldHeadDir)	// Need to start a new sound?
@@ -906,17 +905,16 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 			oldHeadDir = headDir;
 			if (options.SoundOnGPIO())
 			{
-				headSoundCounter = 1000 * options.SoundOnGPIODuration();
+				headSoundCounter = headSoundCounterDuration;
 				headSoundFreqCounter = headSoundFreq;
 			}
 			else
 			{
+#if not defined(EXPERIMENTALZERO)
 				PlaySoundDMA();
+#endif
 			}
 		}
-
-
-#endif
 
 		IEC_Bus::ReadGPIOUserInput();
 
@@ -974,7 +972,7 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 			IEC_Bus::ReadEmulationMode1541();
 			IEC_Bus::RefreshOuts1541();	// Now output all outputs.
 		}
-#if not defined(EXPERIMENTALZERO)
+
 		if (options.SoundOnGPIO() && headSoundCounter > 0)
 		{
 			headSoundFreqCounter--;		// Continue updating a GPIO non DMA sound.
@@ -985,7 +983,6 @@ EXIT_TYPE Emulate1541(FileBrowser* fileBrowser)
 				IEC_Bus::OutputSound = !IEC_Bus::OutputSound;
 			}
 		}
-#endif
 
 		if (numberOfImages > 1)
 		{
@@ -1039,8 +1036,6 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 	unsigned caddyIndex;
 	int headSoundCounter = 0;
 	int headSoundFreqCounter = 0;
-	//			const int headSoundFreq = 833;	// 1200Hz = 1/1200 * 10^6;
-	const int headSoundFreq = 1000000 / options.SoundOnGPIOFreq();	// 1200Hz = 1/1200 * 10^6;
 	unsigned int oldTrack = 0;
 	int resetCount = 0;
 
@@ -1116,7 +1111,6 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 		}
 #endif
 
-#if not defined(EXPERIMENTALZERO)
 		// Do head moving sound
 		unsigned int track = pi1581.wd177x.GetCurrentTrack();
 		if (track != oldTrack)	// Need to start a new sound?
@@ -1124,15 +1118,16 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 			oldTrack = track;
 			if (options.SoundOnGPIO())
 			{
-				headSoundCounter = 1000 * options.SoundOnGPIODuration();
+				headSoundCounter = headSoundCounterDuration;
 				headSoundFreqCounter = headSoundFreq;
 			}
 			else
 			{
+#if not defined(EXPERIMENTALZERO)
 				PlaySoundDMA();
+#endif
 			}
 		}
-#endif
 
 		IEC_Bus::ReadGPIOUserInput();
 
@@ -1182,7 +1177,6 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 #endif
 		ctBefore = ctAfter;
 
-#if not defined(EXPERIMENTALZERO)
 		if (options.SoundOnGPIO() && headSoundCounter > 0)
 		{
 			headSoundFreqCounter--;		// Continue updating a GPIO non DMA sound.
@@ -1193,7 +1187,6 @@ EXIT_TYPE Emulate1581(FileBrowser* fileBrowser)
 				IEC_Bus::OutputSound = !IEC_Bus::OutputSound;
 			}
 		}
-#endif
 
 		if (numberOfImages > 1)
 		{
@@ -1915,6 +1908,9 @@ extern "C"
 			DisplayOptions(y_pos+=32);
 
 #endif
+		headSoundFreq = 1000000 / options.SoundOnGPIOFreq();	// 1200Hz = 1/1200 * 10^6;
+		headSoundCounterDuration = 1000 * options.SoundOnGPIODuration();
+
 		//if (!options.QuickBoot())
 			//IEC_Bus::WaitMicroSeconds(3 * 1000000);
 
