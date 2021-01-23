@@ -357,6 +357,31 @@ void InitialiseLCD()
 //		printf("\E[1ALED %s%d\E[0m Motor %d Track %0d.%d ATN %d DAT %d CLK %d %s\r\n", LED ? termainalTextRed : termainalTextNormal, LED, Motor, Track >> 1, Track & 1 ? 5 : 0, ATN, DATA, CLOCK, roms.ROMNames[romIndex]);
 //}
 
+void UpdateLCD(const char* track, unsigned temperature)
+{
+	if (screenLCD)
+	{
+#if not defined(EXPERIMENTALZERO)
+		core0RefreshingScreen.Acquire();
+#endif
+
+		IEC_Bus::WaitMicroSeconds(100);
+
+		if (options.DisplayTemperature())
+			snprintf(tempBuffer, tempBufferSize, "%s %02dC", track, temperature);
+		else
+			snprintf(tempBuffer, tempBufferSize, "%s", track);
+
+		screenLCD->PrintText(false, 0, 0, tempBuffer, 0, RGBA(0xff, 0xff, 0xff, 0xff));
+		screenLCD->RefreshRows(0, 1);
+
+		IEC_Bus::WaitMicroSeconds(100);
+#if not defined(EXPERIMENTALZERO)
+		core0RefreshingScreen.Release();
+#endif
+	}
+}
+
 // This runs on core0 and frees up core1 to just run the emulator.
 // Care must be taken not to crowd out the shared cache with core1 as this could slow down core1 so that it no longer can perform its duties in the 1us timings it requires.
 void UpdateScreen()
@@ -368,11 +393,13 @@ void UpdateScreen()
 	bool oldDATA = false;
 	bool oldCLOCK = false;
 	bool oldSRQ = false;
+	bool refreshLCDStatusDisplay;
 
 	u32 oldTrack = 0;
 	u32 textColour = COLOUR_BLACK;
 	u32 bgColour = COLOUR_WHITE;
-	u32 oldTemp = 0;
+	u32 oldTemperature = 0;
+	u32 caddyIndexChangedTimer = 0;
 
 	RGBA atnColour = COLOUR_YELLOW;
 	RGBA dataColour = COLOUR_GREEN;
@@ -387,6 +414,10 @@ void UpdateScreen()
 	int bottom;
 	int graphX = 0;
   //bool refreshUartStatusDisplay;
+	unsigned temperature = 0;
+
+	const long int tempBufferTrackSize = 16;
+	char tempBufferTrack[tempBufferTrackSize];
 
 	top = screenHeight - height / 2;
 	bottom = screenHeight - 1;
@@ -404,6 +435,8 @@ void UpdateScreen()
 
 		bool led = false;
 		bool motor = false;
+
+		refreshLCDStatusDisplay = false;
 
 		if (emulating == EMULATING_1541)
 		{
@@ -530,22 +563,6 @@ void UpdateScreen()
 		if (options.GraphIEC())
 			screen.DrawLineV(graphX, top3, bottom, COLOUR_BLACK);
 
-		if (options.DisplayTemperature())
-		{
-			unsigned temp;
-			if (GetTemperature(temp))
-			{
-				temp /= 1000;
-				if (temp != oldTemp)
-				{
-					oldTemp = temp;
-					//DEBUG_LOG("%0x %d %d\r\n", temp, temp, temp / 1000);
-					snprintf(tempBuffer, tempBufferSize, "%02d", temp);
-					screen.PrintText(false, 43 * 8, y, tempBuffer, textColour, bgColour);
-				}
-			}
-		}
-
 		u32 track;
 		if (emulating == EMULATING_1541)
 		{
@@ -553,29 +570,10 @@ void UpdateScreen()
 			if (track != oldTrack)
 			{
 				oldTrack = track;
-				snprintf(tempBuffer, tempBufferSize, "%02d.%d", (oldTrack >> 1) + 1, oldTrack & 1 ? 5 : 0);
-				screen.PrintText(false, 20 * 8, y, tempBuffer, textColour, bgColour);
+				snprintf(tempBufferTrack, tempBufferTrackSize, "%02d.%d", (oldTrack >> 1) + 1, oldTrack & 1 ? 5 : 0);
+				screen.PrintText(false, 20 * 8, y, tempBufferTrack, textColour, bgColour);
 				//refreshUartStatusDisplay = true;
-
-				if (screenLCD)
-				{
-#if not defined(EXPERIMENTALZERO)
-					core0RefreshingScreen.Acquire();
-#endif
-
-					IEC_Bus::WaitMicroSeconds(100);
-
-					snprintf(tempBuffer, tempBufferSize, "D%02d %02d.%d", deviceID, (oldTrack >> 1) + 1, oldTrack & 1 ? 5 : 0);
-					screenLCD->PrintText(false, 0, 0, tempBuffer, 0, RGBA(0xff, 0xff, 0xff, 0xff));
-					//				screenLCD->SetContrast(255.0/79.0*track);
-					screenLCD->RefreshRows(0, 1);
-
-					IEC_Bus::WaitMicroSeconds(100);
-#if not defined(EXPERIMENTALZERO)
-					core0RefreshingScreen.Release();
-#endif
-				}
-
+				refreshLCDStatusDisplay = true;
 			}
 		}
 		else if (emulating == EMULATING_1581)
@@ -584,25 +582,10 @@ void UpdateScreen()
 			if (track != oldTrack)
 			{
 				oldTrack = track;
-				snprintf(tempBuffer, tempBufferSize, "%02d", (oldTrack) + 1);
-				screen.PrintText(false, 20 * 8, y, tempBuffer, textColour, bgColour);
+				snprintf(tempBufferTrack, tempBufferTrackSize, "%02d  ", (oldTrack)+1);
+				screen.PrintText(false, 20 * 8, y, tempBufferTrack, textColour, bgColour);
 				//refreshUartStatusDisplay = true;
-
-				if (screenLCD)
-				{
-#if not defined(EXPERIMENTALZERO)
-					core0RefreshingScreen.Acquire();
-#endif
-					IEC_Bus::WaitMicroSeconds(100);
-					screenLCD->PrintText(false, 0, 0, tempBuffer, 0, RGBA(0xff, 0xff, 0xff, 0xff));
-					//				screenLCD->SetContrast(255.0/79.0*track);
-					screenLCD->RefreshRows(0, 1);
-					IEC_Bus::WaitMicroSeconds(100);
-#if not defined(EXPERIMENTALZERO)
-					core0RefreshingScreen.Release();
-#endif
-				}
-
+				refreshLCDStatusDisplay = true;
 			}
 		}
 		if (emulating != IEC_COMMANDS)
@@ -612,11 +595,42 @@ void UpdateScreen()
 //#if not defined(EXPERIMENTALZERO)
 //			core0RefreshingScreen.Acquire();
 //#endif
-			diskCaddy.Update();
+			if (diskCaddy.Update())
+				caddyIndexChangedTimer = 1000;
+
 //#if not defined(EXPERIMENTALZERO)
 //			core0RefreshingScreen.Release();
 //#endif
+
+			if (options.DisplayTemperature())
+			{
+				if (GetTemperature(temperature))
+				{
+					temperature /= 1000;
+					if (temperature != oldTemperature)
+					{
+						oldTemperature = temperature;
+						//DEBUG_LOG("%0x %d %d\r\n", temp, temp, temp / 1000);
+						snprintf(tempBuffer, tempBufferSize, "%02d", temperature);
+						screen.PrintText(false, 43 * 8, y, tempBuffer, textColour, bgColour);
+						refreshLCDStatusDisplay = true;
+					}
+				}
+			}
+
+			if (caddyIndexChangedTimer == 0)
+			{
+				if (refreshLCDStatusDisplay)
+				{
+					UpdateLCD(tempBufferTrack, temperature);
+				}
+			}
+			else
+			{
+				caddyIndexChangedTimer--;
+			}
 		}
+
 
 		//if (options.GetSupportUARTInput())
 		//	UpdateUartControls(refreshUartStatusDisplay, oldLED, oldMotor, oldATN, oldDATA, oldCLOCK, oldTrack, romIndex);
