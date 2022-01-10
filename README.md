@@ -11,7 +11,7 @@ Commodore Vic20
 Commodore 16
 Commodore Plus4
 
-See www.pi1541.com for SD card and hardware configurations.
+See cbm-pi1541.firebaseapp.com for SD card and hardware configurations.
 
 Toolchain Installation
 ----------------------
