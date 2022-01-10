@@ -93,15 +93,17 @@ private:
 		// 16000000 / 5 = 3200000;
 		static const float CYCLES_16Mhz_PER_ROTATION = 3200000.0f;
 
-		bitsInTrack = diskImage->BitsInTrack(headTrackPos);
-		headBitOffset %= bitsInTrack;
-		cyclesPerBit = CYCLES_16Mhz_PER_ROTATION / (float)bitsInTrack;
+		if (diskImage)
+		{
+			bitsInTrack = diskImage->BitsInTrack(headTrackPos);
+			headBitOffset %= bitsInTrack;
+			cyclesPerBit = CYCLES_16Mhz_PER_ROTATION / (float)bitsInTrack;
 #if defined(EXPERIMENTALZERO)
-		cyclesPerBitInt = cyclesPerBit;
-		cyclesPerBitErrorConstant = (unsigned int)((cyclesPerBit - ((float)cyclesPerBitInt)) * static_cast<float>(0xffffffff));
-		cyclesForBitErrorCounter = (unsigned int)(((cyclesForBit)-(int)(cyclesForBit)) * static_cast<float>(0xffffffff));
+			cyclesPerBitInt = cyclesPerBit;
+			cyclesPerBitErrorConstant = (unsigned int)((cyclesPerBit - ((float)cyclesPerBitInt)) * static_cast<float>(0xffffffff));
+			cyclesForBitErrorCounter = (unsigned int)(((cyclesForBit)-(int)(cyclesForBit)) * static_cast<float>(0xffffffff));
 #endif
-
+		}
 	}
 
 	inline void MoveHead(unsigned char headDirection)

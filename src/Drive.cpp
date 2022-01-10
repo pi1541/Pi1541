@@ -344,7 +344,9 @@ extern "C"
 #define DISK_SWAP_CYCLES_NO_DISK 200000
 #define DISK_SWAP_CYCLES_DISK_INSERTING 400000
 
-Drive::Drive() : m_pVIA(0)
+Drive::Drive()
+	: diskImage(0)
+	, m_pVIA(0)
 {
 	srand(0x811c9dc5U);
 #if defined(EXPERIMENTALZERO)
