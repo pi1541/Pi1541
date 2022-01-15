@@ -344,10 +344,11 @@ extern "C"
 #define DISK_SWAP_CYCLES_NO_DISK 200000
 #define DISK_SWAP_CYCLES_DISK_INSERTING 400000
 
-Drive::Drive()
+Drive::Drive(m6522* pVIA)
 	: diskImage(0)
-	, m_pVIA(0)
+	, m_pVIA(pVIA)
 {
+	pVIA->GetPortB()->SetPortOut(this, OnPortOut);
 	srand(0x811c9dc5U);
 #if defined(EXPERIMENTALZERO)
 	localSeed = 0x811c9dc5U;

@@ -1983,7 +1983,6 @@ extern "C"
 
 		GlobalSetDeviceID(deviceID);
 
-		pi1541.drive.SetVIA(&pi1541.VIA[1]);
 		pi1541.VIA[0].GetPortB()->SetPortOut(0, IEC_Bus::PortB_OnPortOut);
 		IEC_Bus::Initialise();
 		if (screenLCD)
