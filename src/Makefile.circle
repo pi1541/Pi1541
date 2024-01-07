@@ -1,0 +1,36 @@
+#
+# Makefile
+#
+
+CIRCLEBASE = ../../circle-stdlib
+include $(CIRCLEBASE)/Config.mk
+
+CIRCLEHOME = $(CIRCLEBASE)/libs/circle
+NEWLIBDIR = $(CIRCLEBASE)/install/$(NEWLIB_ARCH)
+
+OBJS	= circle-main.o circle-kernel.o mandel-driver.o fake-posix.o webserver.o
+
+#include $(CIRCLEHOME)/Rules.mk
+include Circle/Rules.mk
+
+ADDONINC = -I $(CIRCLEHOME)/addon/linux
+
+CFLAGS += -D__CIRCLE__ -I. -I./Circle -I "$(NEWLIBDIR)/include" -I $(STDDEF_INCPATH) -I $(CIRCLEBASE)/include $(ADDONINC) 
+LIBS := \
+	$(NEWLIBDIR)/lib/libm.a $(NEWLIBDIR)/lib/libc.a $(NEWLIBDIR)/lib/libcirclenewlib.a \
+	$(CIRCLEHOME)/addon/wlan/hostap/wpa_supplicant/libwpa_supplicant.a \
+	$(CIRCLEHOME)/addon/wlan/libwlan.a \
+	$(CIRCLEHOME)/addon/linux/liblinuxemu.a \
+	$(CIRCLEHOME)/addon/SDCard/libsdcard.a \
+	$(CIRCLEHOME)/lib/usb/libusb.a \
+	$(CIRCLEHOME)/lib/input/libinput.a \
+	$(CIRCLEHOME)/addon/fatfs/libfatfs.a \
+	$(CIRCLEHOME)/lib/fs/libfs.a \
+	$(CIRCLEHOME)/lib/net/libnet.a \
+	$(CIRCLEHOME)/lib/sched/libsched.a \
+	$(CIRCLEHOME)/lib/libcircle.a
+
+
+EXTRACLEAN = ${OBJS:.o=.d} ${SKVIC20OBJS:.o=.d} $(SKVIC20OBJS) $(RADOBJS) $(OLED) *.img *.lst *.map *.elf
+
+-include $(DEPS)

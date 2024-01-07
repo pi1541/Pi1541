@@ -74,6 +74,7 @@ bool InputMappings::CheckButtonsBrowseMode()
 		{
 			SetButtonFlag(FUNCTION_FLAG);
 			inputROMOrDevice = 11;
+			Reboot_Pi(); // reboot instead of device 11
 		}
 		insertButtonPressedPrev = false;
 	}
