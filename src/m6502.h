@@ -197,7 +197,7 @@ private:
 	void BCC(void) { BRANCH_CONDITION(FLAG_CARRY, 0); }
 	void BCS(void) { BRANCH_CONDITION(FLAG_CARRY, FLAG_CARRY); }
 	void BEQ(void) { BRANCH_CONDITION(FLAG_ZERO, FLAG_ZERO); }
-	void BIT(void) { u16 result = a & value; EstablishZ(result); SetV(value & 0x40); EstablishN(value); }
+	void _BIT(void) { u16 result = a & value; EstablishZ(result); SetV(value & 0x40); EstablishN(value); }
 	void BMI(void) { BRANCH_CONDITION(FLAG_SIGN, FLAG_SIGN); }
 	void BNE(void) { BRANCH_CONDITION(FLAG_ZERO, 0); }
 	void BPL(void) { BRANCH_CONDITION(FLAG_SIGN, 0); }

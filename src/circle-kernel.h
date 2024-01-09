@@ -55,6 +55,7 @@ public:
 	CTimer *get_timer(void) { return &mTimer; }
 	CLogger *get_logger(void) { return &mLogger; }
 	CScreenDevice *get_scrdevice(void) { return &mScreen; }
+        CEMMCDevice &get_emmc(void) { return m_EMMC; }
 	
 private:
 	CActLED			m_ActLED;

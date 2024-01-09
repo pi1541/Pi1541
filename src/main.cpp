@@ -105,7 +105,7 @@ Pi1541 pi1541;
 #if defined(PI1581SUPPORT)
 Pi1581 pi1581;
 #endif
-CEMMCDevice	m_EMMC;
+//XXX CEMMCDevice	m_EMMC;
 Screen screen;
 ScreenLCD* screenLCD = 0;
 Options options;
@@ -1872,14 +1872,14 @@ extern "C"
 		FATFS fileSystemSD;
 		FATFS fileSystemUSB[16];
 
-		m_EMMC.Initialize();
+		//XXX		m_EMMC.Initialize();
 
 #if not defined(EXPERIMENTALZERO)
 		RPI_AuxMiniUartInit(115200, 8);
 #endif
 
-		disk_setEMM(&m_EMMC);
-		f_mount(&fileSystemSD, "SD:", 1);
+		//XXXdisk_setEMM(&m_EMMC);
+		//XXXf_mount(&fileSystemSD, "SD:", 1);
 
 		LoadOptions();
 

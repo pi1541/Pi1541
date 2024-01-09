@@ -81,7 +81,7 @@ void InterruptSystemDisableIRQ(unsigned IRQIndex)
 	DataMemBarrier();
 }
 
-void InterruptHandler(void)
+void _shit_InterruptHandler(void)
 {
 //	DEBUG_LOG("InterruptHandler\r\n");
 

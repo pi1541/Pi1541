@@ -71,6 +71,7 @@ boolean CKernel::Initialize (void)
 	if (bOK) bOK = mTimer.Initialize ();
 	if (bOK) bOK = m_USBHCI.Initialize ();
 	if (bOK) bOK = m_EMMC.Initialize ();
+	
 	if (bOK) 
 	{ 
 		mLogger.Write ("pottendo-kern", LogNotice, "mounting drive: " DRIVE);
