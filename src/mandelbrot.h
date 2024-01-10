@@ -251,9 +251,10 @@ extern void RPiConsole_put_pixel(uint32_t x, uint32_t y, uint16_t);
             sp.sched_priority = sp.sched_priority + (p->tno % 3);
             if ((ret = pthread_setschedparam(worker_tasks[p->tno], pol, &sp)) != 0)
                 log_msg("pthread setschedparam failed for thread %d, %d\n", p->tno, ret);
-#endif
         pthread_getschedparam(worker_tasks[p->tno], &pol, &sp);
         log_msg("starting thread %d with priority %d\n", p->tno, sp.sched_priority);
+#endif
+        log_msg("starting thread %d.\n", p->tno);
 
         sched_yield();
         mandel_helper(p->xl, p->yl, p->xh, p->yh, p->incx, p->incy, p->xoffset, p->yoffset, p->width, p->height);

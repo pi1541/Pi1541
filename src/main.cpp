@@ -105,7 +105,9 @@ Pi1541 pi1541;
 #if defined(PI1581SUPPORT)
 Pi1581 pi1581;
 #endif
-//XXX CEMMCDevice	m_EMMC;
+#if !defined(__CIRCLE__)
+CEMMCDevice	m_EMMC;
+#endif
 Screen screen;
 ScreenLCD* screenLCD = 0;
 Options options;
@@ -1427,7 +1429,7 @@ void emulator()
 //	DEBUG_LOG("Mouse: %x %d %d\r\n", nButtons, nDisplacementX, nDisplacementY);
 //}
 
-#ifdef HAS_MULTICORE
+#if defined(HAS_MULTICORE) && !defined(__CIRCLE__)
 extern "C" 
 {
 	void run_core() 
@@ -1871,15 +1873,16 @@ extern "C"
 		FRESULT res;
 		FATFS fileSystemSD;
 		FATFS fileSystemUSB[16];
-
-		//XXX		m_EMMC.Initialize();
-
+#if !defined(__CIRCLE__)
+		m_EMMC.Initialize();
+#endif
 #if not defined(EXPERIMENTALZERO)
 		RPI_AuxMiniUartInit(115200, 8);
 #endif
-
-		//XXXdisk_setEMM(&m_EMMC);
-		//XXXf_mount(&fileSystemSD, "SD:", 1);
+#if !defined(__CIRCLE__)
+		disk_setEMM(&m_EMMC);
+		f_mount(&fileSystemSD, "SD:", 1);
+#endif		
 
 		LoadOptions();
 
@@ -1988,7 +1991,7 @@ extern "C"
 		IEC_Bus::Initialise();
 		if (screenLCD)
 			screenLCD->ClearInit(0);
-
+#if !defined(__CIRCLE__) 
 #ifdef HAS_MULTICORE
 		start_core(3, _spin_core);
 		start_core(2, _spin_core);
@@ -2003,6 +2006,7 @@ extern "C"
 #ifndef USE_MULTICORE
 		emulator();	// If only one core the emulator runs on it now.
 #endif
+#endif		
 	}
 }
 
