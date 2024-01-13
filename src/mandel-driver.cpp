@@ -7,7 +7,7 @@
 
 #include "fake-posix.h"
 
-#define NO_THREADS 4       // max 16 for Orangecart!
+#define NO_THREADS 64       // max 16 for Orangecart!
 #define STACK_SIZE 1024
 #define PIXELW 2 // 2
 #define MAX_ITER 256
