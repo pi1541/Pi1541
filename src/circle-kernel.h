@@ -34,6 +34,7 @@
 #include <wlan/bcm4343.h>
 #include <wlan/hostap/wpa_supplicant/wpasupplicant.h>
 #include <circle/net/netsubsystem.h>
+#include <stdio.h>
 
 enum TShutdownMode
 {
@@ -55,7 +56,10 @@ public:
 	CTimer *get_timer(void) { return &mTimer; }
 	CLogger *get_logger(void) { return &mLogger; }
 	CScreenDevice *get_scrdevice(void) { return &mScreen; }
-        CEMMCDevice &get_emmc(void) { return m_EMMC; }
+    CEMMCDevice &get_emmc(void) { return m_EMMC; }
+
+	void blink(int n) { m_ActLED.Blink(n); }
+	void tlog(int i) { char x[1024]; sprintf(x, "0x%08x", i); mLogger.Write("tlog:", LogNotice, x); }
 	
 private:
 	CActLED			m_ActLED;

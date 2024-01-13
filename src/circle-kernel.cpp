@@ -26,9 +26,9 @@
 
 extern int mandel_driver(void);
 
-#define DRIVE		"SD:"
-#define FIRMWARE_PATH	DRIVE "/firmware/"		// firmware files must be provided here
-#define CONFIG_FILE	DRIVE "/wpa_supplicant.conf"
+#define _DRIVE		"SD:"
+#define _FIRMWARE_PATH	_DRIVE "/firmware/"		// firmware files must be provided here
+#define _CONFIG_FILE	_DRIVE "/wpa_supplicant.conf"
 
 #define USE_DHCP
 #ifndef USE_DHCP
@@ -44,20 +44,17 @@ CKernel::CKernel(void) :
 	mLogger (mOptions.GetLogLevel (), &mTimer), mScheduler(),
 	m_USBHCI (&mInterrupt, &mTimer),
 	m_EMMC (&mInterrupt, &mTimer, &m_ActLED),
-	m_WLAN (FIRMWARE_PATH),
+	m_WLAN (_FIRMWARE_PATH),
 #ifndef USE_DHCP
 	m_Net (IPAddress, NetMask, DefaultGateway, DNSServer, DEFAULT_HOSTNAME, NetDeviceTypeWLAN),
 #else
 	m_Net (0, 0, 0, 0, DEFAULT_HOSTNAME, NetDeviceTypeWLAN),
 #endif
-	m_WPASupplicant (CONFIG_FILE)
+	m_WPASupplicant (_CONFIG_FILE)
 {
-}
-
-boolean CKernel::Initialize (void) 
-{
+	//blink(3);
+	//mLogger.Write("pottendo-kern", LogNotice, "CKernel Constructor...");
 	boolean bOK = TRUE;
-
 	if (bOK) bOK = mScreen.Initialize ();
 	if (bOK) bOK = mSerial.Initialize (115200);
 	if (bOK)
@@ -67,19 +64,28 @@ boolean CKernel::Initialize (void)
 			pTarget = &mScreen;
 		bOK = mLogger.Initialize (&mSerial);
 	}
+}
+
+boolean CKernel::Initialize (void) 
+{
+	boolean bOK = TRUE;
 	if (bOK) bOK = mInterrupt.Initialize ();
+	mLogger.Write ("pottendo-kern", LogNotice, "Interrupt done");
 	if (bOK) bOK = mTimer.Initialize ();
+	mLogger.Write ("pottendo-kern", LogNotice, "mTimer done");
 	if (bOK) bOK = m_USBHCI.Initialize ();
+	mLogger.Write ("pottendo-kern", LogNotice, "USBHCI done");
 	if (bOK) bOK = m_EMMC.Initialize ();
-	
+	mLogger.Write ("pottendo-kern", LogNotice, "EMMC done");
 	if (bOK) 
 	{ 
-		mLogger.Write ("pottendo-kern", LogNotice, "mounting drive: " DRIVE);
-		if (f_mount (&m_FileSystem, DRIVE, 1) != FR_OK)
+		if (f_mount (&m_FileSystem, _DRIVE, 1) != FR_OK)
 		{
 			mLogger.Write ("pottendo-kern", LogError,
-					"Cannot mount drive: %s", DRIVE);
+					"Cannot mount drive: %s", _DRIVE);
 			bOK = FALSE;
+		} else {
+			mLogger.Write ("pottendo-kern", LogNotice, "mounted drive: " _DRIVE);
 		}
 	}
 	if (bOK) bOK = m_WLAN.Initialize ();

@@ -81,7 +81,8 @@ void InterruptSystemDisableIRQ(unsigned IRQIndex)
 	DataMemBarrier();
 }
 
-void _shit_InterruptHandler(void)
+#if !defined(__CIRCLE__)
+void InterruptHandler(void)
 {
 //	DEBUG_LOG("InterruptHandler\r\n");
 
@@ -168,4 +169,4 @@ void _shit_InterruptHandler(void)
 
 	DataMemBarrier();
 }
-
+#endif

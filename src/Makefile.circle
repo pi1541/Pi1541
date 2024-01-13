@@ -10,15 +10,15 @@ NEWLIBDIR = $(CIRCLEBASE)/install/$(NEWLIB_ARCH)
 
 CIRCLEOBJS = circle-main.o circle-kernel.o mandel-driver.o fake-posix.o webserver.o
 PI1541OBS = \
-	exception.o main.o rpi-aux.o rpi-i2c.o rpi-mailbox-interface.o rpi-mailbox.o \
-	rpi-gpio.o rpi-interrupts.o dmRotary.o interrupt.o Keyboard.o performance.o \
+	main.o rpi-aux.o rpi-i2c.o rpi-mailbox-interface.o rpi-mailbox.o \
+	rpi-gpio.o dmRotary.o interrupt.o performance.o \
 	Drive.o Pi1541.o DiskImage.o iec_bus.o iec_commands.o m6502.o m6522.o \
-	gcr.o prot.o lz.o diskio.o options.o Screen.o SSD1306.o ScreenLCD.o \
-	Timer.o FileBrowser.o DiskCaddy.o ROMs.o InputMappings.o xga_font_data.o \
-	m8520.o wd177x.o Pi1581.o SpinLock.o \
+	gcr.o prot.o lz.o options.o Screen.o SSD1306.o ScreenLCD.o \
+	FileBrowser.o DiskCaddy.o ROMs.o InputMappings.o xga_font_data.o \
+	m8520.o wd177x.o Pi1581.o SpinLock.o Keyboard.o \
 	uspi-dummy.o
 
-#	  armc-start.o armc-cstartup.o armc-cstubs.o armc-cppstubs.o emmc.o ff.o cache.o \
+#	  armc-start.o armc-cstartup.o armc-cstubs.o armc-cppstubs.o emmc.o ff.o cache.o exception.o rpi-interrupts.o Timer.o diskio.o \
 
 OBJS = $(CIRCLEOBJS) $(PI1541OBS)
 
@@ -29,8 +29,10 @@ ADDONINC = -I$(CIRCLEHOME)/addon/linux -I../uspi/include/
 
 CFLAGS += -D__CIRCLE__ -I. -I./Circle -I "$(NEWLIBDIR)/include" \
        	  -I $(STDDEF_INCPATH) -I $(CIRCLEBASE)/include $(ADDONINC) \
-	  -mno-unaligned-access -Wno-psabi -Wno-unused-but-set-variable -Wno-address \
-	  -DRPI3=1
+	  -Wno-psabi -Wno-unused-but-set-variable -Wno-address -mno-unaligned-access \
+	  -DRPI3=1 -DRASPPI=3
+AFLAGS = -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8 -mfloat-abi=hard -marm -mno-unaligned-access -DRPI3=1 -DDEBUG=1 -DRASPPI=3
+
 LIBS := \
 	$(NEWLIBDIR)/lib/libm.a $(NEWLIBDIR)/lib/libc.a $(NEWLIBDIR)/lib/libcirclenewlib.a \
 	$(CIRCLEHOME)/addon/wlan/hostap/wpa_supplicant/libwpa_supplicant.a \

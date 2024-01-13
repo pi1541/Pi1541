@@ -138,6 +138,7 @@ const char* termainalTextNormal = "\E[0m";
 int headSoundFreq;
 int headSoundCounterDuration;
 
+#if !defined(__CIRCLE__)
 // Hooks required for USPi library
 extern "C"
 {
@@ -238,6 +239,11 @@ extern "C"
 		InterruptSystemConnectIRQ(nIRQ, pHandler, pParam);
 	}
 }
+#else
+extern "C" void usDelay(unsigned nMicroSeconds);
+void MsDelay(unsigned nMilliSeconds);
+int GetTemperature(unsigned& value);
+#endif
 
 // Hooks for FatFs
 DWORD get_fattime() { return 0; }	// If you have hardware RTC return a correct value here. THis can then be reflected in file modification times/dates.
@@ -1875,11 +1881,9 @@ extern "C"
 		FATFS fileSystemUSB[16];
 #if !defined(__CIRCLE__)
 		m_EMMC.Initialize();
-#endif
 #if not defined(EXPERIMENTALZERO)
 		RPI_AuxMiniUartInit(115200, 8);
 #endif
-#if !defined(__CIRCLE__)
 		disk_setEMM(&m_EMMC);
 		f_mount(&fileSystemSD, "SD:", 1);
 #endif		
@@ -1970,7 +1974,7 @@ extern "C"
 		for (int USBDriveIndex = 0; USBDriveIndex < numberOfUSBMassStorageDevices; ++USBDriveIndex)
 		{
 			char USBDriveId[16];
-			disk_setUSB(USBDriveIndex);
+			//disk_setUSB(USBDriveIndex);
 			sprintf(USBDriveId, "USB%02d:", USBDriveIndex + 1);
 			res = f_mount(&fileSystemUSB[USBDriveIndex], USBDriveId, 1);
 		}

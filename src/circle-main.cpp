@@ -20,9 +20,21 @@
 
 CKernel Kernel;
 
+extern void pingme(int n)
+{
+	CActLED			m_ActLED;
+	m_ActLED.Blink(n);
+}
+
+extern "C" void tlog(int m)
+{
+	Kernel.tlog(m);
+}
+
 int main (void)
 {
 	// cannot return here because some destructors used in CKernel are not implemented
+	//Kernel.blink(4);
 	if (!Kernel.Initialize ())
 	{
 		halt ();
