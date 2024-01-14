@@ -1,3 +1,19 @@
+# Pi1531 - Circle ported
+
+This is an optional port of Pi1541 to the current Circle bare metal library (45.3.1).
+
+Target is to remove all Pi bindings which have a counterpart in Circle and to pimp with more functionalities:
+- Webserver to download images
+- Pi4/400 and 5 (later)
+- ...
+
+Credits to Stephen and Rene for the brilliant base packages I've used so far.
+
+It's a bit tricky to build:
+- checkout circle-stdlib next to this project
+- Edit sysconfig.h. ffcong.h
+- more to come here  
+
 # Pi1541
 
 Commodore 1541/1581 emulator for the Raspberry Pi
