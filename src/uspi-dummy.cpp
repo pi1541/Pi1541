@@ -13,7 +13,6 @@ void _data_memory_barrier(void) {}
 void _invalidate_dtlb_mva(void *x) {}
 //void f_getlabel(char *x, char *l, int *) { *l = '\0'; }
 
-void InitialiseHardware(void) {}
 void _enable_unaligned_access(void) {}
 void enable_MMU_and_IDCaches(void) {}
 void reboot_now(void) 

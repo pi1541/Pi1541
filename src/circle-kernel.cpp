@@ -50,7 +50,8 @@ CKernel::CKernel(void) :
 #else
 	m_Net (0, 0, 0, 0, DEFAULT_HOSTNAME, NetDeviceTypeWLAN),
 #endif
-	m_WPASupplicant (_CONFIG_FILE)
+	m_WPASupplicant (_CONFIG_FILE),
+	m_MCores(CMemorySystem::Get())
 {
 	//blink(3);
 	//mLogger.Write("pottendo-kern", LogNotice, "CKernel Constructor...");
@@ -88,9 +89,6 @@ boolean CKernel::Initialize (void)
 			mLogger.Write ("pottendo-kern", LogNotice, "mounted drive: " _DRIVE);
 		}
 	}
-	if (bOK) bOK = m_WLAN.Initialize ();
-	if (bOK) bOK = m_Net.Initialize (FALSE);
-	if (bOK) bOK = m_WPASupplicant.Initialize ();
 	return bOK;
 }
 
@@ -100,26 +98,12 @@ extern int mandel_iterate(int);
 TShutdownMode CKernel::Run (void)
 {
 	mLogger.Write ("pottendo-kern", LogNotice, "Mandelbrot Demo (%dx%d)", mScreen.GetWidth(), mScreen.GetHeight());
-	while (!m_Net.IsRunning ())
-	{
-		mScheduler.MsSleep (100);
-	}
-	CString IPString;
-	m_Net.GetConfig ()->GetIPAddress ()->Format (&IPString);
-	mLogger.Write ("pottendo-kern", LogNotice, "Open \"http://%s/\" in your web browser!",
-			(const char *) IPString);
-
-	new CWebServer (&m_Net, &m_ActLED);
+	run_wifi();
 	(void) mandel_iterate(1000*1000);
-
 	mLogger.Write ("pottendo-kern", LogNotice, "Demo finished");
 
-	for (unsigned nCount = 0; 1; nCount++)
-	{
-		mScheduler.Yield ();
-		mScreen.Rotor (0, nCount);
-	}
-
+	kernel_main(0, 0, 0);
+	log("unexpected return of display thread");
 	return ShutdownHalt;
 }
 
@@ -139,4 +123,65 @@ void CKernel::log(const char *fmt, ...)
 void SetACTLed(int v) 
 { 
 	Kernel.SetACTLed(v); 
+}
+
+boolean CKernel::init_screen(u32 widthDesired, u32 heightDesired, u32 colourDepth, u32 &width, u32 &height, u32 &bpp, u32 &pitch, u8** framebuffer)
+{
+	Kernel.log("init_screen for %dx%dx%d", widthDesired, heightDesired, colourDepth);
+	width = mScreen.GetWidth();
+	height = mScreen.GetHeight();
+	Kernel.log("screen %dx%d", width, height);
+	if (mScreen.GetFrameBuffer() == nullptr)
+		return false;
+	*framebuffer = (u8 *)(mScreen.GetFrameBuffer());
+	bpp = mScreen.GetFrameBuffer()->GetDepth();
+	pitch = mScreen.GetFrameBuffer()->GetPitch();
+	Kernel.log("bpp=%d, pitch=%d, fb=%p", bpp, pitch, *framebuffer);
+	return true;
+}
+
+void CKernel::run_wifi(void) 
+{
+	bool bOK = true;
+	CString IPString;
+	if (bOK) bOK = m_WLAN.Initialize();
+	if (bOK) bOK = m_Net.Initialize(FALSE);
+	if (bOK) bOK = m_WPASupplicant.Initialize();
+	if (!bOK) {
+		log("couldn't start network...");
+		return;
+	}
+	while (!m_Net.IsRunning ())
+	{
+		mScheduler.MsSleep (100);
+	}
+	m_Net.GetConfig ()->GetIPAddress ()->Format (&IPString);
+	mLogger.Write ("pottendo-kern", LogNotice, "Open \"http://%s/\" in your web browser!",
+			(const char *) IPString);
+}
+
+void CKernel::run_webserver(void) 
+{
+	new CWebServer (&m_Net, &m_ActLED);
+	for (unsigned nCount = 0; 1; nCount++)
+	{
+		mScheduler.Yield ();
+		mScreen.Rotor (0, nCount);
+	}
+}
+
+void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
+{
+	switch (core) {
+	case 1:
+		Kernel.log("launching emulator on core %d", core);
+		emulator();
+		break;
+	case 2:
+		Kernel.log("launching webserver on core %d", core);
+		Kernel.run_webserver();
+		break;
+	default:
+		break;
+	}
 }

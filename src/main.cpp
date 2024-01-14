@@ -261,9 +261,9 @@ extern void write6502ExtraRAM(u16 address, const u8 value);
 extern u8 read6502_1581(u16 address);
 extern void write6502_1581(u16 address, const u8 value);
 
-#if !defined (__CIRCLE__)
 void InitialiseHardware()
 {
+#if !defined (__CIRCLE__)
 #if defined(RPI3)
 	RPI_GpioVirtInit();
 	RPI_TouchInit();
@@ -293,8 +293,10 @@ void InitialiseHardware()
 
 	clockCycles1MHz = MaxClk / 1000000;
 #endif
-}
+#else
+	screen.Open(screenWidth, screenHeight, 16);
 #endif
+}
 
 #if !defined (__CIRCLE__)
 void InitialiseLCD()
@@ -611,6 +613,7 @@ void UpdateScreen()
 		}
 		if (emulating != IEC_COMMANDS)
 		{
+
 			// Putting the semaphore around diskCaddy.Update() keeps this core awake and this breaks emulation on option B hardware.
 			// Don't know why. Disabling for now.
 //#if not defined(EXPERIMENTALZERO)
@@ -657,7 +660,9 @@ void UpdateScreen()
 		//	UpdateUartControls(refreshUartStatusDisplay, oldLED, oldMotor, oldATN, oldDATA, oldCLOCK, oldTrack, romIndex);
 
 		// Go back to sleep. The USB irq will wake us up again.
-		__asm ("WFE");
+		//Kernel.yield();
+		MsDelay(4);
+		//FIXME: __asm ("WFE");
 	}
 #endif
 }
@@ -1710,7 +1715,7 @@ static void CheckOptions()
 				roms.UpdateLongestRomNameLen( strlen(roms.ROMNames[ROMIndex]) );
 			}
 			f_close(&fp);
-			//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
+			DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
 		}
 	}
 
@@ -1736,6 +1741,8 @@ static void CheckOptions()
 	inputMappings->INPUT_BUTTON_DOWN = options.GetButtonDown();
 	inputMappings->INPUT_BUTTON_BACK = options.GetButtonBack();
 	inputMappings->INPUT_BUTTON_INSERT = options.GetButtonInsert();
+
+	Kernel.log("%s: done", __FUNCTION__);
 }
 
 void Reboot_Pi()
@@ -1906,7 +1913,6 @@ extern "C"
 		disk_setEMM(&m_EMMC);
 		f_mount(&fileSystemSD, "SD:", 1);
 #endif		
-
 		LoadOptions();
 
 		InitialiseHardware();
@@ -2031,6 +2037,9 @@ extern "C"
 #ifndef USE_MULTICORE
 		emulator();	// If only one core the emulator runs on it now.
 #endif
+#else
+		Kernel.launch_cores();
+		UpdateScreen();
 #endif		
 	}
 }

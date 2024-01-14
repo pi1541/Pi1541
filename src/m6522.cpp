@@ -86,7 +86,6 @@ void m6522::Reset()
 	OutputIRQ();
 }
 
-#include "circle-kernel.h"
 void m6522::InputCA1(bool value)
 {
 	if (ca1 != value && ((functionControlRegister & FCR_CA1) != 0) == value) // CA1 is an input?

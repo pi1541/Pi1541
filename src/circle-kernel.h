@@ -17,6 +17,7 @@
 #ifndef _circle_kernel_h
 #define _circle_kernel_h
 
+#include <circle/multicore.h>
 #include <circle/actled.h>
 #include <circle/koptions.h>
 #include <circle/devicenameservice.h>
@@ -43,6 +44,14 @@ enum TShutdownMode
 	ShutdownReboot
 };
 
+class Pi1541Cores : public CMultiCoreSupport {
+public:
+	Pi1541Cores(CMemorySystem *pMemorySystem) : CMultiCoreSupport(pMemorySystem) {}
+	virtual ~Pi1541Cores(void) = default;
+
+	virtual void Run(unsigned int); 
+};
+
 class CKernel
 {
 public:
@@ -62,25 +71,32 @@ public:
 	void tlog(int i) { char x[1024]; sprintf(x, "0x%08x", i); mLogger.Write("tlog:", LogNotice, x); }
 	void log(const char *fmt, ...);
 	void SetACTLed(int v) { if (v) m_ActLED.On(); else m_ActLED.Off(); }
+	boolean init_screen(u32 widthDesired, u32 heightDesired, u32 colourDepth, 
+						u32 &width, u32 &height, u32 &bpp, u32 &pitch, u8** framebuffer);
+	void launch_cores(void) { m_MCores.Initialize(); }
+	void yield(void) { mScheduler.Yield(); }
+	void run_wifi(void);
+	void run_webserver(void);
 
 private:
-	CActLED			m_ActLED;
+	CActLED				m_ActLED;
 	CKernelOptions		mOptions;
 	CDeviceNameService	mDeviceNameService;
 	CScreenDevice		mScreen;
 	CSerialDevice		mSerial;
 	CExceptionHandler	mExceptionHandler;
 	CInterruptSystem	mInterrupt;
-	CTimer			mTimer;
-	CLogger			mLogger;
-	CScheduler		mScheduler;
+	CTimer				mTimer;
+	CLogger				mLogger;
+	CScheduler			mScheduler;
 	CUSBHCIDevice		m_USBHCI;
-	CEMMCDevice		m_EMMC;
-	FATFS			m_FileSystem;
+	CEMMCDevice			m_EMMC;
+	FATFS				m_FileSystem;
 	CBcm4343Device		m_WLAN;
 	CSynchronizationEvent	mEvent;
 	CNetSubSystem		m_Net;
 	CWPASupplicant		m_WPASupplicant;
+	Pi1541Cores		 	m_MCores;
 };
 
 extern CKernel Kernel;
@@ -88,7 +104,7 @@ extern CKernel Kernel;
 void reboot_now(void);
 static inline void delay_us(u32 usec) { Kernel.get_timer()->usDelay(usec); }
 static inline void usDelay(u32 usec) { Kernel.get_timer()->usDelay(usec); }
-static inline void Msdelay(u32 msec) { Kernel.get_timer()->usDelay(1000 * msec); }
+static inline void MsDelay(u32 msec) { Kernel.get_timer()->usDelay(1000 * msec); }
 
 void USPiInitialize(void);
 void TimerSystemInitialize(void);
@@ -104,12 +120,14 @@ unsigned TimerStartKernelTimer(
 		void* pContext);
 int GetTemperature(unsigned &value);
 void SetACTLed(int v);
-void InitialiseHardware(void);
 void _enable_unaligned_access(void);
 void enable_MMU_and_IDCaches(void);
 void InitialiseLCD();
 void UpdateLCD(const char* track, unsigned temperature);
 void DisplayI2CScan(int y_pos);
+void emulator(void);
+
+extern "C" void kernel_main(unsigned int r0, unsigned int r1, unsigned int atags);
 #endif
 
 

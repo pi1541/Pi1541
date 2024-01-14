@@ -378,7 +378,6 @@ void Drive::Reset()
 	ResetEncoderDecoder(18.0f, 22.0f);
 #endif
 	newDiskImageQueuedCylesRemaining = DISK_SWAP_CYCLES_DISK_EJECTING + DISK_SWAP_CYCLES_NO_DISK + DISK_SWAP_CYCLES_DISK_INSERTING;
-	Kernel.log("%s: m_pVIA = %p", __FUNCTION__, m_pVIA);
 	if (m_pVIA) 
 	{
 		m_pVIA->InputCA1(true);	// Reset in read mode
