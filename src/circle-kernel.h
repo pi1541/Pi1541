@@ -60,7 +60,9 @@ public:
 
 	void blink(int n) { m_ActLED.Blink(n); }
 	void tlog(int i) { char x[1024]; sprintf(x, "0x%08x", i); mLogger.Write("tlog:", LogNotice, x); }
-	
+	void log(const char *fmt, ...);
+	void SetACTLed(int v) { if (v) m_ActLED.On(); else m_ActLED.Off(); }
+
 private:
 	CActLED			m_ActLED;
 	CKernelOptions		mOptions;
@@ -81,6 +83,33 @@ private:
 	CWPASupplicant		m_WPASupplicant;
 };
 
+extern CKernel Kernel;
+
+void reboot_now(void);
+static inline void delay_us(u32 usec) { Kernel.get_timer()->usDelay(usec); }
+static inline void usDelay(u32 usec) { Kernel.get_timer()->usDelay(usec); }
+static inline void Msdelay(u32 msec) { Kernel.get_timer()->usDelay(1000 * msec); }
+
+void USPiInitialize(void);
+void TimerSystemInitialize(void);
+void InterruptSystemInitialize(void);
+int USPiMassStorageDeviceAvailable(void);
+int USPiKeyboardAvailable(void);
+void USPiKeyboardRegisterKeyStatusHandlerRaw(void *fn);
+void TimerCancelKernelTimer(unsigned hTimer);
+unsigned TimerStartKernelTimer(
+		unsigned nDelay,		// in HZ units
+		void* pHandler,
+		void* pParam,
+		void* pContext);
+int GetTemperature(unsigned &value);
+void SetACTLed(int v);
+void InitialiseHardware(void);
+void _enable_unaligned_access(void);
+void enable_MMU_and_IDCaches(void);
+void InitialiseLCD();
+void UpdateLCD(const char* track, unsigned temperature);
+void DisplayI2CScan(int y_pos);
 #endif
 
 

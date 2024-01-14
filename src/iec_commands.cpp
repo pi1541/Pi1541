@@ -25,7 +25,9 @@
 
 #include "iec_commands.h"
 #include "iec_bus.h"
+#if !defined (__CIRCLE__)
 #include "ff.h"
+#endif
 #include "DiskImage.h"
 #include "Petscii.h"
 #include "FileBrowser.h"

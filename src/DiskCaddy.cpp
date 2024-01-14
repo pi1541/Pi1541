@@ -20,11 +20,13 @@
 #include "debug.h"
 #include <string.h>
 #include <stdlib.h>
+#if !defined (__CIRCLE__)
 #include "ff.h"
 extern "C"
 {
 #include "rpi-gpio.h"	// For SetACTLed
 }
+#endif
 
 extern u8 deviceID;
 

@@ -127,3 +127,16 @@ void RPiConsole_put_pixel(uint32_t x, uint32_t y, uint16_t c)
 {
 	Kernel.set_pixel(x, y, c);
 }
+
+void CKernel::log(const char *fmt, ...)
+{
+    char t[256];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(t, 256, fmt, args);
+	mLogger.Write("pottendo-log:", LogNotice, t);
+}
+void SetACTLed(int v) 
+{ 
+	Kernel.SetACTLed(v); 
+}

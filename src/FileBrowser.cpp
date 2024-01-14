@@ -27,10 +27,12 @@
 #include "InputMappings.h"
 #include "stb_image.h"
 #include "Petscii.h"
+#if !defined (__CIRCLE__)
 extern "C"
 {
 #include "rpi-gpio.h"
 }
+#endif
 
 #include "iec_commands.h"
 extern IEC_Commands m_IEC_Commands;

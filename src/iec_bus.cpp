@@ -91,6 +91,7 @@ void IEC_Bus::ReadGPIOUserInput()
 		int indexBack = InputMappings::INPUT_BUTTON_BACK;
 		int indexInsert = InputMappings::INPUT_BUTTON_INSERT;
 
+#if !defined (__CIRCLE__)
 		//Poll the rotary encoder
 		//
 		// Note: If the rotary encoder returns any value other than 'NoChange' an
@@ -121,7 +122,7 @@ void IEC_Bus::ReadGPIOUserInput()
 				break;
 
 		}
-
+#endif
 		UpdateButton(indexBack, gplev0);
 		UpdateButton(indexInsert, gplev0);
 	}

@@ -352,9 +352,7 @@ Drive::Drive()
 #if defined(EXPERIMENTALZERO)
 	localSeed = 0x811c9dc5U;
 #endif
-#if !defined (__CIRCLE__)
-	Reset();	// FIXME
-#endif	
+	Reset();
 }
 
 void Drive::Reset()
@@ -380,10 +378,14 @@ void Drive::Reset()
 	ResetEncoderDecoder(18.0f, 22.0f);
 #endif
 	newDiskImageQueuedCylesRemaining = DISK_SWAP_CYCLES_DISK_EJECTING + DISK_SWAP_CYCLES_NO_DISK + DISK_SWAP_CYCLES_DISK_INSERTING;
-	m_pVIA->InputCA1(true);	// Reset in read mode
-	m_pVIA->InputCB1(true);
-	m_pVIA->InputCA2(true);
-	m_pVIA->InputCB2(true);
+	Kernel.log("%s: m_pVIA = %p", __FUNCTION__, m_pVIA);
+	if (m_pVIA) 
+	{
+		m_pVIA->InputCA1(true);	// Reset in read mode
+		m_pVIA->InputCB1(true);
+		m_pVIA->InputCA2(true);
+		m_pVIA->InputCB2(true);
+	}
 }
 
 void Drive::Insert(DiskImage* diskImage)

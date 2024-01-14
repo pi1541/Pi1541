@@ -10,22 +10,24 @@ NEWLIBDIR = $(CIRCLEBASE)/install/$(NEWLIB_ARCH)
 
 CIRCLEOBJS = circle-main.o circle-kernel.o mandel-driver.o fake-posix.o webserver.o
 PI1541OBS = \
-	main.o rpi-aux.o rpi-i2c.o rpi-mailbox-interface.o rpi-mailbox.o \
-	rpi-gpio.o dmRotary.o interrupt.o performance.o \
+	main.o \
+	performance.o \
 	Drive.o Pi1541.o DiskImage.o iec_bus.o iec_commands.o m6502.o m6522.o \
-	gcr.o prot.o lz.o options.o Screen.o SSD1306.o ScreenLCD.o \
+	gcr.o prot.o lz.o options.o Screen.o \
 	FileBrowser.o DiskCaddy.o ROMs.o InputMappings.o xga_font_data.o \
 	m8520.o wd177x.o Pi1581.o SpinLock.o Keyboard.o \
 	uspi-dummy.o
 
-#	  armc-start.o armc-cstartup.o armc-cstubs.o armc-cppstubs.o emmc.o ff.o cache.o exception.o rpi-interrupts.o Timer.o diskio.o \
+# armc-start.o armc-cstartup.o armc-cstubs.o armc-cppstubs.o emmc.o ff.o cache.o exception.o \
+# rpi-interrupts.o Timer.o diskio.o interrupt.o rpi-aux.o  rpi-i2c.o rpi-mailbox-interface.o rpi-mailbox.o rpi-gpio.o dmRotary.o \
+# SSD1306.o ScreenLCD.o 
 
 OBJS = $(CIRCLEOBJS) $(PI1541OBS)
 
 #include $(CIRCLEHOME)/Rules.mk
 include Circle/Rules.mk
 
-ADDONINC = -I$(CIRCLEHOME)/addon/linux -I../uspi/include/
+ADDONINC = -I$(CIRCLEHOME)/addon/linux
 
 CFLAGS += -D__CIRCLE__ -I. -I./Circle -I "$(NEWLIBDIR)/include" \
        	  -I $(STDDEF_INCPATH) -I $(CIRCLEBASE)/include $(ADDONINC) \

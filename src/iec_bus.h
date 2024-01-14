@@ -25,7 +25,9 @@
 #include "m8520.h"
 
 #include "rpi-gpio.h"
+#if !defined (__CIRCLE__)
 #include "rpiHardware.h"
+#endif
 
 //ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
 #include "dmRotary.h"
@@ -316,6 +318,7 @@ public:
 		}
 		else
 		{
+#if !defined (__CIRCLE__)			
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_IN_BUTTON4, FS_INPUT);
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_IN_BUTTON5, FS_INPUT);
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_IN_RESET, FS_INPUT);
@@ -337,9 +340,11 @@ public:
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_CLOCK, FS_OUTPUT);
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_DATA, FS_OUTPUT);
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_SRQ, FS_OUTPUT);
+#endif			
 		}
 	
 #if not defined(EXPERIMENTALZERO)
+#if !defined (__CIRCLE__)
 		// Set up audio.
 		write32(CM_PWMDIV, CM_PASSWORD + 0x2000);
 		write32(CM_PWMCTL, CM_PASSWORD + CM_ENAB + CM_SRC_OSCILLATOR);	// Use Default 100MHz Clock
@@ -347,6 +352,7 @@ public:
 		write32(PWM_RNG1, 0x1B4);	// 8bit 44100Hz Mono
 		write32(PWM_RNG2, 0x1B4);
 		write32(PWM_CTL, PWM_USEF2 + PWM_PWEN2 + PWM_USEF1 + PWM_PWEN1 + PWM_CLRF1);
+#endif		
 #endif
 
 		for (index = 0; index < buttonCount; ++index)
@@ -371,6 +377,7 @@ public:
 		RPI_GpioBase->GPPUD = 0;
 		RPI_GpioBase->GPPUDCLK0 = 0;
 
+#if !defined (__CIRCLE__)
 		//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
 		if (IEC_Bus::rotaryEncoderEnable == true)
 		{
@@ -384,7 +391,7 @@ public:
 				IEC_Bus::rotaryEncoder.Initialize(RPI_GPIO22, RPI_GPIO23, RPI_GPIO27);
 			}
 		}
-
+#endif
 	}
 
 	static inline void LetSRQBePulledHigh()

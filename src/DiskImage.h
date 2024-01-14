@@ -19,7 +19,9 @@
 #ifndef DISKIMAGE_H
 #define DISKIMAGE_H
 #include "types.h"
+#if !defined (__CIRCLE__)
 #include "ff.h"
+#endif
 
 #define READBUFFER_SIZE 1024 * 512 * 2 // Now need over 800K for D81s
 

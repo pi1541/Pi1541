@@ -19,11 +19,16 @@
 #include "defs.h"
 #include <string.h>
 #include <strings.h>
+#if !defined (__CIRCLE__)
 #include "Timer.h"
+#else 
+#include "circle-kernel.h"
+#endif
 #include "ROMs.h"
 #include "stb_image.h"
 extern "C"
 {
+#if !defined(__CIRCLE__)
 #include "rpi-aux.h"
 #include "rpi-i2c.h"
 #include "rpi-gpio.h"
@@ -32,6 +37,9 @@ extern "C"
 #include "rpi-mailbox-interface.h"
 #include "interrupt.h"
 #include <uspi.h>
+#else
+#include "circle-types.h"
+#endif
 #include "rpi-mailbox.h"
 }
 #include "InputMappings.h"
@@ -239,14 +247,12 @@ extern "C"
 		InterruptSystemConnectIRQ(nIRQ, pHandler, pParam);
 	}
 }
-#else
-extern "C" void usDelay(unsigned nMicroSeconds);
-void MsDelay(unsigned nMilliSeconds);
-int GetTemperature(unsigned& value);
 #endif
 
 // Hooks for FatFs
+#if !defined (__CIRCLE__)
 DWORD get_fattime() { return 0; }	// If you have hardware RTC return a correct value here. THis can then be reflected in file modification times/dates.
+#endif
 
 extern u8 read6502(u16 address);
 extern u8 read6502ExtraRAM(u16 address);
@@ -255,6 +261,7 @@ extern void write6502ExtraRAM(u16 address, const u8 value);
 extern u8 read6502_1581(u16 address);
 extern void write6502_1581(u16 address, const u8 value);
 
+#if !defined (__CIRCLE__)
 void InitialiseHardware()
 {
 #if defined(RPI3)
@@ -287,7 +294,9 @@ void InitialiseHardware()
 	clockCycles1MHz = MaxClk / 1000000;
 #endif
 }
+#endif
 
+#if !defined (__CIRCLE__)
 void InitialiseLCD()
 {
 	FILINFO filLcdIcon;
@@ -391,6 +400,8 @@ void UpdateLCD(const char* track, unsigned temperature)
 #endif
 	}
 }
+
+#endif /* __CIRCLE__ */
 
 // This runs on core0 and frees up core1 to just run the emulator.
 // Care must be taken not to crowd out the shared cache with core1 as this could slow down core1 so that it no longer can perform its duties in the 1us timings it requires.
@@ -718,6 +729,7 @@ EmulatingMode BeginEmulating(FileBrowser* fileBrowser, const char* filenameForIc
 	return IEC_COMMANDS;
 }
 #if not defined(EXPERIMENTALZERO)
+#if !defined (__CIRCLE__)
 static u32* dmaSound;
 
 struct DMA_ControlBlock
@@ -743,14 +755,17 @@ DMA_ControlBlock dmaSoundCB =
 	0, 0
 };
 #endif
+#endif
 
 #if not defined(EXPERIMENTALZERO)
 static void PlaySoundDMA()
 {
+#if !defined (__CIRCLE__)	
 	write32(PWM_DMAC, PWM_ENAB + 0x0001);
 	write32(DMA_ENABLE, 1);	// DMA_EN0
 	write32(DMA0_BASE + DMA_CONBLK_AD, (u32)&dmaSoundCB);
 	write32(DMA0_BASE + DMA_CS, DMA_ACTIVE);
+#endif	
 }
 #endif
 
@@ -1550,6 +1565,7 @@ void DisplayOptions(int y_pos)
 #endif
 }
 
+#if !defined (__CIRCLE__)
 void DisplayI2CScan(int y_pos)
 {
 #if not defined(EXPERIMENTALZERO)
@@ -1577,6 +1593,7 @@ void DisplayI2CScan(int y_pos)
 	screen.PrintText(false, 0, y_pos+16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 #endif
 }
+#endif
 
 static void CheckOptions()
 {
@@ -1723,8 +1740,10 @@ static void CheckOptions()
 
 void Reboot_Pi()
 {
+#if !defined (__CIRCLE__)	
 	if (screenLCD)
 		screenLCD->ClearInit(0);
+#endif		
 	reboot_now();
 }
 
@@ -1962,6 +1981,7 @@ extern "C"
 #if not defined(EXPERIMENTALZERO)
 		if (!options.SoundOnGPIO())
 		{
+#if !defined (__CIRCLE__)			
 			dmaSound = (u32*)malloc(Sample_bin_size * 4);
 			for (int i = 0; i < Sample_bin_size; ++i)
 			{
@@ -1969,6 +1989,7 @@ extern "C"
 			}
 			dmaSoundCB.sourceAddress = dmaSound;
 			//PlaySoundDMA();
+#endif			
 		}
 
 		for (int USBDriveIndex = 0; USBDriveIndex < numberOfUSBMassStorageDevices; ++USBDriveIndex)
@@ -1993,9 +2014,9 @@ extern "C"
 		pi1541.drive.SetVIA(&pi1541.VIA[1]);
 		pi1541.VIA[0].GetPortB()->SetPortOut(0, IEC_Bus::PortB_OnPortOut);
 		IEC_Bus::Initialise();
+#if !defined(__CIRCLE__) 
 		if (screenLCD)
 			screenLCD->ClearInit(0);
-#if !defined(__CIRCLE__) 
 #ifdef HAS_MULTICORE
 		start_core(3, _spin_core);
 		start_core(2, _spin_core);

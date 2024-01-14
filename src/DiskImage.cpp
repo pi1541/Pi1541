@@ -27,10 +27,12 @@
 #include "lz.h"
 #include "Petscii.h"
 #include <malloc.h>
+#if !defined (__CIRCLE__)
 extern "C"
 {
 #include "rpi-gpio.h"
 }
+#endif
 
 extern u32 HashBuffer(const void* pBuffer, u32 length);
 

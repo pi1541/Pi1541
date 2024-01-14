@@ -22,7 +22,11 @@
 
 extern "C"
 {
+#if !defined (__CIRCLE__)	
 #include <uspi/usbkeyboard.h>
+#else
+#include "circle-types.h"
+#endif
 }
 #if not defined(EXPERIMENTALZERO)
 

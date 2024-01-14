@@ -31,7 +31,9 @@
 extern "C"
 {
     #include "rpi-aux.h"
+#if !defined (__CIRCLE__)    
     #include "rpiHardware.h"
+#endif    
 }
 
 //Enable debugging messages on the mini uart

@@ -48,6 +48,7 @@ void Screen::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth)
 	if (heightDesired > 720)
 		heightDesired = 720;
 
+#if !defined (__CIRCLE__)
 	rpi_mailbox_property_t* mp;
 	//int width = 0;
 	//int height = 0;
@@ -101,7 +102,9 @@ void Screen::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth)
 			framebuffer = (unsigned char*)(mp->data.buffer_32[0] & 0x3FFFFFFF);
 	}
 	while (framebuffer == 0);
-
+#else
+	/* use Circle screen / framebuffer drivers*/
+#endif
 
 	//RPI_PropertyInit();
 	//RPI_PropertyAddTag(TAG_SET_PALETTE, palette);

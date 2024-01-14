@@ -1,7 +1,8 @@
 #include <circle/startup.h>
 #include <unistd.h>
+#include "circle-kernel.h"
+#include "rpi-gpio.h"
 
-extern "C" {
 void USPiInitialize(void) {}
 int USPiMassStorageDeviceAvailable(void) { return 0; }
 int USPiKeyboardAvailable(void) { return 0; }
@@ -10,23 +11,18 @@ unsigned USPiMassStorageDeviceWrite(void) { return 0 ; }
 void USPiKeyboardRegisterKeyStatusHandlerRaw(void) {}
 void _data_memory_barrier(void) {} 
 void _invalidate_dtlb_mva(void *x) {}
-void f_getlabel(char *x, char *l, int *) { *l = '\0'; }
+//void f_getlabel(char *x, char *l, int *) { *l = '\0'; }
+
+void InitialiseHardware(void) {}
 void _enable_unaligned_access(void) {}
-void enable_MMU_and_IDCaches(void) {};
+void enable_MMU_and_IDCaches(void) {}
 void reboot_now(void) 
 {
     reboot();
 }
 
-void usDelay(unsigned nMicroSeconds) 
-{
-//    usleep(nMicroSeconds);
-}
-void MsDelay(unsigned ms)
-{
-//    usleep(1000 * ms);
-}
 void TimerSystemInitialize() {};
+void InterruptSystemInitialize() {};
 void TimerCancelKernelTimer(unsigned hTimer) {};
 unsigned TimerStartKernelTimer(
 		unsigned nDelay,		// in HZ units
@@ -34,6 +30,9 @@ unsigned TimerStartKernelTimer(
 		void* pParam,
 		void* pContext) { return 0; };
 
-}
 
 int GetTemperature(unsigned &value) { return 0; };
+void InitialiseLCD() {}
+void UpdateLCD(const char* track, unsigned temperature) {}
+void DisplayI2CScan(int y_pos) {}
+rpi_gpio_t* RPI_GpioBase = (rpi_gpio_t*) RPI_GPIO_BASE;
