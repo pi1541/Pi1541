@@ -1,4 +1,4 @@
-# Pi1531 - Circle ported
+# Pi1541 - Circle ported
 
 This is an optional port of Pi1541 to the current Circle bare metal library (45.3.1).
 
