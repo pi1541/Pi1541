@@ -36,16 +36,15 @@ The circle-version is built by:
 mkdir build-pottendo-Pi1541
 cd build-pottendo-Pi1541
 git clone https://github.com/pottendo/pottendo-Pi1541.git
-`
+
 # Checkout (circle-stdlib)[https://github.com/smuehlst/circle-stdlib]:
-`git clone --recursive https://github.com/smuehlst/circle-stdlib.git
+git clone --recursive https://github.com/smuehlst/circle-stdlib.git
 cd circle-stdlib
 ./configure -r 3
 make
-`
 
 # Set/edit some options in libs/circle/include/circle/sysconfig.h and libs/circle/addon/fatfs/ffconf.h, see src/Circle/patch-circle.diff
-`
+
 cd ../pottendo-Pi1541/src
 make -f Makefile.circle
 `
@@ -57,10 +56,10 @@ TODO: add where to get the drivers...
 
 the *config.txt* on the SDCard must not set kernel_address (therefore commented below) as it's needed for the original Pi1541.
 
-``
-\#kernel_address=0x1f00000
+`
+#kernel_address=0x1f00000
 arm_64bit=0
-\#armstub=no-prefetch.bin 
+#armstub=no-prefetch.bin 
 
 enable_uart=1
 gpu_mem=16
@@ -68,9 +67,9 @@ gpu_mem=16
 hdmi_group=2
 hdmi_mode=16
 
-\#kernel=kernel8.img
+#kernel=kernel8.img
 kernel=kernel.img
-``
+`
 
 This config.txt enables the uart console on pins 14/15 - this gives useful log information.
 *options.txt* and all the other content on a Pi1541 sdcard are similar to the original
