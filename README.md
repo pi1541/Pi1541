@@ -58,7 +58,7 @@ make -f Makefile.circle
 
 In order to build the standard Pi1541 you have clean the builds by make clean (toplevel), and make -f Makefile.circle in src
 
-WiFi needs the drivers on the flash card under *firmware/...* and a file wpa_supplicant.conf on the toplevel to configure your SSID.
+WiFi needs the drivers on the flash card under *firmware/...* and a file *wpa_supplicant.conf* on the toplevel to configure your SSID.
 TODO: add where to get the drivers...
 
 the *config.txt* on the SDCard must not set kernel_address (therefore commented below) as it's needed for the original Pi1541.
