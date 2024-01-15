@@ -15,7 +15,9 @@ Currently only tested for
 - Option A (not support split IECLines) of Pi1541, Option *cannot work* as of now!
 - WiFi stats and seeks for a DHCP server, Webserver runs, but one can only control the led so far
 
+**not yet connected to a real C64/ViC20/...** 
 GPIO handling is still not yet replaced by its circle counterpart, so most likely P4 (and younger) still won't work.
+I've tested only on the breadboard and see the reactions on the screen, so it's likely to work with a real machine. However the realtime behavior may be changed, so this is the next step to make trials on real retro machines. Stay tuned.
 
 Not yet working & Todos:
 - USB Massstorage
@@ -23,6 +25,7 @@ Not yet working & Todos:
 - Rotary Input
 
 - Make checkout and build easier
+- Use it on a real machine!
 
 Credits to Stephen [Pi1541](https://cbm-pi1541.firebaseapp.com/), Rene [circle](https://github.com/rsta2/circle), Stephan [circle-stdlib](https://github.com/smuehlst/circle-stdlib) for the brilliant base packages!
 
@@ -58,21 +61,26 @@ the *config.txt* on the SDCard must not set kernel_address (therefore commented 
 
 ```
 #kernel_address=0x1f00000
-arm_64bit=0
-#armstub=no-prefetch.bin 
+arm_64bit=0               # 64 bit won't work
+#armstub=no-prefetch.bin  # not sure if this is needed
 
-enable_uart=1
+enable_uart=1             # Console
 gpu_mem=16
 
 hdmi_group=2
 hdmi_mode=16
 
-#kernel=kernel8.img
-kernel=kernel.img
+#kernel=kernel.img      # use this for the original build
+kernel=kernel8-32.img
+
 ```
 
 This config.txt enables the uart console on pins 14/15 - this gives useful log information.
 *options.txt* and all the other content on a Pi1541 sdcard are similar to the original
+
+# Disclaimer
+
+**You may damage your beloved devices (Raspberry Pi, Retro machines, C64s, VIC20s, etc) by using this. I do not take any responsibility, so use at your own risk!**
 
 # Pi1541
 
