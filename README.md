@@ -16,12 +16,14 @@ Currently only tested for
 
 GPIO handling is still not yet replaced by its circle counterpart, so most likely P4 (and younger) still won't work.
 
-Not yet working:
+Not yet working & Todos:
 - USB Massstorage
 - Option B, split IEC lines
 - Rotary Input
 
-Credits to Stephen (Pi1541)[https://cbm-pi1541.firebaseapp.com/], Rene (circle)[https://github.com/rsta2/circle], Stephan (circle-stdlib)[https://github.com/smuehlst/circle-stdlib] for the brilliant base packages!
+- Make checkout and build easier
+
+Credits to Stephen [Pi1541](https://cbm-pi1541.firebaseapp.com/), Rene [circle](https://github.com/rsta2/circle), Stephan [circle-stdlib](https://github.com/smuehlst/circle-stdlib) for the brilliant base packages!
 
 Build
 -----
@@ -43,7 +45,7 @@ make
 cd ../pottendo-Pi1541/src
 make -f Makefile.circle
 
-# to build the standard Pi1541 you have to do clean the builds
+# to build the standard Pi1541 you have clean the builds by make clean (toplevel), and make -f Makefile.circle in src
 ```
 
 # Pi1541
