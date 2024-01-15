@@ -32,7 +32,7 @@ One can build the Version 1.24 (+some minor fixes: LED & Buzzer work, build/work
 The circle-version is built by:
 
 
-`
+```
 mkdir build-pottendo-Pi1541
 cd build-pottendo-Pi1541
 git clone https://github.com/pottendo/pottendo-Pi1541.git
@@ -47,16 +47,16 @@ make
 
 cd ../pottendo-Pi1541/src
 make -f Makefile.circle
-`
+```
 
-# to build the standard Pi1541 you have clean the builds by make clean (toplevel), and make -f Makefile.circle in src
+In order to build the standard Pi1541 you have clean the builds by make clean (toplevel), and make -f Makefile.circle in src
 
 WiFi needs the drivers on the flash card under *firmware/...* and a file wpa_supplicant.conf on the toplevel to configure your SSID.
 TODO: add where to get the drivers...
 
 the *config.txt* on the SDCard must not set kernel_address (therefore commented below) as it's needed for the original Pi1541.
 
-`
+```
 #kernel_address=0x1f00000
 arm_64bit=0
 #armstub=no-prefetch.bin 
@@ -69,7 +69,7 @@ hdmi_mode=16
 
 #kernel=kernel8.img
 kernel=kernel.img
-`
+```
 
 This config.txt enables the uart console on pins 14/15 - this gives useful log information.
 *options.txt* and all the other content on a Pi1541 sdcard are similar to the original
