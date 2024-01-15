@@ -7,6 +7,9 @@ Target is to remove all Pi bindings which have a counterpart in Circle and to pi
 - Pi4/400 and 5 (later)
 - ...
 
+Credits to Stephen [Pi1541](https://cbm-pi1541.firebaseapp.com/), Rene [circle](https://github.com/rsta2/circle), Stephan [circle-stdlib](https://github.com/smuehlst/circle-stdlib) for the brilliant base packages!
+
+
 Status
 ------
 Currently only tested for
@@ -15,19 +18,20 @@ Currently only tested for
 - Option A (not support split IECLines) of Pi1541, Option *cannot work* as of now!
 - WiFi stats and seeks for a DHCP server, Webserver runs, but one can only control the led so far
 
-**not yet connected to a real C64/ViC20/...** 
 GPIO handling is still not yet replaced by its circle counterpart, so most likely P4 (and younger) still won't work.
+
+This was not yet connected to a real C64/ViC20/...
+--------------------------------------------------
 I've tested only on the breadboard and see the reactions on the screen, so it's likely to work with a real machine. However the realtime behavior may be changed, so this is the next step to make trials on real retro machines. Stay tuned.
 
-Not yet working & Todos:
+Not yet working & Todos
+-----------------------
 - USB Massstorage
 - Option B, split IEC lines
 - Rotary Input
 
 - Make checkout and build easier
 - Use it on a real machine!
-
-Credits to Stephen [Pi1541](https://cbm-pi1541.firebaseapp.com/), Rene [circle](https://github.com/rsta2/circle), Stephan [circle-stdlib](https://github.com/smuehlst/circle-stdlib) for the brilliant base packages!
 
 Build
 -----
