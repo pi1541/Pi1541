@@ -31,6 +31,7 @@
 #include <circle/usb/usbhcidevice.h>
 #include <circle/sched/scheduler.h>
 #include <SDCard/emmc.h>
+#include <circle/i2cmaster.h>
 #include <fatfs/ff.h>
 #include <wlan/bcm4343.h>
 #include <wlan/hostap/wpa_supplicant/wpasupplicant.h>
@@ -77,6 +78,11 @@ public:
 	void yield(void) { mScheduler.Yield(); }
 	void run_wifi(void);
 	void run_webserver(void);
+	void i2c_init(int BSCMaster, int fast) {};	/* already done in Kernel's Initialization */
+	void i2c_setclock(int BSCMaster, int clock_freq);
+	int i2c_read(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count);
+	int i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count);
+	int i2c_scan(int BSCMaster, unsigned char slaveAddress);
 
 private:
 	CActLED				m_ActLED;
@@ -91,6 +97,7 @@ private:
 	CScheduler			mScheduler;
 	CUSBHCIDevice		m_USBHCI;
 	CEMMCDevice			m_EMMC;
+	CI2CMaster			m_I2c;
 	FATFS				m_FileSystem;
 	CBcm4343Device		m_WLAN;
 	CSynchronizationEvent	mEvent;
@@ -128,6 +135,19 @@ void DisplayI2CScan(int y_pos);
 void emulator(void);
 
 extern "C" void kernel_main(unsigned int r0, unsigned int r1, unsigned int atags);
+
+/* I2C provided by Circle */
+#define RPI_I2CInit i2c_init
+#define RPI_I2CSetClock i2c_setclock
+#define RPI_I2CRead i2c_read
+#define RPI_I2CWrite i2c_write
+#define RPI_I2CScan i2c_scan
+void i2c_init(int BSCMaster, int fast);
+void i2c_setclock(int BSCMaster, int clock_freq);
+int i2c_read(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count);
+int i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count);
+int i2c_scan(int BSCMaster, unsigned char slaveAddress);
+
 #endif
 
 

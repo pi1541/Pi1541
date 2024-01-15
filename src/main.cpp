@@ -1570,7 +1570,6 @@ void DisplayOptions(int y_pos)
 #endif
 }
 
-#if !defined (__CIRCLE__)
 void DisplayI2CScan(int y_pos)
 {
 #if not defined(EXPERIMENTALZERO)
@@ -1598,7 +1597,6 @@ void DisplayI2CScan(int y_pos)
 	screen.PrintText(false, 0, y_pos+16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 #endif
 }
-#endif
 
 static void CheckOptions()
 {
@@ -2020,9 +2018,9 @@ extern "C"
 		pi1541.drive.SetVIA(&pi1541.VIA[1]);
 		pi1541.VIA[0].GetPortB()->SetPortOut(0, IEC_Bus::PortB_OnPortOut);
 		IEC_Bus::Initialise();
-#if !defined(__CIRCLE__) 
 		if (screenLCD)
 			screenLCD->ClearInit(0);
+#if !defined(__CIRCLE__) 
 #ifdef HAS_MULTICORE
 		start_core(3, _spin_core);
 		start_core(2, _spin_core);

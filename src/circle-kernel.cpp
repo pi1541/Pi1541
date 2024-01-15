@@ -44,6 +44,7 @@ CKernel::CKernel(void) :
 	mLogger (mOptions.GetLogLevel (), &mTimer), mScheduler(),
 	m_USBHCI (&mInterrupt, &mTimer),
 	m_EMMC (&mInterrupt, &mTimer, &m_ActLED),
+	m_I2c (1, true),
 	m_WLAN (_FIRMWARE_PATH),
 #ifndef USE_DHCP
 	m_Net (IPAddress, NetMask, DefaultGateway, DNSServer, DEFAULT_HOSTNAME, NetDeviceTypeWLAN),
@@ -89,6 +90,7 @@ boolean CKernel::Initialize (void)
 			mLogger.Write ("pottendo-kern", LogNotice, "mounted drive: " _DRIVE);
 		}
 	}
+	if (bOK) bOK = m_I2c.Initialize();
 	return bOK;
 }
 
@@ -169,6 +171,45 @@ void CKernel::run_webserver(void)
 		mScreen.Rotor (0, nCount);
 	}
 }
+
+void CKernel::i2c_setclock(int BSCMaster, int clock_freq)
+{
+	m_I2c.SetClock(clock_freq);
+}
+
+int CKernel::i2c_read(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count)
+{
+	return m_I2c.Read(slaveAddress, buffer, count);
+}
+
+int CKernel::i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count)
+{
+	return m_I2c.Write(slaveAddress, buffer, count);
+}
+
+int CKernel::i2c_scan(int BSCMaster, unsigned char slaveAddress)
+{
+#define SLAVE_ADDRESS_MIN	0x03
+#define SLAVE_ADDRESS_MAX	0x77
+	int found = 0;
+	log("scanning I2C bus...");
+	for (u8 ucAddress = SLAVE_ADDRESS_MIN; ucAddress <= SLAVE_ADDRESS_MAX; ucAddress++)
+	{
+		if (m_I2c.Write (ucAddress, 0, 0) == 0) 
+		{
+			log("identified I2C slave on address 0x%02x", ucAddress);
+			found++;
+		}
+	}
+	log("...found %d devices", found);
+	return found;
+}
+
+void i2c_init(int BSCMaster, int fast) { Kernel.i2c_init(BSCMaster, fast); }
+void i2c_setclock(int BSCMaster, int clock_freq) { Kernel.i2c_setclock(BSCMaster, clock_freq); }
+int i2c_read(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count) { return Kernel.i2c_read(BSCMaster, slaveAddress, buffer, count); }
+int i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count) { return Kernel.i2c_write(BSCMaster, slaveAddress, buffer, count); }
+int i2c_scan(int BSCMaster, unsigned char slaveAddress) { return Kernel.i2c_scan(BSCMaster, slaveAddress); }
 
 void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 {

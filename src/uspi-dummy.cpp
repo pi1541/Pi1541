@@ -33,5 +33,4 @@ unsigned TimerStartKernelTimer(
 int GetTemperature(unsigned &value) { return 0; };
 void InitialiseLCD() {}
 void UpdateLCD(const char* track, unsigned temperature) {}
-void DisplayI2CScan(int y_pos) {}
 rpi_gpio_t* RPI_GpioBase = (rpi_gpio_t*) RPI_GPIO_BASE;
