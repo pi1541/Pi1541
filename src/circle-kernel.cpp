@@ -44,7 +44,7 @@ CKernel::CKernel(void) :
 	mLogger (mOptions.GetLogLevel (), &mTimer), mScheduler(),
 	m_USBHCI (&mInterrupt, &mTimer),
 	m_EMMC (&mInterrupt, &mTimer, &m_ActLED),
-	m_I2c (1, true),
+	m_I2c (0, true),
 	m_WLAN (_FIRMWARE_PATH),
 #ifndef USE_DHCP
 	m_Net (IPAddress, NetMask, DefaultGateway, DNSServer, DEFAULT_HOSTNAME, NetDeviceTypeWLAN),
@@ -91,6 +91,7 @@ boolean CKernel::Initialize (void)
 		}
 	}
 	if (bOK) bOK = m_I2c.Initialize();
+	mLogger.Write ("pottendo-kern", LogNotice, "I2C done");
 	return bOK;
 }
 
@@ -189,19 +190,13 @@ int CKernel::i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, 
 
 int CKernel::i2c_scan(int BSCMaster, unsigned char slaveAddress)
 {
-#define SLAVE_ADDRESS_MIN	0x03
-#define SLAVE_ADDRESS_MAX	0x77
 	int found = 0;
-	log("scanning I2C bus...");
-	for (u8 ucAddress = SLAVE_ADDRESS_MIN; ucAddress <= SLAVE_ADDRESS_MAX; ucAddress++)
+	u8 t[1];
+	if (m_I2c.Read(slaveAddress, t, 1) >= 0) 
 	{
-		if (m_I2c.Write (ucAddress, 0, 0) == 0) 
-		{
-			log("identified I2C slave on address 0x%02x", ucAddress);
-			found++;
-		}
+		log("identified I2C slave on address 0x%02x", slaveAddress);
+		found++;
 	}
-	log("...found %d devices", found);
 	return found;
 }
 

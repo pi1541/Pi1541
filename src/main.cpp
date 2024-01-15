@@ -298,7 +298,6 @@ void InitialiseHardware()
 #endif
 }
 
-#if !defined (__CIRCLE__)
 void InitialiseLCD()
 {
 	FILINFO filLcdIcon;
@@ -402,8 +401,6 @@ void UpdateLCD(const char* track, unsigned temperature)
 #endif
 	}
 }
-
-#endif /* __CIRCLE__ */
 
 // This runs on core0 and frees up core1 to just run the emulator.
 // Care must be taken not to crowd out the shared cache with core1 as this could slow down core1 so that it no longer can perform its duties in the 1us timings it requires.
@@ -1745,10 +1742,8 @@ static void CheckOptions()
 
 void Reboot_Pi()
 {
-#if !defined (__CIRCLE__)	
 	if (screenLCD)
 		screenLCD->ClearInit(0);
-#endif		
 	reboot_now();
 }
 
