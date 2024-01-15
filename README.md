@@ -47,6 +47,7 @@ make
 cd ../pottendo-Pi1541/src
 make -f Makefile.circle
 `
+
 # to build the standard Pi1541 you have clean the builds by make clean (toplevel), and make -f Makefile.circle in src
 
 
