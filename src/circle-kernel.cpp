@@ -21,10 +21,10 @@
 #include <stdlib.h>
 #include <time.h>
 #include <circle/timer.h>
+#include <circle/startup.h>
+#include <circle/cputhrottle.h>
 #include <iostream>
 #include "webserver.h"
-
-extern int mandel_driver(void);
 
 #define _DRIVE		"SD:"
 #define _FIRMWARE_PATH	_DRIVE "/firmware/"		// firmware files must be provided here
@@ -38,11 +38,14 @@ static const u8 DefaultGateway[] = {192, 168, 188, 1};
 static const u8 DNSServer[]      = {192, 168, 188, 1};
 #endif
 
+CCPUThrottle CPUThrottle;
+
 CKernel::CKernel(void) :
 	mScreen (mOptions.GetWidth (), mOptions.GetHeight ()),
 	mTimer (&mInterrupt),
 	mLogger (mOptions.GetLogLevel (), &mTimer), mScheduler(),
-	m_USBHCI (&mInterrupt, &mTimer),
+	m_USBHCI (&mInterrupt, &mTimer, true),
+	m_pKeyboard (0),
 	m_EMMC (&mInterrupt, &mTimer, &m_ActLED),
 	m_I2c (0, true),
 	m_WLAN (_FIRMWARE_PATH),
@@ -61,7 +64,7 @@ CKernel::CKernel(void) :
 	if (bOK) bOK = mSerial.Initialize (115200);
 	if (bOK)
 	{
-		CDevice *pTarget = mDeviceNameService.GetDevice (mOptions.GetLogDevice (), FALSE);
+		CDevice *pTarget = m_DeviceNameService.GetDevice (mOptions.GetLogDevice (), FALSE);
 		if (pTarget == 0)
 			pTarget = &mScreen;
 		bOK = mLogger.Initialize (&mSerial);
@@ -100,19 +103,13 @@ extern int mandel_iterate(int);
 
 TShutdownMode CKernel::Run (void)
 {
-	mLogger.Write ("pottendo-kern", LogNotice, "Mandelbrot Demo (%dx%d)", mScreen.GetWidth(), mScreen.GetHeight());
+	mLogger.Write ("pottendo-kern", LogNotice, "pottendo-Pi1541 (%dx%d)", mScreen.GetWidth(), mScreen.GetHeight());
 	run_wifi();
-	(void) mandel_iterate(1000*1000);
-	mLogger.Write ("pottendo-kern", LogNotice, "Demo finished");
+//	(void) mandel_iterate(1000*1000);
 
 	kernel_main(0, 0, 0);
 	log("unexpected return of display thread");
 	return ShutdownHalt;
-}
-
-void RPiConsole_put_pixel(uint32_t x, uint32_t y, uint16_t c)
-{
-	Kernel.set_pixel(x, y, c);
 }
 
 void CKernel::log(const char *fmt, ...)
@@ -122,10 +119,6 @@ void CKernel::log(const char *fmt, ...)
     va_start(args, fmt);
     vsnprintf(t, 256, fmt, args);
 	mLogger.Write("pottendo-log:", LogNotice, t);
-}
-void SetACTLed(int v) 
-{ 
-	Kernel.SetACTLed(v); 
 }
 
 boolean CKernel::init_screen(u32 widthDesired, u32 heightDesired, u32 colourDepth, u32 &width, u32 &height, u32 &bpp, u32 &pitch, u8** framebuffer)
@@ -200,11 +193,32 @@ int CKernel::i2c_scan(int BSCMaster, unsigned char slaveAddress)
 	return found;
 }
 
-void i2c_init(int BSCMaster, int fast) { Kernel.i2c_init(BSCMaster, fast); }
-void i2c_setclock(int BSCMaster, int clock_freq) { Kernel.i2c_setclock(BSCMaster, clock_freq); }
-int i2c_read(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count) { return Kernel.i2c_read(BSCMaster, slaveAddress, buffer, count); }
-int i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count) { return Kernel.i2c_write(BSCMaster, slaveAddress, buffer, count); }
-int i2c_scan(int BSCMaster, unsigned char slaveAddress) { return Kernel.i2c_scan(BSCMaster, slaveAddress); }
+void KeyboardRemovedHandler(CDevice *pDevice, void *pContext) 
+{
+	Kernel.log("keyboard removed");
+}
+
+/* Ctrl-Alt-Del*/
+void KeyboardShutdownHandler(void)
+{
+	Kernel.log("Ctrl-Alt-Del pressed, rebooting...");
+	reboot();
+}
+
+int CKernel::usb_keyboard_available(void) 
+{
+	m_pKeyboard = (CUSBKeyboardDevice *) m_DeviceNameService.GetDevice ("ukbd1", FALSE);
+	if (!m_pKeyboard)
+		return 0;
+	m_pKeyboard->RegisterRemovedHandler(KeyboardRemovedHandler);
+	m_pKeyboard->RegisterShutdownHandler(KeyboardShutdownHandler);
+	return 1;
+}
+
+TKernelTimerHandle CKernel::timer_start(unsigned delay, TKernelTimerHandler *pHandler, void *pParam, void *pContext)
+{
+	return mTimer.StartKernelTimer(delay, pHandler, pParam, pContext);
+}
 
 void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 {
@@ -221,3 +235,28 @@ void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 		break;
 	}
 }
+
+/* wrappers */
+void RPiConsole_put_pixel(uint32_t x, uint32_t y, uint16_t c) {	Kernel.set_pixel(x, y, c); }
+void SetACTLed(int v) { Kernel.SetACTLed(v); }
+void reboot_now(void) { reboot(); }
+void i2c_init(int BSCMaster, int fast) { Kernel.i2c_init(BSCMaster, fast); }
+void i2c_setclock(int BSCMaster, int clock_freq) { Kernel.i2c_setclock(BSCMaster, clock_freq); }
+int i2c_read(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count) { return Kernel.i2c_read(BSCMaster, slaveAddress, buffer, count); }
+int i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count) { return Kernel.i2c_write(BSCMaster, slaveAddress, buffer, count); }
+int i2c_scan(int BSCMaster, unsigned char slaveAddress) { return Kernel.i2c_scan(BSCMaster, slaveAddress); }
+void USPiInitialize(void) 
+{
+	if (Kernel.usb_updatepnp() == false) 
+	{
+		Kernel.log("usb update failed");
+	}
+}
+int USPiKeyboardAvailable(void) { return Kernel.usb_keyboard_available(); }
+void USPiKeyboardRegisterKeyStatusHandlerRaw(TKeyStatusHandlerRaw *handler) { Kernel.usb_reghandler(handler); }
+TKernelTimerHandle TimerStartKernelTimer(unsigned nDelay, TKernelTimerHandler *pHandler, void* pParam, void* pContext)
+{
+	return Kernel.timer_start(nDelay, pHandler, pParam, pContext);
+}
+void TimerCancelKernelTimer(TKernelTimerHandle hTimer) { Kernel.timer_cancel(hTimer); }
+int GetTemperature(unsigned &value) { unsigned ret = CPUThrottle.GetTemperature(); if (ret) value = ret * 1000; return ret; }

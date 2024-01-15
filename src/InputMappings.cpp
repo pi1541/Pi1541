@@ -21,12 +21,14 @@
 #include "FileBrowser.h"
 #include "iec_bus.h"
 #include "debug.h"
+#if !defined (__CIRCLE__)
 extern "C"
 {
 #include "rpi-aux.h"
 extern void usDelay(unsigned nMicroSeconds);
 }
 extern void Reboot_Pi(void);
+#endif
 
 // If disk swaps can be done via multiple cores then directDiskSwapRequest needs to be volatile. WARNING: volatile acesses can be very expensive.
 //volatile unsigned InputMappings::directDiskSwapRequest = 0;

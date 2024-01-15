@@ -35,7 +35,11 @@ extern "C"
 
 Keyboard* Keyboard::instance;
 
+#if !defined (__CIRCLE__)
 void Keyboard::KeyPressedHandlerRaw(TUSBKeyboardDevice* device, unsigned char modifiers, const unsigned char RawKeys[6])
+#else
+void Keyboard::KeyPressedHandlerRaw(unsigned char modifiers, const unsigned char RawKeys[6])
+#endif
 {
 	// byte 0 - modifires
 	//  bit 0: left control
@@ -71,7 +75,7 @@ void Keyboard::KeyPressedHandlerRaw(TUSBKeyboardDevice* device, unsigned char mo
 		{
 			int keyStatusIndex = (rawKey >= 64) ? 1 : 0;
 
-			//DEBUG_LOG("%x %d\r\n", rawKey, keyStatusIndex);
+			DEBUG_LOG("%x %d\r\n", rawKey, keyStatusIndex);
 
 			u64 keyBit = 1ULL << (u64)(rawKey & 0x3f);
 			if (keyboard->keyStatusPrev[keyStatusIndex] & keyBit)
@@ -91,7 +95,10 @@ void Keyboard::KeyPressedHandlerRaw(TUSBKeyboardDevice* device, unsigned char mo
 		// Only need the timer if a key was held down
 		if (keyboard->timer == 0)
 		{
-			//FIXME keyboard->timer = TimerStartKernelTimer(REPEAT_RATE, USBKeyboardDeviceTimerHandler, 0, device);
+#if defined (__CIRCLE__)			
+			void *device = nullptr;
+#endif			
+			keyboard->timer = TimerStartKernelTimer(REPEAT_RATE, USBKeyboardDeviceTimerHandler, 0, device);
 			//DEBUG_LOG("Timer started\r\n");
 		}
 	}
@@ -99,7 +106,7 @@ void Keyboard::KeyPressedHandlerRaw(TUSBKeyboardDevice* device, unsigned char mo
 	{
 		if (keyboard->timer != 0)
 		{
-			//FIXME TimerCancelKernelTimer(keyboard->timer);
+			TimerCancelKernelTimer(keyboard->timer);
 			keyboard->timer = 0;
 		}
 	}
@@ -139,13 +146,11 @@ void Keyboard::USBKeyboardDeviceTimerHandler(unsigned hTimer, void *pParam, void
 
 	if (keyboard->timer != 0)
 	{
-// FIXME		TimerCancelKernelTimer(keyboard->timer);
+		TimerCancelKernelTimer(keyboard->timer);
 		keyboard->timer = 0;
 	}
-/* FIXME 
 	if (anyDown)	// Only need the timer if a key was held down
 		keyboard->timer = TimerStartKernelTimer(REPEAT_RATE, USBKeyboardDeviceTimerHandler, 0, pContext);
- END FIXME */
 }
 
 Keyboard::Keyboard()
@@ -159,6 +164,6 @@ Keyboard::Keyboard()
 	keyStatus[1] = 0;
 
 	memset(keyRepeatCount, 0, sizeof(keyRepeatCount));
-	// FIXME USPiKeyboardRegisterKeyStatusHandlerRaw(KeyPressedHandlerRaw);
+	USPiKeyboardRegisterKeyStatusHandlerRaw(KeyPressedHandlerRaw);
 }
 #endif

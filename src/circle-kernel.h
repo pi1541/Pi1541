@@ -29,6 +29,7 @@
 #include <circle/logger.h>
 #include <circle/types.h>
 #include <circle/usb/usbhcidevice.h>
+#include <circle/usb/usbkeyboard.h>
 #include <circle/sched/scheduler.h>
 #include <SDCard/emmc.h>
 #include <circle/i2cmaster.h>
@@ -83,11 +84,16 @@ public:
 	int i2c_read(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count);
 	int i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count);
 	int i2c_scan(int BSCMaster, unsigned char slaveAddress);
+	bool usb_updatepnp(void) { return m_USBHCI.UpdatePlugAndPlay(); }
+	int usb_keyboard_available(void);
+	void usb_reghandler(TKeyStatusHandlerRaw *handler) { m_pKeyboard->RegisterKeyStatusHandlerRaw(handler); }
+	TKernelTimerHandle timer_start(unsigned delay, TKernelTimerHandler *pHandler, void *pParam = 0, void *pContext = 0);
+	void timer_cancel(TKernelTimerHandle handler) { mTimer.CancelKernelTimer(handler); }
 
 private:
 	CActLED				m_ActLED;
 	CKernelOptions		mOptions;
-	CDeviceNameService	mDeviceNameService;
+	CDeviceNameService	m_DeviceNameService;
 	CScreenDevice		mScreen;
 	CSerialDevice		mSerial;
 	CExceptionHandler	mExceptionHandler;
@@ -96,6 +102,7 @@ private:
 	CLogger				mLogger;
 	CScheduler			mScheduler;
 	CUSBHCIDevice		m_USBHCI;
+	CUSBKeyboardDevice * volatile m_pKeyboard;
 	CEMMCDevice			m_EMMC;
 	CI2CMaster			m_I2c;
 	FATFS				m_FileSystem;
@@ -109,6 +116,7 @@ private:
 extern CKernel Kernel;
 
 void reboot_now(void);
+void Reboot_Pi(void);
 static inline void delay_us(u32 usec) { Kernel.get_timer()->usDelay(usec); }
 static inline void usDelay(u32 usec) { Kernel.get_timer()->usDelay(usec); }
 static inline void MsDelay(u32 msec) { Kernel.get_timer()->usDelay(1000 * msec); }
@@ -118,13 +126,9 @@ void TimerSystemInitialize(void);
 void InterruptSystemInitialize(void);
 int USPiMassStorageDeviceAvailable(void);
 int USPiKeyboardAvailable(void);
-void USPiKeyboardRegisterKeyStatusHandlerRaw(void *fn);
-void TimerCancelKernelTimer(unsigned hTimer);
-unsigned TimerStartKernelTimer(
-		unsigned nDelay,		// in HZ units
-		void* pHandler,
-		void* pParam,
-		void* pContext);
+void USPiKeyboardRegisterKeyStatusHandlerRaw(TKeyStatusHandlerRaw *handler);
+void TimerCancelKernelTimer(TKernelTimerHandle hTimer);
+TKernelTimerHandle TimerStartKernelTimer(unsigned nDelay, TKernelTimerHandler *pHandler, void* pParam,void* pContext);
 int GetTemperature(unsigned &value);
 void SetACTLed(int v);
 void _enable_unaligned_access(void);
@@ -149,5 +153,3 @@ int i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned 
 int i2c_scan(int BSCMaster, unsigned char slaveAddress);
 
 #endif
-
-

@@ -151,13 +151,15 @@ void Screen::PlotPixel24(u32 pixel_offset, RGBA Colour)
 }
 void Screen::PlotPixel16(u32 pixel_offset, RGBA Colour)
 {
-// FIXME
-	Kernel.set_pixel((pixel_offset % pitch) / 2, pixel_offset / pitch, Colour);
-	return;
+#if !defined (__CIRCLE__)
 #if not defined(EXPERIMENTALZERO)
 	*(unsigned short*)&framebuffer[pixel_offset] = ((RED(Colour) >> 3) << 11) | ((GREEN(Colour) >> 2) << 5) | (BLUE(Colour) >> 3);
 #endif
+#else
+	Kernel.set_pixel((pixel_offset % pitch) / 2, pixel_offset / pitch, Colour);
+#endif
 }
+
 void Screen::PlotPixel8(u32 pixel_offset, RGBA Colour)
 {
 #if not defined(EXPERIMENTALZERO)

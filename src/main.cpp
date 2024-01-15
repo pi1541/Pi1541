@@ -1737,7 +1737,7 @@ static void CheckOptions()
 	inputMappings->INPUT_BUTTON_BACK = options.GetButtonBack();
 	inputMappings->INPUT_BUTTON_INSERT = options.GetButtonInsert();
 
-	Kernel.log("%s: done", __FUNCTION__);
+	DEBUG_LOG("%s: done", __FUNCTION__);
 }
 
 void Reboot_Pi()

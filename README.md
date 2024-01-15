@@ -1,18 +1,50 @@
 # Pi1541 - Circle ported
 
-This is an optional port of Pi1541 to the current Circle bare metal library (45.3.1).
+This is an optional port of Pi1541 to the current Circle bare metal library (as of Jan. 2024, Version 45.3.1).
 
 Target is to remove all Pi bindings which have a counterpart in Circle and to pimp with more functionalities:
 - Webserver to download images
 - Pi4/400 and 5 (later)
 - ...
 
-Credits to Stephen and Rene for the brilliant base packages I've used so far.
+Status
+------
+Currently only tested for
+- Raspberry 3B+
+- LCD Display SSD1306
+- Option A (not support split IECLines) of Pi1541, Option *cannot work* as of now!
 
-It's a bit tricky to build:
-- checkout circle-stdlib next to this project
-- Edit sysconfig.h. ffcong.h
-- more to come here  
+GPIO handling is still not yet replaced by its circle counterpart, so most likely P4 (and younger) still won't work.
+
+Not yet working:
+- USB Massstorage
+- Option B, split IEC lines
+- Rotary Input
+
+Credits to Stephen (Pi1541)[https://cbm-pi1541.firebaseapp.com/], Rene (circle)[https://github.com/rsta2/circle], Stephan (circle-stdlib)[https://github.com/smuehlst/circle-stdlib] for the brilliant base packages!
+
+Build
+-----
+One can build the Version 1.24 (+some minor fixes: LED & Buzzer work, build/works with gcc > 10.x).
+The circle-version is built by:
+
+```
+mkdir build-pottendo-Pi1541
+cd build-pottendo-Pi1541
+git clone https://github.com/pottendo/pottendo-Pi1541.git
+# Checkout (circle-stdlib)[https://github.com/smuehlst/circle-stdlib]:
+git clone --recursive https://github.com/smuehlst/circle-stdlib.git
+cd circle-stdlib
+./configure -r 3
+make
+
+# Set/edit some options in libs/circle/include/circle/sysconfig.h and libs/circle/addon/fatfs/ffconf.h, see src/Circle/patch-circle.diff
+
+cd ../pottendo-Pi1541/src
+make -f Makefile.circle
+
+# to build the standard Pi1541 you have to do clean the builds
+```
 
 # Pi1541
 
