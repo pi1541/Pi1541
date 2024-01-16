@@ -24,6 +24,7 @@
 #include <circle/startup.h>
 #include <circle/cputhrottle.h>
 #include <iostream>
+#include <circle/usb/usbmassdevice.h>
 #include "webserver.h"
 
 #define _DRIVE		"SD:"
@@ -215,6 +216,17 @@ int CKernel::usb_keyboard_available(void)
 	return 1;
 }
 
+int CKernel::usb_massstorage_available(void)
+{
+	pUMSD1 = m_DeviceNameService.GetDevice ("umsd1", TRUE);
+	if (pUMSD1 == 0)
+	{
+		log("USB mass storage device not found");
+		return 0;
+	}
+	return 1;
+}
+
 TKernelTimerHandle CKernel::timer_start(unsigned delay, TKernelTimerHandler *pHandler, void *pParam, void *pContext)
 {
 	return mTimer.StartKernelTimer(delay, pHandler, pParam, pContext);
@@ -260,3 +272,5 @@ TKernelTimerHandle TimerStartKernelTimer(unsigned nDelay, TKernelTimerHandler *p
 }
 void TimerCancelKernelTimer(TKernelTimerHandle hTimer) { Kernel.timer_cancel(hTimer); }
 int GetTemperature(unsigned &value) { unsigned ret = CPUThrottle.GetTemperature(); if (ret) value = ret * 1000; return ret; }
+int USPiMassStorageDeviceAvailable(void) { return Kernel.usb_massstorage_available(); }
+

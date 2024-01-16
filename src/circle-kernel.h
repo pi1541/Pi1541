@@ -85,6 +85,7 @@ public:
 	int i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count);
 	int i2c_scan(int BSCMaster, unsigned char slaveAddress);
 	bool usb_updatepnp(void) { return m_USBHCI.UpdatePlugAndPlay(); }
+	int usb_massstorage_available(void);
 	int usb_keyboard_available(void);
 	void usb_reghandler(TKeyStatusHandlerRaw *handler) { m_pKeyboard->RegisterKeyStatusHandlerRaw(handler); }
 	TKernelTimerHandle timer_start(unsigned delay, TKernelTimerHandler *pHandler, void *pParam = 0, void *pContext = 0);
@@ -103,6 +104,7 @@ private:
 	CScheduler			mScheduler;
 	CUSBHCIDevice		m_USBHCI;
 	CUSBKeyboardDevice * volatile m_pKeyboard;
+	CDevice 			*pUMSD1;
 	CEMMCDevice			m_EMMC;
 	CI2CMaster			m_I2c;
 	FATFS				m_FileSystem;
