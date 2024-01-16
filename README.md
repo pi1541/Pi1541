@@ -1,4 +1,4 @@
-# Pi1541 - Circle ported
+# Pi1541 - Circle ported, ready for new features
 
 This is an optional port of Pi1541 to the current Circle bare metal library (as of Jan. 2024, Version 45.3.1).
 
@@ -7,40 +7,42 @@ Target is to remove all Pi bindings which have a counterpart in Circle and to pi
 - Pi4/400 and 5 (later)
 - ...
 
-Credits to Stephen [Pi1541](https://cbm-pi1541.firebaseapp.com/), Rene [circle](https://github.com/rsta2/circle), Stephan [circle-stdlib](https://github.com/smuehlst/circle-stdlib) for the brilliant base packages!
+Credits to Stephen (@pi1541) [Pi1541](https://cbm-pi1541.firebaseapp.com/) and [Pi1541-github](https://github.com/pi1541/Pi1541), Rene (@rsta2) [circle](https://github.com/rsta2/circle), Stephan (@smuehlst) [circle-stdlib](https://github.com/smuehlst/circle-stdlib) for the brilliant base packages!
 
 
 Status
 ------
 Currently only tested for
-- Raspberry 3B+
+- Raspberry 3B+, PiZero 2W: successful load (JiffyDOS) of some games with fastloaders and GEOS
 - LCD Display SSD1306
-- Option A (not support split IECLines) of Pi1541, Option *cannot work* as of now!
-- WiFi stats and seeks for a DHCP server, Webserver runs, but one can only control the led so far
-- USB Massstorage
+- Option A (not support split IECLines) of Pi1541, **Option B cannot work** as of now!
+- Buzzer sound output 
+- USB Keyboard and USB Massstorage
+- WiFi starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
+GPIO handling is still not yet fully replaced by its circle counterpart, so most likely P4 (and younger) still won't work.
 
-GPIO handling is still not yet replaced by its circle counterpart, so most likely P4 (and younger) still won't work.
-
-This was not yet connected to a real C64/ViC20/...
---------------------------------------------------
-I've tested only on the breadboard and see the reactions on the screen, so it's likely to work with a real machine. However the realtime behavior may be changed, so this is the next step to make trials on real retro machines. Stay tuned.
-
-Not yet working & Todos
------------------------
+TODOs
+-----
 - Option B, split IEC lines
-- Soundoutput via Buzzer
+- PWM/DMA Soundoutput
 - Rotary Input
+- Some better output on the LCD and Screen to instruct user: IP address, Status WiFi, etc.
+- Make the webserver useful
+- Make execution more efficient wrt. CPU usage to keep temperature lower, use throtteling to protect the Pi.
 
 - Make checkout and build easier
-- Use it on a real machine!
-
 - find and fix strict RPI model specific sections, which don't fint to RP4+
-  
+- Test more sophisticated loaders (RT behavior)
+
+What will not come
+------------------
+- PiZero support, as it doesn't make sense due to lack of network support
+- Support for all variants of Pi1 and Pi2, as I don't have those to test
+
 Build
 -----
 One can build the Version 1.24 (+some minor fixes: LED & Buzzer work, build/works with gcc > 10.x).
 The circle-version is built by:
-
 
 ```
 mkdir build-pottendo-Pi1541
@@ -66,8 +68,50 @@ cd src
 make -f Makefile.circle clean
 ```
 
-WiFi needs the drivers on the flash card under *firmware/...* and a file *wpa_supplicant.conf* on the toplevel to configure your SSID.
-TODO: add where to get the drivers...
+WiFi needs the drivers on the flash card. You can download like this:
+```
+cd ....build-pottendo-Pi1541
+cd circle-stdlib/libs/circle/addon/wlan/firmware
+make
+```
+this downloads the necessary files in the directory.\
+cp the content to you Pi1541 SDCard in the directlry 
+  *firmware/*
+it should look like this:
+```
+brcmfmac43430-sdio.bin
+brcmfmac43430-sdio.txt
+brcmfmac43436-sdio.bin
+brcmfmac43436-sdio.clm_blob
+brcmfmac43436-sdio.txt
+brcmfmac43455-sdio.bin
+brcmfmac43455-sdio.clm_blob
+brcmfmac43455-sdio.txt
+brcmfmac43456-sdio.bin
+brcmfmac43456-sdio.clm_blob
+brcmfmac43456-sdio.txt
+LICENCE.broadcom_bcm43xx
+
+```
+Further you need a file 
+  *wpa_supplicant.conf* 
+on the toplevel to configure your SSID:
+```
+#
+# wpa_supplicant.conf
+#
+# adjust your country code
+country=AT
+
+network={
+    # adjust your SSID
+    ssid="REPLACE_WITH_MY_NETWORK_SSI"
+    # adjust your WiFi password
+    psk="REPLACYE_WITH_MY_WIFI_PASSWORD"
+    proto=WPA2
+    key_mgmt=WPA-PSK
+}
+```
 
 the *config.txt* on the SDCard must not set kernel_address (therefore commented below) as it's needed for the original Pi1541.
 
@@ -92,7 +136,7 @@ This config.txt enables the uart console on pins 14(TX)/15(RX) - this gives usef
 
 # Disclaimer
 
-**You may damage your beloved devices (Raspberry Pi, Retro machines, C64s, VIC20s, etc) by using this. I do not take any responsibility, so use at your own risk!**
+**Due to some unlikely, unexpected circumstances, you may damage your beloved devices (Raspberry Pi, Retro machines, C64s, VIC20s, etc) by using this software. I do not take any responsibility, so use at your own risk!**
 
 # Pi1541
 
