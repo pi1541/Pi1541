@@ -31,7 +31,7 @@ TODOs
 - Make execution more efficient wrt. CPU usage to keep temperature lower, use throtteling to protect the Pi.
 
 - Make checkout and build easier
-- find and fix strict RPI model specific sections, which don't fint to RP4+
+- find and fix strict RPI model specific sections, which don't fit to RP4+
 - Test more sophisticated loaders (RT behavior)
 
 What will not come
