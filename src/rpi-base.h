@@ -31,6 +31,7 @@
 #ifndef RPI_BASE_H
 #define RPI_BASE_H
 
+#if !defined (__CIRCLE__)
 #ifdef __ASSEMBLER__
 
 #if defined(RPI2) || defined(RPI3)
@@ -58,6 +59,10 @@
 //#endif
 
 //#define MEM_COHERENT_REGION		0x400000
+#endif
+#else
+#include <circle/bcm2835.h>
+#define PERIPHERAL_BASE     ARM_IO_BASE
 
 #include <stdint.h>
 
