@@ -75,7 +75,7 @@ void Keyboard::KeyPressedHandlerRaw(unsigned char modifiers, const unsigned char
 		{
 			int keyStatusIndex = (rawKey >= 64) ? 1 : 0;
 
-			DEBUG_LOG("%x %d\r\n", rawKey, keyStatusIndex);
+			//DEBUG_LOG("%x %d\r\n", rawKey, keyStatusIndex);
 
 			u64 keyBit = 1ULL << (u64)(rawKey & 0x3f);
 			if (keyboard->keyStatusPrev[keyStatusIndex] & keyBit)

@@ -1,5 +1,5 @@
 diff --git a/addon/fatfs/ffconf.h b/addon/fatfs/ffconf.h
-index 4bf3998..e1434e7 100644
+index 4bf3998..13e7a46 100644
 --- a/addon/fatfs/ffconf.h
 +++ b/addon/fatfs/ffconf.h
 @@ -47,7 +47,7 @@
@@ -11,6 +11,16 @@ index 4bf3998..e1434e7 100644
  /* This option switches volume label functions, f_getlabel() and f_setlabel().
  /  (0:Disable or 1:Enable) */
  
+@@ -171,7 +171,8 @@
+ 
+ 
+ #define FF_STR_VOLUME_ID	1
+-#define FF_VOLUME_STRS		"SD","USB","USB2","USB3"
++/* #define FF_VOLUME_STRS		"SD","USB","USB2","USB3" */
++
+ /* FF_STR_VOLUME_ID switches support for volume ID in arbitrary strings.
+ /  When FF_STR_VOLUME_ID is set to 1 or 2, arbitrary strings can be used as drive
+ /  number in the path name. FF_VOLUME_STRS defines the volume ID strings for each
 diff --git a/include/circle/sysconfig.h b/include/circle/sysconfig.h
 index 8b51df3..4101c87 100644
 --- a/include/circle/sysconfig.h

@@ -17,6 +17,7 @@ Currently only tested for
 - LCD Display SSD1306
 - Option A (not support split IECLines) of Pi1541, Option *cannot work* as of now!
 - WiFi stats and seeks for a DHCP server, Webserver runs, but one can only control the led so far
+- USB Massstorage
 
 GPIO handling is still not yet replaced by its circle counterpart, so most likely P4 (and younger) still won't work.
 
@@ -26,13 +27,15 @@ I've tested only on the breadboard and see the reactions on the screen, so it's 
 
 Not yet working & Todos
 -----------------------
-- USB Massstorage
 - Option B, split IEC lines
+- Soundoutput via Buzzer
 - Rotary Input
 
 - Make checkout and build easier
 - Use it on a real machine!
 
+- find and fix strict RPI model specific sections, which don't fint to RP4+
+  
 Build
 -----
 One can build the Version 1.24 (+some minor fixes: LED & Buzzer work, build/works with gcc > 10.x).
@@ -56,7 +59,12 @@ cd ../pottendo-Pi1541/src
 make -f Makefile.circle
 ```
 
-In order to build the standard Pi1541 you have clean the builds by make clean (toplevel), and make -f Makefile.circle in src
+In order to build the standard Pi1541 you have clean the builds by 
+```
+make clean (toplevel)
+cd src
+make -f Makefile.circle clean
+```
 
 WiFi needs the drivers on the flash card under *firmware/...* and a file *wpa_supplicant.conf* on the toplevel to configure your SSID.
 TODO: add where to get the drivers...
@@ -64,22 +72,22 @@ TODO: add where to get the drivers...
 the *config.txt* on the SDCard must not set kernel_address (therefore commented below) as it's needed for the original Pi1541.
 
 ```
-#kernel_address=0x1f00000
+#kernel_address=0x1f00000 # needed for original builds
 arm_64bit=0               # 64 bit won't work
 #armstub=no-prefetch.bin  # not sure if this is needed
 
-enable_uart=1             # Console
+enable_uart=1             # Console 14(TX), 15(RX)
 gpu_mem=16
 
 hdmi_group=2
-hdmi_mode=16
+hdmi_mode=16              # 1024x768 @ 60Hz (in group 2)
 
-#kernel=kernel.img      # use this for the original build
-kernel=kernel8-32.img
+#kernel=kernel.img        # use this for the original build
+kernel=kernel8-32.img     # Circle build default name
 
 ```
 
-This config.txt enables the uart console on pins 14/15 - this gives useful log information.
+This config.txt enables the uart console on pins 14(TX)/15(RX) - this gives useful log information.
 *options.txt* and all the other content on a Pi1541 sdcard are similar to the original
 
 # Disclaimer

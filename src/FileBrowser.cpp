@@ -32,6 +32,8 @@ extern "C"
 {
 #include "rpi-gpio.h"
 }
+#else
+const char* VolumeStr[FF_VOLUMES] = {"SD","USB01","USB02", "USB03"};
 #endif
 
 #include "iec_commands.h"
