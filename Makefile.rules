@@ -17,22 +17,22 @@ LD	= $(PREFIX)ld
 AR	= $(PREFIX)ar
 
 ifeq ($(strip $(RASPPI)),0)
-	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPIZERO=1 -DEXPERIMENTALZERO=1
+	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -mno-unaligned-access -DRPIZERO=1 -DEXPERIMENTALZERO=1
 	CFLAGS	+= -DRPIZERO=1 -DRASPPI=1
 else ifeq ($(strip $(RASPPI)),1BRev1)
-	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPI1BREV1=1 -DEXPERIMENTALZERO=1
+	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -mno-unaligned-access-DRPI1BREV1=1 -DEXPERIMENTALZERO=1
 	CFLAGS	+= -DRPI1BREV1=1 -DRASPPI=1
 else ifeq ($(strip $(RASPPI)),1BRev2)
-	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPI1BREV2=1 -DEXPERIMENTALZERO=1
+	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -mno-unaligned-access-DRPI1BREV2=1 -DEXPERIMENTALZERO=1
 	CFLAGS	+= -DRPI1BREV2=1 -DRASPPI=1
 else ifeq ($(strip $(RASPPI)),1BPlus)
-	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -DRPI1BPLUS=1 -DEXPERIMENTALZERO=1
+	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -mno-unaligned-access -DRPI1BPLUS=1 -DEXPERIMENTALZERO=1
 	CFLAGS	+= -DRPI1BPLUS=1 -DRASPPI=1
 else ifeq ($(strip $(RASPPI)),2)
-	ARCH	?= -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -marm -DRPI2=1 -DEXPERIMENTALZERO=1
+	ARCH	?= -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -marm -mno-unaligned-access -DRPI2=1 -DEXPERIMENTALZERO=1
 	CFLAGS	+= -DRPI2=1
 else ifeq ($(strip $(RASPPI)),3)
-	ARCH	?= -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8 -mfloat-abi=hard -marm -DRPI3=1
+	ARCH	?= -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8 -mfloat-abi=hard -marm -mno-unaligned-access -DRPI3=1
 	CFLAGS	+= -DRPI3=1
 else
 	$(error RASPPI must be one of: 0, 1BRev1, 1BRev2, 1BPlus, 2, 3)
