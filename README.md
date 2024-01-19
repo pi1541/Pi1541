@@ -25,6 +25,7 @@ Startup currently unconditionally tries to connect to the WiFi. The LCD shows th
 The address is briefly shown, once received. One can check the IP address on the screen (HDMI).
 
 <p>
+
 **Attention**: the operating temperature is substantially higher than with the original kernel. It is recommended to use _active_ cooling as of now. Raspeberry PIs normally protect themselves through throtteling. This should work at 85C - for some reason I can't lower this threshold via `cmdline.txt` using `socmaxtemp=70`, as this doesn't set the limit as documented [here](https://circle-rpi.readthedocs.io/en/latest/basic-system-services/cpu-clock-rate-management.html#ccputhrottle) - at least not on my RPi3.
 
 TODOs
