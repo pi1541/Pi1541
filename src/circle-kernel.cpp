@@ -56,7 +56,8 @@ CKernel::CKernel(void) :
 	m_Net (0, 0, 0, 0, DEFAULT_HOSTNAME, NetDeviceTypeWLAN),
 #endif
 	m_WPASupplicant (_CONFIG_FILE),
-	m_MCores(CMemorySystem::Get())
+	m_MCores(CMemorySystem::Get()),
+	ip_address(nullptr)
 {
 	//blink(3);
 	//mLogger.Write("pottendo-kern", LogNotice, "CKernel Constructor...");
@@ -105,10 +106,14 @@ extern int mandel_iterate(int);
 TShutdownMode CKernel::Run (void)
 {
 	mLogger.Write ("pottendo-kern", LogNotice, "pottendo-Pi1541 (%dx%d)", mScreen.GetWidth(), mScreen.GetHeight());
-	run_wifi();
 //	(void) mandel_iterate(1000*1000);
 
 	kernel_main(0, 0, 0);
+	//	DisplayMessage(0, 0, true, "Connect WiFi...", 0xffffffff, 0x0);
+	run_wifi();
+	Kernel.launch_cores();
+	UpdateScreen();
+
 	log("unexpected return of display thread");
 	return ShutdownHalt;
 }
@@ -140,7 +145,7 @@ boolean CKernel::init_screen(u32 widthDesired, u32 heightDesired, u32 colourDept
 void CKernel::run_wifi(void) 
 {
 	bool bOK = true;
-	CString IPString;
+	static CString IPString;
 	if (bOK) bOK = m_WLAN.Initialize();
 	if (bOK) bOK = m_Net.Initialize(FALSE);
 	if (bOK) bOK = m_WPASupplicant.Initialize();
@@ -155,14 +160,22 @@ void CKernel::run_wifi(void)
 	m_Net.GetConfig ()->GetIPAddress ()->Format (&IPString);
 	mLogger.Write ("pottendo-kern", LogNotice, "Open \"http://%s/\" in your web browser!",
 			(const char *) IPString);
+	ip_address = (const char *) IPString;
+	DisplayMessage(0, 16, true, (const char*) IPString, 0xffffffff, 0x0);
+	MsDelay(3000);
 }
 
 void CKernel::run_webserver(void) 
 {
+	while (!m_Net.IsRunning ())
+	{
+		mScheduler.MsSleep (1000);
+		log("webserver waits for network...");
+	}
 	new CWebServer (&m_Net, &m_ActLED);
 	for (unsigned nCount = 0; 1; nCount++)
 	{
-		mScheduler.Yield ();
+		mScheduler.MsSleep (100);
 		mScreen.Rotor (0, nCount);
 	}
 }
@@ -227,6 +240,51 @@ int CKernel::usb_massstorage_available(void)
 	return 1;
 }
 
+void monitorhandler(TSystemThrottledState CurrentState, void *pParam)
+{
+	if (CurrentState | SystemStateUnderVoltageOccurred)
+	{
+		Kernel.log("%s: undervoltage occured...", __FUNCTION__);
+	}
+	if (CurrentState | SystemStateFrequencyCappingOccurred)
+	{
+		Kernel.log("%s: frequency capping occured...", __FUNCTION__);
+	}
+	if (CurrentState | SystemStateThrottlingOccurred)
+	{
+		Kernel.log("%s: throttling occured to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
+	}
+	if (CurrentState | SystemStateSoftTempLimitOccurred)
+	{
+		Kernel.log("%s: softtemplimit occured...", __FUNCTION__);
+	}
+}
+
+void CKernel::run_tempmonitor(void)
+{
+	unsigned t = 0;
+
+    unsigned tmask = SystemStateUnderVoltageOccurred | SystemStateFrequencyCappingOccurred |
+					 SystemStateThrottlingOccurred | SystemStateSoftTempLimitOccurred;
+	CPUThrottle.RegisterSystemThrottledHandler(tmask, monitorhandler, nullptr);
+	// CPUThrottle.DumpStatus(true);
+	log("Maximum temp set to %d, dynamic adaption%spossible, curret freq = %dMHz (max=%dMHz)", 
+			CPUThrottle.GetMaxTemperature(), 
+			CPUThrottle.IsDynamic() ? " " : " not ",
+			CPUThrottle.GetClockRate() / 1000000L, 
+			CPUThrottle.GetMaxClockRate() / 1000000L);
+	if (CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown)
+		log ("maxed freq to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
+
+	while (true) {
+		if (CPUThrottle.SetOnTemperature() == false)
+			log("temperature monitor failed...");
+		MsDelay(5 * 1000);
+		GetTemperature(t);
+		log("Temperature = %dC", t / 1000); 
+	}
+}
+
 TKernelTimerHandle CKernel::timer_start(unsigned delay, TKernelTimerHandler *pHandler, void *pParam, void *pContext)
 {
 	return mTimer.StartKernelTimer(delay, pHandler, pParam, pContext);
@@ -242,6 +300,9 @@ void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 	case 2:
 		Kernel.log("launching webserver on core %d", core);
 		Kernel.run_webserver();
+		break;
+	case 3:	/* health monitoring */
+		Kernel.run_tempmonitor();
 		break;
 	default:
 		break;

@@ -487,7 +487,10 @@ void UpdateScreen()
 			screen.PrintText(false, 12 * 8, y, tempBuffer, textColour, bgColour);
 			//refreshUartStatusDisplay = true;
 		}
-
+#if defined (__CIRCLE__)
+		snprintf(tempBuffer, tempBufferSize, "IP address: %s", Kernel.get_ip());
+		screen.PrintText(false, 0, y + 20, tempBuffer, textColour, bgColour);		
+#endif
 		if (options.GraphIEC())
 			screen.DrawLineV(graphX, top3, bottom, BkColour);
 
@@ -657,9 +660,11 @@ void UpdateScreen()
 		//	UpdateUartControls(refreshUartStatusDisplay, oldLED, oldMotor, oldATN, oldDATA, oldCLOCK, oldTrack, romIndex);
 
 		// Go back to sleep. The USB irq will wake us up again.
-		//Kernel.yield();
-		MsDelay(4);
-		//FIXME: __asm ("WFE");
+#if defined (__CIRCLE__)		
+		MsDelay(10);		/* less CPU demanding */
+#else		
+		__asm ("WFE");
+#endif
 	}
 #endif
 }
@@ -1909,9 +1914,10 @@ extern "C"
 		LoadOptions();
 
 		InitialiseHardware();
+#if !defined (__CIRCLE__)
 		enable_MMU_and_IDCaches();
 		_enable_unaligned_access();
-
+#endif
 		write32(ARM_GPIO_GPCLR0, 0xFFFFFFFF);
 
 		DisplayLogo();
@@ -1939,10 +1945,13 @@ extern "C"
 		//if (!options.QuickBoot())
 			//IEC_Bus::WaitMicroSeconds(3 * 1000000);
 
+#if !defined (__CIRCLE__)		
 		InterruptSystemInitialize();
+#endif
 #if not defined(EXPERIMENTALZERO)
+#if !defined (__CIRCLE__)		
 		TimerSystemInitialize();
-
+#endif
 		USPiInitialize();
 
 		DEBUG_LOG("\r\n");
@@ -2013,9 +2022,9 @@ extern "C"
 		pi1541.drive.SetVIA(&pi1541.VIA[1]);
 		pi1541.VIA[0].GetPortB()->SetPortOut(0, IEC_Bus::PortB_OnPortOut);
 		IEC_Bus::Initialise();
+#if !defined(__CIRCLE__) 
 		if (screenLCD)
 			screenLCD->ClearInit(0);
-#if !defined(__CIRCLE__) 
 #ifdef HAS_MULTICORE
 		start_core(3, _spin_core);
 		start_core(2, _spin_core);
@@ -2030,9 +2039,6 @@ extern "C"
 #ifndef USE_MULTICORE
 		emulator();	// If only one core the emulator runs on it now.
 #endif
-#else
-		Kernel.launch_cores();
-		UpdateScreen();
 #endif		
 	}
 }

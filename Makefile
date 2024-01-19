@@ -11,11 +11,17 @@ OBJS    := $(addprefix $(SRCDIR)/, $(OBJS))
 LIBS     = uspi/libuspi.a
 INCLUDE  = -Iuspi/include/
 
-TARGET  ?= kernel
-
+TARGET_CIRCLE ?= kernel8-32.img
+TARGET ?= kernel
 .PHONY: all $(LIBS)
 
-all: $(TARGET)
+all: $(TARGET_CIRCLE)
+
+legacy: $(TARGET)
+
+$(TARGET_CIRCLE): 
+	$(MAKE) -C $(SRCDIR) -f Makefile.circle
+	cp $(SRCDIR)/$@ .
 
 $(TARGET): $(OBJS) $(LIBS)
 	@echo "  LINK $@"
@@ -27,7 +33,8 @@ uspi/libuspi.a:
 	$(MAKE) -C uspi
 
 clean:
-	$(Q)$(RM) $(OBJS) $(TARGET).elf $(TARGET).map $(TARGET).lst $(TARGET).img
+	$(Q)$(RM) $(OBJS) $(TARGET).elf $(TARGET).map $(TARGET).lst $(TARGET).img $(TARGET_CIRCLE)
 	$(MAKE) -C uspi clean
+	$(MAKE) -C $(SRCDIR) -f Makefile.circle clean
 
 include Makefile.rules

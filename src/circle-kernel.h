@@ -90,6 +90,8 @@ public:
 	void usb_reghandler(TKeyStatusHandlerRaw *handler) { m_pKeyboard->RegisterKeyStatusHandlerRaw(handler); }
 	TKernelTimerHandle timer_start(unsigned delay, TKernelTimerHandler *pHandler, void *pParam = 0, void *pContext = 0);
 	void timer_cancel(TKernelTimerHandle handler) { mTimer.CancelKernelTimer(handler); }
+	const char *get_ip(void) { return ip_address; }
+	void run_tempmonitor(void);
 
 private:
 	CActLED				m_ActLED;
@@ -113,6 +115,7 @@ private:
 	CNetSubSystem		m_Net;
 	CWPASupplicant		m_WPASupplicant;
 	Pi1541Cores		 	m_MCores;
+	const char *ip_address; 
 };
 
 extern CKernel Kernel;
@@ -140,7 +143,11 @@ void UpdateLCD(const char* track, unsigned temperature);
 void DisplayI2CScan(int y_pos);
 void emulator(void);
 
-extern "C" void kernel_main(unsigned int r0, unsigned int r1, unsigned int atags);
+extern "C" {
+	void kernel_main(unsigned int r0, unsigned int r1, unsigned int atags);
+	void UpdateScreen(void);
+}
+void DisplayMessage(int x, int y, bool LCD, const char* message, u32 textColour, u32 backgroundColour);
 
 /* I2C provided by Circle */
 #define RPI_I2CInit i2c_init
