@@ -37,13 +37,7 @@ inline int ceil(float num) {
 class Drive
 {
 public:
-	Drive();
-
-	void SetVIA(m6522* pVIA)
-	{
-		m_pVIA = pVIA;
-		pVIA->GetPortB()->SetPortOut(this, OnPortOut);
-	}
+	Drive(m6522* pVIA);
 
 	static void OnPortOut(void*, unsigned char status);
 

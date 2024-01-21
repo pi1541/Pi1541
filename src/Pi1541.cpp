@@ -161,6 +161,7 @@ void write6502ExtraRAM(u16 address, const u8 value)
 }
 
 Pi1541::Pi1541()
+	: drive(&VIA[1])
 {
 	VIA[0].ConnectIRQ(&m6502.IRQ);
 	VIA[1].ConnectIRQ(&m6502.IRQ);
