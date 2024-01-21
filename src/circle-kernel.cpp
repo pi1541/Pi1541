@@ -110,7 +110,7 @@ TShutdownMode CKernel::Run (void)
 
 	kernel_main(0, 0, 0);
 	//	DisplayMessage(0, 0, true, "Connect WiFi...", 0xffffffff, 0x0);
-	run_wifi();
+	//run_wifi();
 	Kernel.launch_cores();
 	UpdateScreen();
 
@@ -260,10 +260,10 @@ void monitorhandler(TSystemThrottledState CurrentState, void *pParam)
 	}
 }
 
+#include <circle/gpiopin.h>
+
 void CKernel::run_tempmonitor(void)
 {
-	unsigned t = 0;
-
     unsigned tmask = SystemStateUnderVoltageOccurred | SystemStateFrequencyCappingOccurred |
 					 SystemStateThrottlingOccurred | SystemStateSoftTempLimitOccurred;
 	CPUThrottle.RegisterSystemThrottledHandler(tmask, monitorhandler, nullptr);
@@ -275,13 +275,17 @@ void CKernel::run_tempmonitor(void)
 			CPUThrottle.GetMaxClockRate() / 1000000L);
 	if (CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown)
 		log ("maxed freq to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
+	log("ARM_GPIO_GPFSEL1 = 0x%08x", ARM_GPIO_GPFSEL1);
+	log("ARM_GPIO_GPSET0 = 0x%08x", ARM_GPIO_GPSET0);
+	log("ARM_GPIO_GPCLR0 = 0x%08x", ARM_GPIO_GPCLR0);
 
+	CGPIOPin B1(16, GPIOModeOutput);
 	while (true) {
 		if (CPUThrottle.SetOnTemperature() == false)
 			log("temperature monitor failed...");
-		MsDelay(5 * 1000);
-		GetTemperature(t);
-		log("Temperature = %dC", t / 1000); 
+		MsDelay(1 * 1000);
+		log("Temperature = %dC, IO is 0x%08x", CPUThrottle.GetTemperature(), CGPIOPin::ReadAll()); 
+		B1.Invert();
 	}
 }
 
@@ -298,8 +302,8 @@ void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 		emulator();
 		break;
 	case 2:
-		Kernel.log("launching webserver on core %d", core);
-		Kernel.run_webserver();
+		//Kernel.log("launching webserver on core %d", core);
+		//Kernel.run_webserver();
 		break;
 	case 3:	/* health monitoring */
 		Kernel.run_tempmonitor();

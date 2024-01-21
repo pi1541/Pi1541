@@ -201,6 +201,7 @@ enum PIGPIOMasks
 };
 
 static const unsigned ButtonPinFlags[5] = { PIGPIO_MASK_IN_BUTTON1, PIGPIO_MASK_IN_BUTTON2, PIGPIO_MASK_IN_BUTTON3, PIGPIO_MASK_IN_BUTTON4, PIGPIO_MASK_IN_BUTTON5 };
+static const unsigned ButtonPins[5] = { PIGPIO_IN_BUTTON1, PIGPIO_IN_BUTTON2, PIGPIO_IN_BUTTON3, PIGPIO_IN_BUTTON4, PIGPIO_IN_BUTTON5 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Original Non-split lines
@@ -295,14 +296,22 @@ typedef bool(*CheckStatus)();
 
 class IEC_Bus
 {
+	static CGPIOPin IO_led;
+	static CGPIOPin IO_sound;
+	static CGPIOPin IO_ATN;
+	static CGPIOPin IO_CLK;
+	static CGPIOPin IO_DAT;
+	static CGPIOPin IO_SRQ;
+	static CGPIOPin IO_RST;
+	static CGPIOPin IO_buttons[5];
 public:
 	static inline void Initialise(void)
 	{
 		volatile int index; // Force a real delay in the loop below.
-
+		Kernel.log("Initialising IEC...");
 		// Clear all outputs to 0
-		write32(ARM_GPIO_GPCLR0, 0xFFFFFFFF);
-
+		//write32(ARM_GPIO_GPCLR0, 0xFFFFFFFF);
+		CGPIOPin::WriteAll(0xffffffff, 0xffffffff);
 		if (!splitIECLines)
 		{
 			// This means that when any pin is turn to output it will output a 0 and pull lines low (ie an activation state on the IEC bus)
@@ -311,8 +320,20 @@ public:
 			myOutsGPFSEL0 = read32(ARM_GPIO_GPFSEL0);
 			myOutsGPFSEL1 = read32(ARM_GPIO_GPFSEL1);
 
+			IEC_Bus::IO_led.AssignPin(PIGPIO_OUT_LED); IEC_Bus::IO_led.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_sound.AssignPin(PIGPIO_OUT_SOUND); IEC_Bus::IO_sound.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_CLK.AssignPin(PIGPIO_CLOCK); IEC_Bus::IO_CLK.SetMode(GPIOModeInput);
+			IEC_Bus::IO_ATN.AssignPin(PIGPIO_ATN); IEC_Bus::IO_ATN.SetMode(GPIOModeInput);
+			IEC_Bus::IO_DAT.AssignPin(PIGPIO_DATA); IEC_Bus::IO_DAT.SetMode(GPIOModeInput);
+			IEC_Bus::IO_SRQ.AssignPin(PIGPIO_SRQ); IEC_Bus::IO_SRQ.SetMode(GPIOModeInput);
+			IEC_Bus::IO_RST.AssignPin(PIGPIO_RESET); IEC_Bus::IO_RST.SetMode(GPIOModeInput);
+			for (int i = 0; i < 5; i++) {
+				IO_buttons[i].AssignPin(ButtonPins[i]);
+				IO_buttons[i].SetMode(GPIOModeInput);
+			}
 			myOutsGPFSEL1 |= (1 << ((PIGPIO_OUT_LED - 10) * 3));
 			myOutsGPFSEL1 |= (1 << ((PIGPIO_OUT_SOUND - 10) * 3));
+
 			//RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_SOUND, FS_OUTPUT);
 			//RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_LED, FS_OUTPUT);
 		}
@@ -409,7 +430,8 @@ public:
 
 	static void UpdateButton(int index, unsigned gplev0)
 	{
-		bool inputcurrent = (gplev0 & ButtonPinFlags[index]) == 0;
+		//XXX bool inputcurrent = (gplev0 & ButtonPinFlags[index]) == 0;
+		bool inputcurrent = IO_buttons[index].Read() == 0;
 
 		InputButtonPrev[index] = InputButton[index];
 		inputRepeatPrev[index] = inputRepeat[index];
@@ -491,7 +513,9 @@ public:
 		unsigned gplev0;
 		do
 		{
-			gplev0 = read32(ARM_GPIO_GPLEV0);
+			//XXX gplev0 = read32(ARM_GPIO_GPLEV0);
+			gplev0 = CGPIOPin::ReadAll();
+
 			Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == \
 				 (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 
@@ -508,6 +532,7 @@ public:
 
 	static inline void RefreshOuts1581(void)
 	{
+Kernel.log("%s: 1", __FUNCTION__);
 		unsigned set = 0;
 		unsigned clear = 0;
 		unsigned tmp;
