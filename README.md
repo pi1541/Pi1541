@@ -54,7 +54,7 @@ Checkout & Build
 ----------------
 One can build the Version 1.24 (+some minor fixes: LED & Buzzer work, build/works with gcc > 10.x).
 
-The circle-version is built by:
+The circle-stdlib used by this project is built by:
 
 ```
 BUILDDIR=build-pottendo-Pi1541

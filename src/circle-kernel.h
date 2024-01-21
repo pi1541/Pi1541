@@ -31,6 +31,7 @@
 #include <circle/usb/usbhcidevice.h>
 #include <circle/usb/usbkeyboard.h>
 #include <circle/sched/scheduler.h>
+#include <circle/memio.h>
 #include <SDCard/emmc.h>
 #include <circle/i2cmaster.h>
 #include <fatfs/ff.h>

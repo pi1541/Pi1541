@@ -242,19 +242,19 @@ int CKernel::usb_massstorage_available(void)
 
 void monitorhandler(TSystemThrottledState CurrentState, void *pParam)
 {
-	if (CurrentState | SystemStateUnderVoltageOccurred)
+	if (CurrentState & SystemStateUnderVoltageOccurred)
 	{
 		Kernel.log("%s: undervoltage occured...", __FUNCTION__);
 	}
-	if (CurrentState | SystemStateFrequencyCappingOccurred)
+	if (CurrentState & SystemStateFrequencyCappingOccurred)
 	{
 		Kernel.log("%s: frequency capping occured...", __FUNCTION__);
 	}
-	if (CurrentState | SystemStateThrottlingOccurred)
+	if (CurrentState & SystemStateThrottlingOccurred)
 	{
 		Kernel.log("%s: throttling occured to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
 	}
-	if (CurrentState | SystemStateSoftTempLimitOccurred)
+	if (CurrentState & SystemStateSoftTempLimitOccurred)
 	{
 		Kernel.log("%s: softtemplimit occured...", __FUNCTION__);
 	}
