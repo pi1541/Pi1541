@@ -279,13 +279,13 @@ void CKernel::run_tempmonitor(void)
 	log("ARM_GPIO_GPSET0 = 0x%08x", ARM_GPIO_GPSET0);
 	log("ARM_GPIO_GPCLR0 = 0x%08x", ARM_GPIO_GPCLR0);
 
-	CGPIOPin B1(16, GPIOModeOutput);
+	//CGPIOPin B1(16, GPIOModeOutput);
 	while (true) {
 		if (CPUThrottle.SetOnTemperature() == false)
 			log("temperature monitor failed...");
 		MsDelay(1 * 1000);
 		log("Temperature = %dC, IO is 0x%08x", CPUThrottle.GetTemperature(), CGPIOPin::ReadAll()); 
-		B1.Invert();
+		//B1.Invert();
 	}
 }
 
