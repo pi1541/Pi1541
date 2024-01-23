@@ -26,7 +26,9 @@
 
 extern "C"
 {
+#if !defined (__CIRCLE__)	
 	#include "rpi-mailbox-interface.h"
+#endif	
 	#include "xga_font_data.h"
 }
 

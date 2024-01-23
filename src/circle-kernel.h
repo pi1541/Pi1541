@@ -25,6 +25,7 @@
 #include <circle/serial.h>
 #include <circle/exceptionhandler.h>
 #include <circle/interrupt.h>
+#include <circle/memio.h>
 #include <circle/timer.h>
 #include <circle/logger.h>
 #include <circle/types.h>
