@@ -430,15 +430,15 @@ public:
 
 	static void UpdateButton(int index, unsigned gplev0)
 	{
-		//XXX bool inputcurrent = (gplev0 & ButtonPinFlags[index]) == 0;
-		bool inputcurrent = IO_buttons[index].Read() == 0;
+		bool inputcurrent = (gplev0 & ButtonPinFlags[index]) == 0;
+		//XXXbool inputcurrent = IO_buttons[index].Read() == 0;
 
 		InputButtonPrev[index] = InputButton[index];
 		inputRepeatPrev[index] = inputRepeat[index];
 
 		if (inputcurrent)
 		{
-			Kernel.log("%s: button %d fired", __FUNCTION__, index);
+			//Kernel.log("%s: button %d fired", __FUNCTION__, index);
 			validInputCount[index]++;
 			if (validInputCount[index] == INPUT_BUTTON_DEBOUNCE_THRESHOLD)
 			{
