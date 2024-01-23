@@ -542,23 +542,25 @@ Kernel.log("%s: 1", __FUNCTION__);
 		if (!splitIECLines)
 		{
 			unsigned outputs = 0;
-#if 0
+#if 1
 			if (AtnaDataSetToOut || DataSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_DATA - 10) * 3));
 			if (ClockSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_CLOCK - 10) * 3));
 			//if (SRQSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_SRQ - 10) * 3));			// For Option A hardware we should not support pulling more than 2 lines low at any one time!
 
 			unsigned nValue = (myOutsGPFSEL1 & PI_OUTPUT_MASK_GPFSEL1) | outputs;
 			write32(ARM_GPIO_GPFSEL1, nValue);
-#endif
+#else
 			if (AtnaDataSetToOut || DataSetToOut)
 			{
 				IEC_Bus::IO_DAT.SetMode(GPIOModeOutput, true);
 				//Kernel.log("%s: DATA fired", __FUNCTION__);
 			}
+			else IEC_Bus::IO_DAT.SetMode(GPIOModeInput, true);
 			if (ClockSetToOut) {
 				IEC_Bus::IO_CLK.SetMode(GPIOModeOutput, true);
 				//Kernel.log("%s: CLOCK fired", __FUNCTION__);
-			}
+			} else IEC_Bus::IO_CLK.SetMode(GPIOModeInput, true);
+#endif
 		}
 		else
 		{
