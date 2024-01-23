@@ -165,7 +165,7 @@ void IEC_Bus::ReadBrowseMode(void)
 	if (!AtnaDataSetToOut && !DataSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
 	{
 		//XXX bool DATAIn = (gplev0 & PIGPIO_MASK_IN_DATA) == (invertIECInputs ? PIGPIO_MASK_IN_DATA : 0);
-		IEC_Bus::IO_DAT.SetMode(GPIOModeInput);
+		IEC_Bus::IO_DAT.SetMode(GPIOModeInput, true);
 		bool DATAIn = IEC_Bus::IO_DAT.Read() == (invertIECInputs ? PIGPIO_MASK_IN_DATA : 0);
 		if (PI_Data != DATAIn)
 		{
@@ -180,7 +180,7 @@ void IEC_Bus::ReadBrowseMode(void)
 	if (!ClockSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
 	{
 		//bool CLOCKIn = (gplev0 & PIGPIO_MASK_IN_CLOCK) == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK  : 0);
-		IEC_Bus::IO_CLK.SetMode(GPIOModeInput);
+		IEC_Bus::IO_CLK.SetMode(GPIOModeInput, true);
 		bool CLOCKIn = IEC_Bus::IO_CLK.Read() == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK  : 0);
 		if (PI_Clock != CLOCKIn)
 		{
@@ -403,9 +403,14 @@ void IEC_Bus::RefreshOuts1541(void)
 			IEC_Bus::IO_DAT.SetMode(GPIOModeOutput, true);
 			//Kernel.log("%s: DATA fired", __FUNCTION__);
 		}
+		else {
+			IEC_Bus::IO_DAT.SetMode(GPIOModeInput, true);
+		}
 		if (ClockSetToOut) {
 			IEC_Bus::IO_CLK.SetMode(GPIOModeOutput, true);
 			//Kernel.log("%s: CLOCK fired", __FUNCTION__);
+		} else {
+			IEC_Bus::IO_CLK.SetMode(GPIOModeInput, true);
 		}
 	}
 	else
