@@ -153,6 +153,7 @@ void IEC_Bus::ReadBrowseMode(void)
 {
 	//XXXgplev0 = read32(ARM_GPIO_GPLEV0);
 	gplev0 = CGPIOPin::ReadAll();
+	gplev0 = CGPIOPin::ReadAll();
 	ReadGPIOUserInput();
 
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);

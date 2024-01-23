@@ -61,8 +61,8 @@
 
 //#define MEM_COHERENT_REGION		0x400000
 #else
-//#include <circle/bcm2835.h>
-#include <circle/bcm2711.h>
+#include <circle/bcm2835.h>
+//#include <circle/bcm2711.h>
 #define PERIPHERAL_BASE     ARM_IO_BASE
 #endif
 

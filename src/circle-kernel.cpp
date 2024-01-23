@@ -17,6 +17,7 @@
 #include "circle-kernel.h"
 
 #include <stdio.h>
+#include <cstring>
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
@@ -56,8 +57,7 @@ CKernel::CKernel(void) :
 	m_Net (0, 0, 0, 0, DEFAULT_HOSTNAME, NetDeviceTypeWLAN),
 #endif
 	m_WPASupplicant (_CONFIG_FILE),
-	m_MCores(CMemorySystem::Get()),
-	ip_address(nullptr)
+	m_MCores(CMemorySystem::Get())
 {
 	//blink(3);
 	//mLogger.Write("pottendo-kern", LogNotice, "CKernel Constructor...");
@@ -71,6 +71,7 @@ CKernel::CKernel(void) :
 			pTarget = &mScreen;
 		bOK = mLogger.Initialize (&mSerial);
 	}
+	strcpy(ip_address, "<not assigned>");
 }
 
 boolean CKernel::Initialize (void) 
@@ -110,7 +111,7 @@ TShutdownMode CKernel::Run (void)
 
 	kernel_main(0, 0, 0);
 	//	DisplayMessage(0, 0, true, "Connect WiFi...", 0xffffffff, 0x0);
-	//run_wifi();
+	run_wifi();
 	Kernel.launch_cores();
 	UpdateScreen();
 
@@ -145,7 +146,7 @@ boolean CKernel::init_screen(u32 widthDesired, u32 heightDesired, u32 colourDept
 void CKernel::run_wifi(void) 
 {
 	bool bOK = true;
-	static CString IPString;
+	CString IPString;
 	if (bOK) bOK = m_WLAN.Initialize();
 	if (bOK) bOK = m_Net.Initialize(FALSE);
 	if (bOK) bOK = m_WPASupplicant.Initialize();
@@ -160,7 +161,7 @@ void CKernel::run_wifi(void)
 	m_Net.GetConfig ()->GetIPAddress ()->Format (&IPString);
 	mLogger.Write ("pottendo-kern", LogNotice, "Open \"http://%s/\" in your web browser!",
 			(const char *) IPString);
-	ip_address = (const char *) IPString;
+	strncpy(ip_address, (const char *) IPString, 31); ip_address[31] = '\0';
 	DisplayMessage(0, 16, true, (const char*) IPString, 0xffffffff, 0x0);
 	MsDelay(3000);
 }

@@ -116,7 +116,7 @@ private:
 	CNetSubSystem		m_Net;
 	CWPASupplicant		m_WPASupplicant;
 	Pi1541Cores		 	m_MCores;
-	const char *ip_address; 
+	char ip_address[32]; 
 };
 
 extern CKernel Kernel;
