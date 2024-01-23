@@ -534,7 +534,6 @@ public:
 
 	static inline void RefreshOuts1581(void)
 	{
-Kernel.log("%s: 1", __FUNCTION__);
 		unsigned set = 0;
 		unsigned clear = 0;
 		unsigned tmp;
