@@ -66,10 +66,17 @@ git clone --recursive https://github.com/smuehlst/circle-stdlib.git
 cd circle-stdlib
 # configure for Rasppi3 (also 3 for PiZero2W!)
 ./configure -r 3
+
+# Path Circle sysconfigh on ffconf.h to adapt to Pi1541 needs
+
+cd libs/circle
+patch -p1 < ../../../pottendo-Pi1541/src/Circle/patch-circle.diff 
+cd ../..
+
+# build circle-lib
 make
 
-# Set/edit some options in libs/circle/include/circle/sysconfig.h and libs/circle/addon/fatfs/ffconf.h, see src/Circle/patch-circle.diff
-
+# build Pi1541 based on circle
 cd ${BUILDDIR}/pottendo-Pi1541
 make 
 ```
