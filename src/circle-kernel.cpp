@@ -274,19 +274,17 @@ void CKernel::run_tempmonitor(void)
 			CPUThrottle.IsDynamic() ? " " : " not ",
 			CPUThrottle.GetClockRate() / 1000000L, 
 			CPUThrottle.GetMaxClockRate() / 1000000L);
-	if (CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown)
-		log ("maxed freq to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
+	//if (CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown)
+	//	log ("maxed freq to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
 	log("ARM_GPIO_GPFSEL1 = 0x%08x", ARM_GPIO_GPFSEL1);
 	log("ARM_GPIO_GPSET0 = 0x%08x", ARM_GPIO_GPSET0);
 	log("ARM_GPIO_GPCLR0 = 0x%08x", ARM_GPIO_GPCLR0);
 
-	//CGPIOPin B1(16, GPIOModeOutput);
 	while (true) {
 		if (CPUThrottle.SetOnTemperature() == false)
 			log("temperature monitor failed...");
-		MsDelay(1 * 1000);
-		log("Temperature = %dC, IO is 0x%08x", CPUThrottle.GetTemperature(), CGPIOPin::ReadAll()); 
-		//B1.Invert();
+		MsDelay(5 * 1000);
+		//log("Temperature = %dC, IO is 0x%08x", CPUThrottle.GetTemperature(), CGPIOPin::ReadAll()); 
 	}
 }
 
@@ -303,10 +301,11 @@ void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 		emulator();
 		break;
 	case 2:
-		//Kernel.log("launching webserver on core %d", core);
-		//Kernel.run_webserver();
+		Kernel.log("launching webserver on core %d", core);
+		Kernel.run_webserver();
 		break;
 	case 3:	/* health monitoring */
+		Kernel.log("launching system monitoring on core %d", core);
 		Kernel.run_tempmonitor();
 		break;
 	default:

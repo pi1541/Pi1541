@@ -153,7 +153,6 @@ void IEC_Bus::ReadBrowseMode(void)
 {
 	//XXXgplev0 = read32(ARM_GPIO_GPLEV0);
 	gplev0 = CGPIOPin::ReadAll();
-	gplev0 = CGPIOPin::ReadAll();
 	ReadGPIOUserInput();
 
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
@@ -251,7 +250,6 @@ void IEC_Bus::ReadEmulationMode1541(void)
 		portB->SetInput(VIAPORTPINS_DATAIN, true);	// simulate the read in software
 	}
 #else
-#error "Fix CIRCLE porting"
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
 	if (PI_Atn != ATNIn)
 	{
@@ -297,8 +295,8 @@ void IEC_Bus::ReadEmulationMode1541(void)
 		portB->SetInput(VIAPORTPINS_CLOCKIN, true); // simulate the read in software
 	}
 
-	//XXXResetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
-	Resetting = !ignoreReset && (IEC_Bus::IO_RST.Read() == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+	//XXXResetting = !ignoreReset && (IEC_Bus::IO_RST.Read() == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 }
 
 void IEC_Bus::ReadEmulationMode1581(void)
@@ -425,7 +423,7 @@ void IEC_Bus::RefreshOuts1541(void)
 		}
 	}
 
-#if 0
+#if 1	/* this is needed, the Circle code won't work on RPI3s */
 	if (OutputLED) set |= 1 << PIGPIO_OUT_LED;
 	else clear |= 1 << PIGPIO_OUT_LED;
 
@@ -434,11 +432,13 @@ void IEC_Bus::RefreshOuts1541(void)
 
 	write32(ARM_GPIO_GPCLR0, clear);
 	write32(ARM_GPIO_GPSET0, set);
-#endif
+#else
 	if (OutputLED) IEC_Bus::IO_led.Write(HIGH);
 	else IEC_Bus::IO_led.Write(LOW);
 	if (OutputSound) IEC_Bus::IO_sound.Write(HIGH);
 	else IEC_Bus::IO_sound.Write(LOW);
+#endif
+
 }
 
 void IEC_Bus::PortB_OnPortOut(void* pUserData, unsigned char status)

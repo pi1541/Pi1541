@@ -578,7 +578,7 @@ public:
 				clear = tmp;
 			}
 		}
-#if 0
+#if 1
 		if (OutputLED) set |= 1 << PIGPIO_OUT_LED;
 		else clear |= 1 << PIGPIO_OUT_LED;
 
@@ -587,17 +587,18 @@ public:
 
 		write32(ARM_GPIO_GPSET0, set);
 		write32(ARM_GPIO_GPCLR0, clear);
-#endif
+#else
 		if (OutputLED) IEC_Bus::IO_led.Write(HIGH);
 		else IEC_Bus::IO_led.Write(LOW);
 		if (OutputSound) IEC_Bus::IO_sound.Write(HIGH);
 		else IEC_Bus::IO_sound.Write(LOW);
+#endif
 	}			
 	
 	static void WaitMicroSeconds(u32 amount)
 	{
 		u32 count;
-		usDelay(amount); return;
+		//usDelay(amount); return;
 		for (count = 0; count < amount; ++count)
 		{
 			unsigned before;
