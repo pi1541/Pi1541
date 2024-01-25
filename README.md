@@ -12,7 +12,7 @@ Credits to Stephen (@pi1541) [Pi1541](https://cbm-pi1541.firebaseapp.com/) and [
 Status
 ------
 Currently only tested for
-- Raspberry 3B+, PiZero 2W: successful load (JiffyDOS) of some games with fastloaders and GEOS
+- Raspberry models 3B+, PiZero 2W, 4: successful load (JiffyDOS) of some games with fastloaders and GEOS
 - LCD Display SSD1306
 - Option A (not support split IECLines) of Pi1541, **Option B cannot work** as of now!
 - Buzzer sound output 
@@ -34,7 +34,6 @@ TODOs
 - PWM/DMA Soundoutput
 - Rotary Input
 - Some better output on the LCD and Screen to instruct user: IP address, Status WiFi, etc.
-- GPIO handling is still not yet fully replaced by its circle counterpart, so most likely P4 (and younger) still won't work.
 - Make the webserver useful
 - Make screen output, WiFi optional via `options.txt`
 - Recover if WiFi isn't connecting after some attempts and continue booting
@@ -42,7 +41,6 @@ TODOs
 - Allow static IP Adresses for faster startup, to be configured in `options.txt`
 - Make execution more efficient wrt. CPU usage to keep temperature lower, use throtteling to protect the Pi.
 - Provide a helper script to collect all files to make Pi1541 sdcard build easy
-- find and fix strict RPI model specific sections, which don't fit to RP4+
 - Test more sophisticated loaders (RT behavior)
 
 What will not come
@@ -65,8 +63,10 @@ git clone https://github.com/pottendo/pottendo-Pi1541.git
 # Checkout (circle-stdlib)[https://github.com/smuehlst/circle-stdlib]:
 git clone --recursive https://github.com/smuehlst/circle-stdlib.git
 cd circle-stdlib
-# configure for Rasppi3 (also 3 for PiZero2W!)
+# configure for Pi3 and Pi Zero 2 W:
 ./configure -r 3
+# alternatively configure for Pi4
+# ./configure -r 4
 
 # Path Circle sysconfigh on ffconf.h to adapt to Pi1541 needs
 

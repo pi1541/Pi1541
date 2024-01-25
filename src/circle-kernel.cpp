@@ -110,13 +110,10 @@ boolean CKernel::Initialize (void)
 }
 
 extern CKernel Kernel;
-extern int mandel_iterate(int);
 
 TShutdownMode CKernel::Run (void)
 {
 	mLogger.Write ("pottendo-kern", LogNotice, "pottendo-Pi1541 (%dx%d)", mScreen.GetWidth(), mScreen.GetHeight());
-//	(void) mandel_iterate(1000*1000);
-
 	kernel_main(0, 0, 0);
 	//	DisplayMessage(0, 0, true, "Connect WiFi...", 0xffffffff, 0x0);
 	//run_wifi();
