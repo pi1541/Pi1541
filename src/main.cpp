@@ -488,8 +488,13 @@ void UpdateScreen()
 			//refreshUartStatusDisplay = true;
 		}
 #if defined (__CIRCLE__)
-		snprintf(tempBuffer, tempBufferSize, "IP address: %s", Kernel.get_ip());
-		screen.PrintText(false, 0, y + 20, tempBuffer, textColour, bgColour);		
+		{
+			const char *p;
+			if (Kernel.get_ip(&p)) {
+				snprintf(tempBuffer, tempBufferSize, "IP address: %s", p);
+				screen.PrintText(false, 0, y + 20, tempBuffer, textColour, bgColour);
+			}
+		}
 #endif
 		if (options.GraphIEC())
 			screen.DrawLineV(graphX, top3, bottom, BkColour);

@@ -62,15 +62,23 @@ CKernel::CKernel(void) :
 	//blink(3);
 	//mLogger.Write("pottendo-kern", LogNotice, "CKernel Constructor...");
 	boolean bOK = TRUE;
-	if (bOK) bOK = mScreen.Initialize ();
-	if (bOK) bOK = mSerial.Initialize (115200);
+	if (bOK) {
+		bOK = mScreen.Initialize ();
+	} else {
+		//m_ActLED.Blink(2);
+	}
+	if (bOK) {
+		bOK = mSerial.Initialize (115200);
+	} else {
+		//m_ActLED.Blink(5);
+	}
 	if (bOK)
 	{
 		CDevice *pTarget = m_DeviceNameService.GetDevice (mOptions.GetLogDevice (), FALSE);
 		if (pTarget == 0)
 			pTarget = &mScreen;
 		bOK = mLogger.Initialize (&mSerial);
-	}
+	} 
 	strcpy(ip_address, "<not assigned>");
 }
 
@@ -111,7 +119,8 @@ TShutdownMode CKernel::Run (void)
 
 	kernel_main(0, 0, 0);
 	//	DisplayMessage(0, 0, true, "Connect WiFi...", 0xffffffff, 0x0);
-	run_wifi();
+	//run_wifi();
+	new_ip = true;
 	Kernel.launch_cores();
 	UpdateScreen();
 
@@ -143,7 +152,7 @@ boolean CKernel::init_screen(u32 widthDesired, u32 heightDesired, u32 colourDept
 	return true;
 }
 
-void CKernel::run_wifi(void) 
+bool CKernel::run_wifi(void) 
 {
 	bool bOK = true;
 	CString IPString;
@@ -151,8 +160,9 @@ void CKernel::run_wifi(void)
 	if (bOK) bOK = m_Net.Initialize(FALSE);
 	if (bOK) bOK = m_WPASupplicant.Initialize();
 	if (!bOK) {
-		log("couldn't start network...");
-		return;
+		log("couldn't start network...waiting 5s"); 
+		mScheduler.MsSleep (5 * 1000);	
+		return bOK;
 	}
 	while (!m_Net.IsRunning ())
 	{
@@ -162,8 +172,9 @@ void CKernel::run_wifi(void)
 	mLogger.Write ("pottendo-kern", LogNotice, "Open \"http://%s/\" in your web browser!",
 			(const char *) IPString);
 	strncpy(ip_address, (const char *) IPString, 31); ip_address[31] = '\0';
+	new_ip = true;
 	DisplayMessage(0, 16, true, (const char*) IPString, 0xffffffff, 0x0);
-	MsDelay(3000);
+	return bOK;
 }
 
 void CKernel::run_webserver(void) 
@@ -295,14 +306,23 @@ TKernelTimerHandle CKernel::timer_start(unsigned delay, TKernelTimerHandler *pHa
 
 void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 {
+	int i = 0;
 	switch (core) {
 	case 1:
 		Kernel.log("launching emulator on core %d", core);
 		emulator();
 		break;
 	case 2:
+		do {
+			if (i >= 10) {
+				Kernel.log("WiFi setup failed, giving up");
+				goto out;
+			}
+			Kernel.log("attempt %d to launch WiFi on core %d", ++i, core);
+		} while (!Kernel.run_wifi());
 		Kernel.log("launching webserver on core %d", core);
 		Kernel.run_webserver();
+	out:		
 		break;
 	case 3:	/* health monitoring */
 		Kernel.log("launching system monitoring on core %d", core);

@@ -1,36 +1,36 @@
 #
-# Makefile
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-CIRCLEBASE = ../../circle-stdlib
+CIRCLEBASE ?= ../../circle-stdlib
 include $(CIRCLEBASE)/Config.mk
 
 CIRCLEHOME = $(CIRCLEBASE)/libs/circle
 NEWLIBDIR = $(CIRCLEBASE)/install/$(NEWLIB_ARCH)
 
-CIRCLEOBJS = circle-main.o circle-kernel.o webserver.o
-PI1541OBS = \
-	main.o \
-	Drive.o Pi1541.o DiskImage.o iec_bus.o iec_commands.o m6502.o m6522.o \
-	gcr.o prot.o lz.o options.o Screen.o SSD1306.o ScreenLCD.o \
-	FileBrowser.o DiskCaddy.o ROMs.o InputMappings.o xga_font_data.o \
-	m8520.o wd177x.o Pi1581.o SpinLock.o Keyboard.o \
-	uspi-dummy.o
+#CIRCLEOBJS = circle-main.o circle-kernel.o webserver.o
+PI1541OBS = $(COMMON_OBJS)
 
-# armc-start.o armc-cstartup.o armc-cstubs.o armc-cppstubs.o emmc.o ff.o cache.o exception.o performance.o \
-# rpi-interrupts.o Timer.o diskio.o interrupt.o rpi-aux.o  rpi-i2c.o rpi-mailbox-interface.o rpi-mailbox.o rpi-gpio.o dmRotary.o \
-# mandel-driver.o fake-posix.o 
+OBJS = $(CIRCLE_OBJS) $(PI1541OBS)
 
-OBJS = $(CIRCLEOBJS) $(PI1541OBS)
-
-#include $(CIRCLEHOME)/Rules.mk
-include Circle/Rules.mk
+include $(CIRCLEHOME)/Rules.mk
 
 ADDONINC = -I$(CIRCLEHOME)/addon/linux
 
 CFLAGS += -D__CIRCLE__ -I. -I./Circle -I "$(NEWLIBDIR)/include" \
        	  -I $(STDDEF_INCPATH) -I $(CIRCLEBASE)/include $(ADDONINC) \
-	  -Wno-psabi -Wno-unused-but-set-variable -Wno-address -mno-unaligned-access \
+	  -Wno-psabi -Wno-write-strings -Wno-unused-variable -Wno-unused-but-set-variable -Wno-address -mno-unaligned-access \
 	  -DRPI3=1 # -DRASPPI=3
 AFLAGS = -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8 -mfloat-abi=hard -marm -mno-unaligned-access -DRPI3=1 -DDEBUG=1 #-DRASPPI=3
 

@@ -78,7 +78,7 @@ public:
 						u32 &width, u32 &height, u32 &bpp, u32 &pitch, u8** framebuffer);
 	void launch_cores(void) { m_MCores.Initialize(); }
 	void yield(void) { mScheduler.Yield(); }
-	void run_wifi(void);
+	bool run_wifi(void);
 	void run_webserver(void);
 	void i2c_init(int BSCMaster, int fast) {};	/* already done in Kernel's Initialization */
 	void i2c_setclock(int BSCMaster, int clock_freq);
@@ -91,7 +91,7 @@ public:
 	void usb_reghandler(TKeyStatusHandlerRaw *handler) { m_pKeyboard->RegisterKeyStatusHandlerRaw(handler); }
 	TKernelTimerHandle timer_start(unsigned delay, TKernelTimerHandler *pHandler, void *pParam = 0, void *pContext = 0);
 	void timer_cancel(TKernelTimerHandle handler) { mTimer.CancelKernelTimer(handler); }
-	const char *get_ip(void) { return ip_address; }
+	bool get_ip(const char **p) { *p = ip_address; if (new_ip) { new_ip = false; return true; } else return false; }
 	void run_tempmonitor(void);
 
 private:
@@ -116,7 +116,8 @@ private:
 	CNetSubSystem		m_Net;
 	CWPASupplicant		m_WPASupplicant;
 	Pi1541Cores		 	m_MCores;
-	char ip_address[32]; 
+	char ip_address[32];
+	bool new_ip;
 };
 
 extern CKernel Kernel;

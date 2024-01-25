@@ -80,6 +80,7 @@ bool IEC_Bus::rotaryEncoderEnable;
 //ROTARY: Added for rotary encoder inversion (Issue#185) - 08/13/2020 by Geo...
 bool IEC_Bus::rotaryEncoderInvert;
 
+#if defined (__CIRCLE__)
 CGPIOPin IEC_Bus::IO_ATN;
 CGPIOPin IEC_Bus::IO_CLK;
 CGPIOPin IEC_Bus::IO_DAT;
@@ -88,6 +89,7 @@ CGPIOPin IEC_Bus::IO_RST;
 CGPIOPin IEC_Bus::IO_buttons[5];
 CGPIOPin IEC_Bus::IO_led;
 CGPIOPin IEC_Bus::IO_sound;
+#endif
 
 void IEC_Bus::ReadGPIOUserInput()
 {
@@ -151,8 +153,8 @@ void IEC_Bus::ReadGPIOUserInput()
 //ROTARY: Modified for rotary encoder support - 09/05/2019 by Geo...
 void IEC_Bus::ReadBrowseMode(void)
 {
-	//XXXgplev0 = read32(ARM_GPIO_GPLEV0);
-	gplev0 = CGPIOPin::ReadAll();
+	gplev0 = read32(ARM_GPIO_GPLEV0);
+	//XXXgplev0 = CGPIOPin::ReadAll();
 	ReadGPIOUserInput();
 
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
@@ -191,16 +193,16 @@ void IEC_Bus::ReadBrowseMode(void)
 	{
 		PI_Clock = true;
 	}
-	//XXXResetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
-	Resetting = !ignoreReset && (IEC_Bus::IO_RST.Read() == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+	//XXXResetting = !ignoreReset && (IEC_Bus::IO_RST.Read() == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 }
 
 void IEC_Bus::ReadEmulationMode1541(void)
 {
 	bool AtnaDataSetToOutOld = AtnaDataSetToOut;
 	IOPort* portB = 0;
-	//XXXgplev0 = read32(ARM_GPIO_GPLEV0);
-	gplev0 = CGPIOPin::ReadAll();
+	gplev0 = read32(ARM_GPIO_GPLEV0);
+	//XXXgplev0 = CGPIOPin::ReadAll();
 
 	portB = port;
 
@@ -302,8 +304,8 @@ void IEC_Bus::ReadEmulationMode1541(void)
 void IEC_Bus::ReadEmulationMode1581(void)
 {
 	IOPort* portB = 0;
-	//XXXgplev0 = read32(ARM_GPIO_GPLEV0);
-	gplev0 = CGPIOPin::ReadAll();
+	gplev0 = read32(ARM_GPIO_GPLEV0);
+	//XXXgplev0 = CGPIOPin::ReadAll();
 
 	portB = port;
 
@@ -377,8 +379,8 @@ void IEC_Bus::ReadEmulationMode1581(void)
 		PI_SRQ = true;
 	}
 
-	//Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
-	Resetting = !ignoreReset && (IO_RST.Read() == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+	//XXXResetting = !ignoreReset && (IO_RST.Read() == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 }
 
 void IEC_Bus::RefreshOuts1541(void)

@@ -296,6 +296,7 @@ typedef bool(*CheckStatus)();
 
 class IEC_Bus
 {
+#if defined (__CIRCLE__)
 	static CGPIOPin IO_led;
 	static CGPIOPin IO_sound;
 	static CGPIOPin IO_ATN;
@@ -304,11 +305,11 @@ class IEC_Bus
 	static CGPIOPin IO_SRQ;
 	static CGPIOPin IO_RST;
 	static CGPIOPin IO_buttons[5];
+#endif	
 public:
 	static inline void Initialise(void)
 	{
 		volatile int index; // Force a real delay in the loop below.
-		Kernel.log("Initialising IEC...");
 		// Clear all outputs to 0
 		write32(ARM_GPIO_GPCLR0, 0xFFFFFFFF);
 		//CGPIOPin::WriteAll(0xffffffff, 0xffffffff);
@@ -319,19 +320,22 @@ public:
 
 			myOutsGPFSEL0 = read32(ARM_GPIO_GPFSEL0);
 			myOutsGPFSEL1 = read32(ARM_GPIO_GPFSEL1);
-
+#if defined (__CIRCLE__)			
+#if 0
 			IEC_Bus::IO_led.AssignPin(PIGPIO_OUT_LED); IEC_Bus::IO_led.SetMode(GPIOModeOutput, true);
 			IEC_Bus::IO_sound.AssignPin(PIGPIO_OUT_SOUND); IEC_Bus::IO_sound.SetMode(GPIOModeOutput, true);
 			IEC_Bus::IO_CLK.AssignPin(PIGPIO_CLOCK); IEC_Bus::IO_CLK.SetMode(GPIOModeInput, true);
 			IEC_Bus::IO_ATN.AssignPin(PIGPIO_ATN); IEC_Bus::IO_ATN.SetMode(GPIOModeInput, true);
 			IEC_Bus::IO_DAT.AssignPin(PIGPIO_DATA); IEC_Bus::IO_DAT.SetMode(GPIOModeInput, true);
 			IEC_Bus::IO_SRQ.AssignPin(PIGPIO_SRQ); IEC_Bus::IO_SRQ.SetMode(GPIOModeInput, true);
+#endif			
 			IEC_Bus::IO_RST.AssignPin(PIGPIO_RESET); IEC_Bus::IO_RST.SetMode(GPIOModeInput, true);
 			for (int i = 0; i < 5; i++) {
 				IO_buttons[i].AssignPin(ButtonPins[i]);
 				IO_buttons[i].SetMode(GPIOModeInputPullUp, true);
 				Kernel.log("%s: assigning button %d to pin %d", __FUNCTION__, i, ButtonPins[i]);
 			}
+#endif			
 			myOutsGPFSEL1 |= (1 << ((PIGPIO_OUT_LED - 10) * 3));
 			myOutsGPFSEL1 |= (1 << ((PIGPIO_OUT_SOUND - 10) * 3));
 			//RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_SOUND, FS_OUTPUT);
@@ -514,12 +518,15 @@ public:
 		unsigned gplev0;
 		do
 		{
-			//XXX gplev0 = read32(ARM_GPIO_GPLEV0);
-			//gplev0 = CGPIOPin::ReadAll();
+			gplev0 = read32(ARM_GPIO_GPLEV0);
+			//XXXgplev0 = CGPIOPin::ReadAll();
 
-			//Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == 
-			//	 (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+#if !defined (__CIRCLE__)
+			Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == 
+				 (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+#else			
 			Resetting = !ignoreReset && (IO_RST.Read() == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+#endif			
 
 			if (Resetting)
 				IEC_Bus::WaitMicroSeconds(100);
