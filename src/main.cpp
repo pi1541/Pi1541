@@ -115,6 +115,8 @@ Pi1581 pi1581;
 #endif
 #if !defined(__CIRCLE__)
 CEMMCDevice	m_EMMC;
+#else
+bool usb_mass_update = false;
 #endif
 Screen screen;
 ScreenLCD* screenLCD = 0;
@@ -494,10 +496,12 @@ void UpdateScreen()
 				snprintf(tempBuffer, tempBufferSize, "IP address: %s", p);
 				screen.PrintText(false, 0, y + 20, tempBuffer, textColour, bgColour);
 			}
-			if (Kernel.usb_updatepnp() && !USBKeyboardDetected) 
+			if (Kernel.usb_updatepnp())
 			{
-				if (USBKeyboardDetected = USPiKeyboardAvailable())
+				if  (!USBKeyboardDetected && (USBKeyboardDetected = USPiKeyboardAvailable()))
 					keyboard->re_register();
+				numberOfUSBMassStorageDevices = USPiMassStorageDeviceAvailable();
+				usb_mass_update = true;
 			}
 		}
 #endif
@@ -1324,7 +1328,13 @@ void emulator()
 			inputMappings->SetKeyboardBrowseLCDScreen(screenLCD && options.KeyboardBrowseLCDScreen());
 #endif
 			fileBrowser->ShowDeviceAndROM();
-
+#if defined (__CIRCLE__)
+			if (usb_mass_update)
+			{
+				fileBrowser->PopFolder();
+				usb_mass_update = false;
+			}
+#endif
 			if (!options.GetDisableSD2IECCommands())
 			{
 				m_IEC_Commands.SimulateIECBegin();

@@ -16,7 +16,7 @@ Currently only tested for
 - LCD Display SSD1306
 - Option A (not support split IECLines) of Pi1541, **Option B cannot work** as of now!
 - Buzzer sound output 
-- USB Keyboard and USB Massstorage, Keyboard supports plug-and-play
+- USB Keyboard and USB Massstorage, Keyboard supports plug-and-play, Massstorage not fully plug-and-play
 - WiFi starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
 
 <p>
