@@ -41,7 +41,7 @@ CIRCLEHOME ?= $(CIRCLEBASE)/libs/circle
 LEGACY_OBJS = 	armc-start.o armc-cstartup.o armc-cstubs.o armc-cppstubs.o emmc.o ff.o cache.o exception.o performance.o \
 	      	rpi-interrupts.o Timer.o diskio.o interrupt.o rpi-aux.o  rpi-i2c.o rpi-mailbox-interface.o rpi-mailbox.o rpi-gpio.o dmRotary.o
 
-CIRCLE_OBJS = 	circle-main.o circle-kernel.o webserver.o uspi-dummy.o
+CIRCLE_OBJS = 	circle-main.o circle-kernel.o webserver.o legacy-wrappers.o
 
 COMMON_OBJS = 	main.o Drive.o Pi1541.o DiskImage.o iec_bus.o iec_commands.o m6502.o m6522.o \
 		gcr.o prot.o lz.o options.o Screen.o SSD1306.o ScreenLCD.o \

@@ -494,6 +494,11 @@ void UpdateScreen()
 				snprintf(tempBuffer, tempBufferSize, "IP address: %s", p);
 				screen.PrintText(false, 0, y + 20, tempBuffer, textColour, bgColour);
 			}
+			if (Kernel.usb_updatepnp() && !USBKeyboardDetected) 
+			{
+				if (USBKeyboardDetected = USPiKeyboardAvailable())
+					keyboard->re_register();
+			}
 		}
 #endif
 		if (options.GraphIEC())

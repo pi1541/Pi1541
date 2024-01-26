@@ -93,7 +93,8 @@ public:
 	void timer_cancel(TKernelTimerHandle handler) { mTimer.CancelKernelTimer(handler); }
 	bool get_ip(const char **p) { *p = ip_address; if (new_ip) { new_ip = false; return true; } else return false; }
 	void run_tempmonitor(void);
-
+	CUSBKeyboardDevice *get_kbd(void) { return m_pKeyboard; }
+	void set_kbd(CUSBKeyboardDevice *kbd) { m_pKeyboard = kbd; }
 private:
 	CActLED				m_ActLED;
 	CKernelOptions		mOptions;
@@ -121,46 +122,8 @@ private:
 };
 
 extern CKernel Kernel;
+extern CCPUThrottle CPUThrottle;
 
-void reboot_now(void);
-void Reboot_Pi(void);
-static inline void delay_us(u32 usec) { Kernel.get_timer()->usDelay(usec); }
-static inline void usDelay(u32 usec) { Kernel.get_timer()->usDelay(usec); }
-static inline void MsDelay(u32 msec) { Kernel.get_timer()->usDelay(1000 * msec); }
-
-void USPiInitialize(void);
-void TimerSystemInitialize(void);
-void InterruptSystemInitialize(void);
-int USPiMassStorageDeviceAvailable(void);
-int USPiKeyboardAvailable(void);
-void USPiKeyboardRegisterKeyStatusHandlerRaw(TKeyStatusHandlerRaw *handler);
-void TimerCancelKernelTimer(TKernelTimerHandle hTimer);
-TKernelTimerHandle TimerStartKernelTimer(unsigned nDelay, TKernelTimerHandler *pHandler, void* pParam,void* pContext);
-int GetTemperature(unsigned &value);
-void SetACTLed(int v);
-void _enable_unaligned_access(void);
-void enable_MMU_and_IDCaches(void);
-void InitialiseLCD();
-void UpdateLCD(const char* track, unsigned temperature);
-void DisplayI2CScan(int y_pos);
-void emulator(void);
-
-extern "C" {
-	void kernel_main(unsigned int r0, unsigned int r1, unsigned int atags);
-	void UpdateScreen(void);
-}
-void DisplayMessage(int x, int y, bool LCD, const char* message, u32 textColour, u32 backgroundColour);
-
-/* I2C provided by Circle */
-#define RPI_I2CInit i2c_init
-#define RPI_I2CSetClock i2c_setclock
-#define RPI_I2CRead i2c_read
-#define RPI_I2CWrite i2c_write
-#define RPI_I2CScan i2c_scan
-void i2c_init(int BSCMaster, int fast);
-void i2c_setclock(int BSCMaster, int clock_freq);
-int i2c_read(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count);
-int i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count);
-int i2c_scan(int BSCMaster, unsigned char slaveAddress);
+#include "legacy-wrappers.h"
 
 #endif

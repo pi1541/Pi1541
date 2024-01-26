@@ -16,17 +16,17 @@ Currently only tested for
 - LCD Display SSD1306
 - Option A (not support split IECLines) of Pi1541, **Option B cannot work** as of now!
 - Buzzer sound output 
-- USB Keyboard and USB Massstorage
+- USB Keyboard and USB Massstorage, Keyboard supports plug-and-play
 - WiFi starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
 
 <p>
 
-Startup currently unconditionally tries to connect to the WiFi. The LCD shows the desired Logo until an IP address is assigned.
+Startup currently unconditionally tries to connect to the WiFi. 
 The address is briefly shown, once received. One can check the IP address on the screen (HDMI).
 
 <p>
 
-**Attention**: the operating temperature is substantially higher than with the original kernel. It is recommended to use _active_ cooling as of now. Raspeberry PIs normally protect themselves through throtteling. This should work at 85C - for some reason I can't lower this threshold via `cmdline.txt` using `socmaxtemp=70`, as this doesn't set the limit as documented [here](https://circle-rpi.readthedocs.io/en/latest/basic-system-services/cpu-clock-rate-management.html#ccputhrottle) - at least not on my RPi3.
+**Attention**: the operating temperature is substantially higher than with the original kernel (legacy build). It is recommended to use _active_ cooling as of now. Raspeberry PIs normally protect themselves through throtteling. This should work at 85C - for some reason I can't lower this threshold via `cmdline.txt` using `socmaxtemp=70`, as this doesn't set the limit as documented [here](https://circle-rpi.readthedocs.io/en/latest/basic-system-services/cpu-clock-rate-management.html#ccputhrottle) - at least not on my RPi3.
 
 TODOs
 -----

@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
+// written by pottendo
+//
 #include "circle-kernel.h"
 
 #include <stdio.h>
@@ -41,6 +43,7 @@ static const u8 DNSServer[]      = {192, 168, 188, 1};
 #endif
 
 CCPUThrottle CPUThrottle;
+extern CKernel Kernel;
 
 CKernel::CKernel(void) :
 	mScreen (mOptions.GetWidth (), mOptions.GetHeight ()),
@@ -109,14 +112,10 @@ boolean CKernel::Initialize (void)
 	return bOK;
 }
 
-extern CKernel Kernel;
-
 TShutdownMode CKernel::Run (void)
 {
 	mLogger.Write ("pottendo-kern", LogNotice, "pottendo-Pi1541 (%dx%d)", mScreen.GetWidth(), mScreen.GetHeight());
 	kernel_main(0, 0, 0);
-	//	DisplayMessage(0, 0, true, "Connect WiFi...", 0xffffffff, 0x0);
-	//run_wifi();
 	new_ip = true;
 	Kernel.launch_cores();
 	UpdateScreen();
@@ -218,6 +217,10 @@ int CKernel::i2c_scan(int BSCMaster, unsigned char slaveAddress)
 
 void KeyboardRemovedHandler(CDevice *pDevice, void *pContext) 
 {
+	extern bool USBKeyboardDetected;
+	USBKeyboardDetected = false;
+	Kernel.get_kbd()->UnregisterKeyStatusHandlerRaw();
+	Kernel.set_kbd(nullptr);
 	Kernel.log("keyboard removed");
 }
 
@@ -230,6 +233,7 @@ void KeyboardShutdownHandler(void)
 
 int CKernel::usb_keyboard_available(void) 
 {
+	//if (m_pKeyboard) return 1;
 	m_pKeyboard = (CUSBKeyboardDevice *) m_DeviceNameService.GetDevice ("ukbd1", FALSE);
 	if (!m_pKeyboard)
 		return 0;
@@ -329,30 +333,4 @@ void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 		break;
 	}
 }
-
-/* wrappers */
-void RPiConsole_put_pixel(uint32_t x, uint32_t y, uint16_t c) {	Kernel.set_pixel(x, y, c); }
-void SetACTLed(int v) { Kernel.SetACTLed(v); }
-void reboot_now(void) { reboot(); }
-void i2c_init(int BSCMaster, int fast) { Kernel.i2c_init(BSCMaster, fast); }
-void i2c_setclock(int BSCMaster, int clock_freq) { Kernel.i2c_setclock(BSCMaster, clock_freq); }
-int i2c_read(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count) { return Kernel.i2c_read(BSCMaster, slaveAddress, buffer, count); }
-int i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count) { return Kernel.i2c_write(BSCMaster, slaveAddress, buffer, count); }
-int i2c_scan(int BSCMaster, unsigned char slaveAddress) { return Kernel.i2c_scan(BSCMaster, slaveAddress); }
-void USPiInitialize(void) 
-{
-	if (Kernel.usb_updatepnp() == false) 
-	{
-		Kernel.log("usb update failed");
-	}
-}
-int USPiKeyboardAvailable(void) { return Kernel.usb_keyboard_available(); }
-void USPiKeyboardRegisterKeyStatusHandlerRaw(TKeyStatusHandlerRaw *handler) { Kernel.usb_reghandler(handler); }
-TKernelTimerHandle TimerStartKernelTimer(unsigned nDelay, TKernelTimerHandler *pHandler, void* pParam, void* pContext)
-{
-	return Kernel.timer_start(nDelay, pHandler, pParam, pContext);
-}
-void TimerCancelKernelTimer(TKernelTimerHandle hTimer) { Kernel.timer_cancel(hTimer); }
-int GetTemperature(unsigned &value) { unsigned ret = CPUThrottle.GetTemperature(); if (ret) value = ret * 1000; return ret; }
-int USPiMassStorageDeviceAvailable(void) { return Kernel.usb_massstorage_available(); }
 

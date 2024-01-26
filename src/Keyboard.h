@@ -363,6 +363,7 @@ public:
 
 	inline bool KeyLCtrlAlt() { return (modifier == (KEY_MOD_LALT | KEY_MOD_LCTRL) ); }
 
+	void re_register(void);
 	static Keyboard* instance;
 };
 #endif
