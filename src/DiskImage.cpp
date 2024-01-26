@@ -1393,6 +1393,7 @@ bool DiskImage::GetDecodedSector(u32 track, u32 sector, u8* buffer)
 
 DiskImage::DiskType DiskImage::GetDiskImageTypeViaExtention(const char* diskImageName)
 {
+	if (!diskImageName) return NONE;
 	char* ext = strrchr((char*)diskImageName, '.');
 
 	if (ext)

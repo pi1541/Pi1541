@@ -292,7 +292,7 @@ void CKernel::run_tempmonitor(void)
 		if (CPUThrottle.SetOnTemperature() == false)
 			log("temperature monitor failed...");
 		MsDelay(5 * 1000);
-		//log("Temperature = %dC, IO is 0x%08x", CPUThrottle.GetTemperature(), CGPIOPin::ReadAll()); 
+		log("Temperature = %dC, IO is 0x%08x", CPUThrottle.GetTemperature(), CGPIOPin::ReadAll()); 
 	}
 }
 

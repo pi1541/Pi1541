@@ -517,6 +517,7 @@ FileBrowser::FileBrowser(InputMappings* inputMappings, DiskCaddy* diskCaddy, ROM
 	, state(State_Folders)
 	, diskCaddy(diskCaddy)
 	, selectionsMade(false)
+	, lastSelectionName(NULL)
 	, roms(roms)
 	, deviceID(deviceID)
 	, displayPNGIcons(displayPNGIcons)
@@ -1416,9 +1417,9 @@ void FileBrowser::DisplayStatusBar()
 
 	char bufferOut[128];
 	if (options.DisplayTemperature())
-		snprintf(bufferOut, 128, "LED 0 Motor 0 Track 18.0 ATN 0 DAT 0 CLK 0 00%cC", 248);
+		snprintf(bufferOut, 127, "LED 0 Motor 0 Track 18.0 ATN 0 DAT 0 CLK 0 00%cC", 248);
 	else
-		snprintf(bufferOut, 128, "LED 0 Motor 0 Track 18.0 ATN 0 DAT 0 CLK 0");
+		snprintf(bufferOut, 127, "LED 0 Motor 0 Track 18.0 ATN 0 DAT 0 CLK 0");
 
 	screenMain->PrintText(false, x, y, bufferOut, RGBA(0, 0, 0, 0xff), RGBA(0xff, 0xff, 0xff, 0xff));
 #endif
