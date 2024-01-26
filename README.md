@@ -33,10 +33,8 @@ TODOs
 - Option B, split IEC lines
 - PWM/DMA Soundoutput
 - Rotary Input
-- Some better output on the LCD and Screen to instruct user: IP address, Status WiFi, etc.
 - Make the webserver useful
 - Make screen output, WiFi optional via `options.txt`
-- Recover if WiFi isn't connecting after some attempts and continue booting
 - Introduce Ethernet netwoek as option (instead of WiFi)
 - Allow static IP Adresses for faster startup, to be configured in `options.txt`
 - Make execution more efficient wrt. CPU usage to keep temperature lower, use throtteling to protect the Pi.
@@ -45,8 +43,8 @@ TODOs
 
 What will not come
 ------------------
-- PiZero support, as it doesn't make sense due to lack of network support
-- Support for all variants of Pi1 and Pi2, as I don't have those to test
+- PiZero support for circle, as it doesn't make sense due to lack of network support
+- Circle Support for all variants of Pi1 and Pi2, as I don't have those to test
 
 Checkout & Build
 ----------------
@@ -79,9 +77,57 @@ make
 
 # build Pi1541 based on circle
 cd ${BUILDDIR}/pottendo-Pi1541
-make 
 ```
-Now copy `kernel8-32.img` to your Pi1541 SDCard. Make sure you have set the respective lines `kernel=kernel8-32.img` in `config.txt` on your SDcard.
+Depending on the RPi Model and on the chosen build (Circle vs. legacy):
+| Model | Version | build cmd | Image Name |
+|----------|-----------|----------- |----------------|
+| Pi Zero, 1RevXX, 2, 3 | legacy build | `make RASPPI={0,1BRev1,1BRev2,1BPlus,2,3} legacy` | `kernel.img` |
+| Pi Zero 2W, 3 | circle build | `make` | `kernel8-32.img` |
+| Pi 4 | circle build | `make` | `kernel7l.img` |
+
+*Hint*: in case you want to alternatively build for circle-lib and legacy make sure to `make clean` between the builds!
+
+Now copy the kernel image to your Pi1541 SDCard. Make sure you have set the respective lines `config.txt` on your Pi1541 SDcard:
+Model 3 and earlier - `config.txt`
+```
+arm_freq=1300
+over_voltage=4
+sdram_freq=500
+sdram_over_voltage=1
+force_turbo=1
+boot_delay=1
+
+# Run in 32-bit mode
+arm_64bit=0
+
+enable_uart=1
+gpu_mem=16
+
+hdmi_group=2
+#hdmi_mode=4
+hdmi_mode=16
+
+kernel=kernel8-32.img
+#kernel_address=0x1f00000
+#kernel=kernel.img
+
+```
+in case you use legacy build `kernel.img` you also have to uncomment the line `kernel_address=0x1f00000`!
+
+Model 4 - `config.txt`
+```
+# some genereic Pi4 configs can remain
+
+# Run in 32-bit mode
+arm_64bit=0
+force_turbo=1
+
+[all]
+enable_uart=1   # in case you have Pin 14/15 connected via TTL cable
+kernel=kernel7l.img
+```
+
+Uart console on pins *14(TX)/15(RX)* gives useful log information.
 
 WiFi needs the drivers on the flash card. You can download like this:
 ```
@@ -126,41 +172,6 @@ network={
     key_mgmt=WPA-PSK
 }
 ```
-
-In order to build the standard Pi1541 after building the circle library the tree has to be cleaned
-```
-cd ${BUILDDIR}/pottendo-Pi1541
-make clean
-```
-Note that this also removes all image files from previoues builds in `${BUILDDIR}/pottendo-Pi1541`
-The file `config.txt` on the SDCard must not set kernel_address (therefore commented below) for the circle version.
-It's mandatory to be set for the original Pi1541.
-
-```
-arm_freq=1300             # overclocking (for Rpi Zero 2 and 3 is needed)
-over_voltage=4
-sdram_freq=500
-sdram_over_voltage=2
-force_turbo=1             # go right with the above defined 1.3GHz
-boot_delay=1
-
-arm_64bit=0               # 64 bit won't work
-#armstub=no-prefetch.bin  # not sure if this is needed
-
-enable_uart=1             # Console 14(TX), 15(RX)
-gpu_mem=16
-
-hdmi_group=2
-hdmi_mode=16              # 1024x768 @ 60Hz (in group 2)
-
-#kernel_address=0x1f00000 # needed for original builds
-#kernel=kernel.img        # use this for the original build
-
-kernel=kernel8-32.img     # Circle build default name
-```
-
-This `config.txt` enables the uart console on pins *14(TX)/15(RX)* - this gives useful log information.
-`options.txt`` and all the other content on a Pi1541 sdcard are similar to the original Pi1541 requirements.
 
 # Disclaimer
 
