@@ -175,7 +175,7 @@ network={
 
 # Disclaimer
 
-**Due to some unlikely, unexpected circumstances (e.g. overheating), you may damage your beloved devices (Raspberry Pi, Retro machines, C64s, VIC20s, etc) by using this software. I do not take any responsibility, so use at your own risk!**
+**Due to some unlikely, unexpected circumstances (e.g. overheating), you may damage your beloved devices (Raspberry Pi, Retro machines, C64s, VIC20s, SDCards, USBSticks, etc) by using this software. I do not take any responsibility, so use at your own risk!**
 
 # Pi1541
 
