@@ -2,9 +2,9 @@
 
 This is an optional port of Pi1541 to the current Circle bare metal library (as of Jan. 2024, Version 45.3.1).
 
-Target is to remove all Pi bindings which have a counterpart in Circle and to pimp with more functionalities:
+As almost all Pi model specific bindings which have a counterparts in Circle have been removed. This allows to use the potential of Circle to extend Pi1541 with new functionalities. Some ideas:
 - Webserver to download images
-- Pi4/400 and 5 (later)
+- Pi4/400 and 5 (later, once supported by Circle)
 - ...
 
 Credits to Stephen (@pi1541) [Pi1541](https://cbm-pi1541.firebaseapp.com/) and [Pi1541-github](https://github.com/pi1541/Pi1541), Rene (@rsta2) [circle](https://github.com/rsta2/circle), Stephan (@smuehlst) [circle-stdlib](https://github.com/smuehlst/circle-stdlib) for the brilliant base packages!
@@ -17,7 +17,7 @@ Currently only tested for
 - Option A (not support split IECLines) of Pi1541, **Option B cannot work** as of now!
 - Buzzer sound output 
 - USB Keyboard and USB Massstorage, Keyboard supports plug-and-play, Massstorage not fully plug-and-play
-- if enabled Ethernet or WiFi starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
+- if enabled, Ethernet or WiFi starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
 
 <p>
 
@@ -141,7 +141,9 @@ kernel=kernel7l.img
 
 Uart console on pins *14(TX)/15(RX)* gives useful log information.
 
-WiFi needs the drivers on the flash card. You can download like this:
+Networking
+----------
+If enabled, WiFi needs the drivers on the flash card. You can download like this:
 ```
 cd ${BUILDDIR}/circle-stdlib/libs/circle/addon/wlan/firmware
 make

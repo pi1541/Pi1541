@@ -162,7 +162,7 @@ bool CKernel::run_ethernet(void)
 		mScheduler.MsSleep (1 * 1000);
 		return bOK;
 	}
-	retry = 51;	// try for 50*100ms
+	retry = 501;	// try for 500*100ms, same as Wifi
 	while (--retry && !m_Net->IsRunning()) 
 		mScheduler.MsSleep(100);
 	return (retry != 0);
@@ -172,7 +172,7 @@ bool CKernel::run_wifi(void)
 {
 	if (m_Net)
 	{
-		log("%s: cleaning up network stack", __FUNCTION__);
+		log("%s: cleaning up network stack, may crash here...", __FUNCTION__);
 		delete m_Net; m_Net = nullptr;
 	}
 #ifndef USE_DHCP
@@ -197,14 +197,15 @@ void CKernel::run_webserver(void)
 	CString IPString;
 	while (!m_Net->IsRunning())
 	{
-		log("webserver waits for network...");
-		mScheduler.MsSleep (1000);
+		log("webserver waits for network... waiting 5s");
+		mScheduler.MsSleep (5000);
 	}
 	m_Net->GetConfig()->GetIPAddress()->Format (&IPString);
 	log ("Open \"http://%s/\" in your web browser!", (const char *) IPString);
-	strncpy(ip_address, (const char *) IPString, 31); ip_address[31] = '\0';
+	memcpy(ip_address, (const char *) IPString, strlen((const char *) IPString) + 1);
 	new_ip = true;
-	DisplayMessage(0, 16, true, (const char*) IPString, 0xffffffff, 0x0);
+	mScheduler.MsSleep (1000);/* wait a bit, LCD output */
+	DisplayMessage(0, 24, true, (const char*) IPString, 0xffffff, 0x0);
 	new CWebServer (m_Net, &m_ActLED);
 	for (unsigned nCount = 0; 1; nCount++)
 	{
@@ -333,7 +334,7 @@ TKernelTimerHandle CKernel::timer_start(unsigned delay, TKernelTimerHandler *pHa
 void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 {
 	extern Options options;
-	int i = 10;/* 10 attempts for each network */
+	int i = 0;
 	switch (core) {
 	case 1:
 		Kernel.log("launching emulator on core %d", core);
@@ -346,7 +347,7 @@ void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 			if (!Kernel.run_ethernet()) {
 				Kernel.log("setup ethernet failed");
 				i = 0;
-			} 
+			} else i = 1;
 		} 
 		if ((i == 0) && options.GetNetWifi()) 
 		{
@@ -358,7 +359,9 @@ void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 		if (i == 0) 
 		{
 			Kernel.log("network setup failed, giving up");
-		} else {
+		} 
+		else 
+		{
 			Kernel.log("launching webserver on core %d", core);
 			Kernel.run_webserver();
 		}
