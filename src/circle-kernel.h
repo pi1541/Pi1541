@@ -79,6 +79,7 @@ public:
 	void launch_cores(void) { m_MCores.Initialize(); }
 	void yield(void) { mScheduler.Yield(); }
 	bool run_wifi(void);
+	bool run_ethernet(void);
 	void run_webserver(void);
 	void i2c_init(int BSCMaster, int fast) {};	/* already done in Kernel's Initialization */
 	void i2c_setclock(int BSCMaster, int clock_freq);
@@ -114,7 +115,7 @@ private:
 	FATFS				m_FileSystem;
 	CBcm4343Device		m_WLAN;
 	CSynchronizationEvent	mEvent;
-	CNetSubSystem		m_Net;
+	CNetSubSystem		*m_Net;
 	CWPASupplicant		m_WPASupplicant;
 	Pi1541Cores		 	m_MCores;
 	char ip_address[32];

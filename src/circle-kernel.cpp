@@ -28,6 +28,7 @@
 #include <circle/cputhrottle.h>
 #include <iostream>
 #include <circle/usb/usbmassdevice.h>
+#include "options.h"
 #include "webserver.h"
 
 #define _DRIVE		"SD:"
@@ -54,11 +55,7 @@ CKernel::CKernel(void) :
 	m_EMMC (&mInterrupt, &mTimer, &m_ActLED),
 	m_I2c (0, true),
 	m_WLAN (_FIRMWARE_PATH),
-#ifndef USE_DHCP
-	m_Net (IPAddress, NetMask, DefaultGateway, DNSServer, DEFAULT_HOSTNAME, NetDeviceTypeWLAN),
-#else
-	m_Net (0, 0, 0, 0, DEFAULT_HOSTNAME, NetDeviceTypeWLAN),
-#endif
+	m_Net(nullptr),
 	m_WPASupplicant (_CONFIG_FILE),
 	m_MCores(CMemorySystem::Get())
 {
@@ -119,7 +116,6 @@ TShutdownMode CKernel::Run (void)
 	new_ip = true;
 	Kernel.launch_cores();
 	UpdateScreen();
-
 	log("unexpected return of display thread");
 	return ShutdownHalt;
 }
@@ -148,39 +144,68 @@ boolean CKernel::init_screen(u32 widthDesired, u32 heightDesired, u32 colourDept
 	return true;
 }
 
-bool CKernel::run_wifi(void) 
+bool CKernel::run_ethernet(void)
 {
-	bool bOK = true;
-	CString IPString;
-	if (bOK) bOK = m_WLAN.Initialize();
-	if (bOK) bOK = m_Net.Initialize(FALSE);
-	if (bOK) bOK = m_WPASupplicant.Initialize();
+	bool bOK;
+	int retry;
+	if (m_Net)
+		delete m_Net;
+	Kernel.log("Initializing ethernet network");
+#ifndef USE_DHCP
+	m_Net = new CNetSubSystem(IPAddress, NetMask, DefaultGateway, DNSServer, DEFAULT_HOSTNAME, NetDeviceTypeWLAN);
+#else
+	m_Net = new CNetSubSystem(0, 0, 0, 0, DEFAULT_HOSTNAME, NetDeviceTypeEthernet);
+#endif
+	bOK = m_Net->Initialize(FALSE);
 	if (!bOK) {
-		log("couldn't start network...waiting 5s"); 
-		mScheduler.MsSleep (5 * 1000);	
+		log("couldn't start ethernet network...waiting 1s"); 
+		mScheduler.MsSleep (1 * 1000);
 		return bOK;
 	}
-	while (!m_Net.IsRunning ())
+	retry = 51;	// try for 50*100ms
+	while (--retry && !m_Net->IsRunning()) 
+		mScheduler.MsSleep(100);
+	return (retry != 0);
+}
+
+bool CKernel::run_wifi(void) 
+{
+	if (m_Net)
 	{
-		mScheduler.MsSleep (100);
+		log("%s: cleaning up network stack", __FUNCTION__);
+		delete m_Net; m_Net = nullptr;
 	}
-	m_Net.GetConfig ()->GetIPAddress ()->Format (&IPString);
-	mLogger.Write ("pottendo-kern", LogNotice, "Open \"http://%s/\" in your web browser!",
-			(const char *) IPString);
-	strncpy(ip_address, (const char *) IPString, 31); ip_address[31] = '\0';
-	new_ip = true;
-	DisplayMessage(0, 16, true, (const char*) IPString, 0xffffffff, 0x0);
+#ifndef USE_DHCP
+	m_Net = new CNetSubSystem(IPAddress, NetMask, DefaultGateway, DNSServer, DEFAULT_HOSTNAME, NetDeviceTypeWLAN);
+#else
+	m_Net = new CNetSubSystem(0, 0, 0, 0, DEFAULT_HOSTNAME, NetDeviceTypeWLAN);
+#endif
+	if (!m_Net) return false;
+	bool bOK = true;
+	if (bOK) bOK = m_WLAN.Initialize();
+	if (bOK) bOK = m_Net->Initialize(FALSE);
+	if (bOK) bOK = m_WPASupplicant.Initialize();
+	if (!bOK) {
+		log("couldn't start wifi network...waiting 5s"); 
+		mScheduler.MsSleep (5 * 1000);	
+	}
 	return bOK;
 }
 
 void CKernel::run_webserver(void) 
 {
-	while (!m_Net.IsRunning ())
+	CString IPString;
+	while (!m_Net->IsRunning())
 	{
-		mScheduler.MsSleep (1000);
 		log("webserver waits for network...");
+		mScheduler.MsSleep (1000);
 	}
-	new CWebServer (&m_Net, &m_ActLED);
+	m_Net->GetConfig()->GetIPAddress()->Format (&IPString);
+	log ("Open \"http://%s/\" in your web browser!", (const char *) IPString);
+	strncpy(ip_address, (const char *) IPString, 31); ip_address[31] = '\0';
+	new_ip = true;
+	DisplayMessage(0, 16, true, (const char*) IPString, 0xffffffff, 0x0);
+	new CWebServer (m_Net, &m_ActLED);
 	for (unsigned nCount = 0; 1; nCount++)
 	{
 		mScheduler.MsSleep (100);
@@ -307,23 +332,38 @@ TKernelTimerHandle CKernel::timer_start(unsigned delay, TKernelTimerHandler *pHa
 
 void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 {
-	int i = 0;
+	extern Options options;
+	int i = 10;/* 10 attempts for each network */
 	switch (core) {
 	case 1:
 		Kernel.log("launching emulator on core %d", core);
 		emulator();
 		break;
 	case 2:
-		do {
-			if (i >= 10) {
-				Kernel.log("WiFi setup failed, giving up");
-				goto out;
-			}
-			Kernel.log("attempt %d to launch WiFi on core %d", ++i, core);
-		} while (!Kernel.run_wifi());
-		Kernel.log("launching webserver on core %d", core);
-		Kernel.run_webserver();
-	out:		
+		if (!options.GetNetWifi() && !options.GetNetEthernet()) goto out;
+		if (options.GetNetEthernet()) // cable network has priority over Wifi
+		{
+			if (!Kernel.run_ethernet()) {
+				Kernel.log("setup ethernet failed");
+				i = 0;
+			} 
+		} 
+		if ((i == 0) && options.GetNetWifi()) 
+		{
+			i = 10;
+			do {
+				Kernel.log("attempt %d to launch WiFi on core %d", 11 - i, core);
+			} while (i-- && !Kernel.run_wifi());
+		}
+		if (i == 0) 
+		{
+			Kernel.log("network setup failed, giving up");
+		} else {
+			Kernel.log("launching webserver on core %d", core);
+			Kernel.run_webserver();
+		}
+	out:
+		Kernel.log("disabling network support");
 		break;
 	case 3:	/* health monitoring */
 		Kernel.log("launching system monitoring on core %d", core);

@@ -17,7 +17,7 @@ Currently only tested for
 - Option A (not support split IECLines) of Pi1541, **Option B cannot work** as of now!
 - Buzzer sound output 
 - USB Keyboard and USB Massstorage, Keyboard supports plug-and-play, Massstorage not fully plug-and-play
-- WiFi starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
+- if enabled Ethernet or WiFi starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
 
 <p>
 
@@ -34,8 +34,6 @@ TODOs
 - PWM/DMA Soundoutput
 - Rotary Input
 - Make the webserver useful
-- Make screen output, WiFi optional via `options.txt`
-- Introduce Ethernet netwoek as option (instead of WiFi)
 - Allow static IP Adresses for faster startup, to be configured in `options.txt`
 - Make execution more efficient wrt. CPU usage to keep temperature lower, use throtteling to protect the Pi.
 - Provide a helper script to collect all files to make Pi1541 sdcard build easy
@@ -45,6 +43,20 @@ What will not come
 ------------------
 - PiZero support for circle, as it doesn't make sense due to lack of network support
 - Circle Support for all variants of Pi1 and Pi2, as I don't have those to test
+
+Additional Options in `options.txt`
+-----------------------------------
+The following options control new functions available:
+| Option | Value | Purpose |
+|--------|-------|---------|
+| netEthernet | 0 or 1 | enable ethernet network|
+| netWifi | 0 or 1 | enable network network|
+
+Know Bugs
+---------
+
+- Enabling both `netEthernet` and `netWifi` leads to a crash
+- Pluging in a USB stick _after_ booting, won't show files on the USB mounted drive and display remains dark. Unplugging/re-plugging works as expected if USB is plugged in at startup
 
 Checkout & Build
 ----------------
