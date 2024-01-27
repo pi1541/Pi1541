@@ -14,9 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
+// written by pottendo
+//
 #include "circle-kernel.h"
 
 #include <stdio.h>
+#include <cstring>
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
@@ -25,6 +28,7 @@
 #include <circle/cputhrottle.h>
 #include <iostream>
 #include <circle/usb/usbmassdevice.h>
+#include "options.h"
 #include "webserver.h"
 
 #define _DRIVE		"SD:"
@@ -40,6 +44,7 @@ static const u8 DNSServer[]      = {192, 168, 188, 1};
 #endif
 
 CCPUThrottle CPUThrottle;
+extern CKernel Kernel;
 
 CKernel::CKernel(void) :
 	mScreen (mOptions.GetWidth (), mOptions.GetHeight ()),
@@ -50,27 +55,31 @@ CKernel::CKernel(void) :
 	m_EMMC (&mInterrupt, &mTimer, &m_ActLED),
 	m_I2c (0, true),
 	m_WLAN (_FIRMWARE_PATH),
-#ifndef USE_DHCP
-	m_Net (IPAddress, NetMask, DefaultGateway, DNSServer, DEFAULT_HOSTNAME, NetDeviceTypeWLAN),
-#else
-	m_Net (0, 0, 0, 0, DEFAULT_HOSTNAME, NetDeviceTypeWLAN),
-#endif
+	m_Net(nullptr),
 	m_WPASupplicant (_CONFIG_FILE),
-	m_MCores(CMemorySystem::Get()),
-	ip_address(nullptr)
+	m_MCores(CMemorySystem::Get())
 {
 	//blink(3);
 	//mLogger.Write("pottendo-kern", LogNotice, "CKernel Constructor...");
 	boolean bOK = TRUE;
-	if (bOK) bOK = mScreen.Initialize ();
-	if (bOK) bOK = mSerial.Initialize (115200);
+	if (bOK) {
+		bOK = mScreen.Initialize ();
+	} else {
+		//m_ActLED.Blink(2);
+	}
+	if (bOK) {
+		bOK = mSerial.Initialize (115200);
+	} else {
+		//m_ActLED.Blink(5);
+	}
 	if (bOK)
 	{
 		CDevice *pTarget = m_DeviceNameService.GetDevice (mOptions.GetLogDevice (), FALSE);
 		if (pTarget == 0)
 			pTarget = &mScreen;
 		bOK = mLogger.Initialize (&mSerial);
-	}
+	} 
+	strcpy(ip_address, "<not assigned>");
 }
 
 boolean CKernel::Initialize (void) 
@@ -100,20 +109,13 @@ boolean CKernel::Initialize (void)
 	return bOK;
 }
 
-extern CKernel Kernel;
-extern int mandel_iterate(int);
-
 TShutdownMode CKernel::Run (void)
 {
 	mLogger.Write ("pottendo-kern", LogNotice, "pottendo-Pi1541 (%dx%d)", mScreen.GetWidth(), mScreen.GetHeight());
-//	(void) mandel_iterate(1000*1000);
-
 	kernel_main(0, 0, 0);
-	//	DisplayMessage(0, 0, true, "Connect WiFi...", 0xffffffff, 0x0);
-	run_wifi();
+	new_ip = true;
 	Kernel.launch_cores();
 	UpdateScreen();
-
 	log("unexpected return of display thread");
 	return ShutdownHalt;
 }
@@ -142,37 +144,68 @@ boolean CKernel::init_screen(u32 widthDesired, u32 heightDesired, u32 colourDept
 	return true;
 }
 
-void CKernel::run_wifi(void) 
+bool CKernel::run_ethernet(void)
 {
+	bool bOK;
+	int retry;
+	if (m_Net)
+		delete m_Net;
+	Kernel.log("Initializing ethernet network");
+#ifndef USE_DHCP
+	m_Net = new CNetSubSystem(IPAddress, NetMask, DefaultGateway, DNSServer, DEFAULT_HOSTNAME, NetDeviceTypeWLAN);
+#else
+	m_Net = new CNetSubSystem(0, 0, 0, 0, DEFAULT_HOSTNAME, NetDeviceTypeEthernet);
+#endif
+	bOK = m_Net->Initialize(FALSE);
+	if (!bOK) {
+		log("couldn't start ethernet network...waiting 1s"); 
+		mScheduler.MsSleep (1 * 1000);
+		return bOK;
+	}
+	retry = 51;	// try for 50*100ms
+	while (--retry && !m_Net->IsRunning()) 
+		mScheduler.MsSleep(100);
+	return (retry != 0);
+}
+
+bool CKernel::run_wifi(void) 
+{
+	if (m_Net)
+	{
+		log("%s: cleaning up network stack", __FUNCTION__);
+		delete m_Net; m_Net = nullptr;
+	}
+#ifndef USE_DHCP
+	m_Net = new CNetSubSystem(IPAddress, NetMask, DefaultGateway, DNSServer, DEFAULT_HOSTNAME, NetDeviceTypeWLAN);
+#else
+	m_Net = new CNetSubSystem(0, 0, 0, 0, DEFAULT_HOSTNAME, NetDeviceTypeWLAN);
+#endif
+	if (!m_Net) return false;
 	bool bOK = true;
-	static CString IPString;
 	if (bOK) bOK = m_WLAN.Initialize();
-	if (bOK) bOK = m_Net.Initialize(FALSE);
+	if (bOK) bOK = m_Net->Initialize(FALSE);
 	if (bOK) bOK = m_WPASupplicant.Initialize();
 	if (!bOK) {
-		log("couldn't start network...");
-		return;
+		log("couldn't start wifi network...waiting 5s"); 
+		mScheduler.MsSleep (5 * 1000);	
 	}
-	while (!m_Net.IsRunning ())
-	{
-		mScheduler.MsSleep (100);
-	}
-	m_Net.GetConfig ()->GetIPAddress ()->Format (&IPString);
-	mLogger.Write ("pottendo-kern", LogNotice, "Open \"http://%s/\" in your web browser!",
-			(const char *) IPString);
-	ip_address = (const char *) IPString;
-	DisplayMessage(0, 16, true, (const char*) IPString, 0xffffffff, 0x0);
-	MsDelay(3000);
+	return bOK;
 }
 
 void CKernel::run_webserver(void) 
 {
-	while (!m_Net.IsRunning ())
+	CString IPString;
+	while (!m_Net->IsRunning())
 	{
-		mScheduler.MsSleep (1000);
 		log("webserver waits for network...");
+		mScheduler.MsSleep (1000);
 	}
-	new CWebServer (&m_Net, &m_ActLED);
+	m_Net->GetConfig()->GetIPAddress()->Format (&IPString);
+	log ("Open \"http://%s/\" in your web browser!", (const char *) IPString);
+	strncpy(ip_address, (const char *) IPString, 31); ip_address[31] = '\0';
+	new_ip = true;
+	DisplayMessage(0, 16, true, (const char*) IPString, 0xffffffff, 0x0);
+	new CWebServer (m_Net, &m_ActLED);
 	for (unsigned nCount = 0; 1; nCount++)
 	{
 		mScheduler.MsSleep (100);
@@ -209,6 +242,10 @@ int CKernel::i2c_scan(int BSCMaster, unsigned char slaveAddress)
 
 void KeyboardRemovedHandler(CDevice *pDevice, void *pContext) 
 {
+	extern bool USBKeyboardDetected;
+	USBKeyboardDetected = false;
+	Kernel.get_kbd()->UnregisterKeyStatusHandlerRaw();
+	Kernel.set_kbd(nullptr);
 	Kernel.log("keyboard removed");
 }
 
@@ -221,6 +258,7 @@ void KeyboardShutdownHandler(void)
 
 int CKernel::usb_keyboard_available(void) 
 {
+	//if (m_pKeyboard) return 1;
 	m_pKeyboard = (CUSBKeyboardDevice *) m_DeviceNameService.GetDevice ("ukbd1", FALSE);
 	if (!m_pKeyboard)
 		return 0;
@@ -242,28 +280,28 @@ int CKernel::usb_massstorage_available(void)
 
 void monitorhandler(TSystemThrottledState CurrentState, void *pParam)
 {
-	if (CurrentState | SystemStateUnderVoltageOccurred)
+	if (CurrentState & SystemStateUnderVoltageOccurred)
 	{
 		Kernel.log("%s: undervoltage occured...", __FUNCTION__);
 	}
-	if (CurrentState | SystemStateFrequencyCappingOccurred)
+	if (CurrentState & SystemStateFrequencyCappingOccurred)
 	{
 		Kernel.log("%s: frequency capping occured...", __FUNCTION__);
 	}
-	if (CurrentState | SystemStateThrottlingOccurred)
+	if (CurrentState & SystemStateThrottlingOccurred)
 	{
 		Kernel.log("%s: throttling occured to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
 	}
-	if (CurrentState | SystemStateSoftTempLimitOccurred)
+	if (CurrentState & SystemStateSoftTempLimitOccurred)
 	{
 		Kernel.log("%s: softtemplimit occured...", __FUNCTION__);
 	}
 }
 
+#include <circle/gpiopin.h>
+
 void CKernel::run_tempmonitor(void)
 {
-	unsigned t = 0;
-
     unsigned tmask = SystemStateUnderVoltageOccurred | SystemStateFrequencyCappingOccurred |
 					 SystemStateThrottlingOccurred | SystemStateSoftTempLimitOccurred;
 	CPUThrottle.RegisterSystemThrottledHandler(tmask, monitorhandler, nullptr);
@@ -273,15 +311,17 @@ void CKernel::run_tempmonitor(void)
 			CPUThrottle.IsDynamic() ? " " : " not ",
 			CPUThrottle.GetClockRate() / 1000000L, 
 			CPUThrottle.GetMaxClockRate() / 1000000L);
-	if (CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown)
-		log ("maxed freq to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
+	//if (CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown)
+	//	log ("maxed freq to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
+	log("ARM_GPIO_GPFSEL1 = 0x%08x", ARM_GPIO_GPFSEL1);
+	log("ARM_GPIO_GPSET0 = 0x%08x", ARM_GPIO_GPSET0);
+	log("ARM_GPIO_GPCLR0 = 0x%08x", ARM_GPIO_GPCLR0);
 
 	while (true) {
 		if (CPUThrottle.SetOnTemperature() == false)
 			log("temperature monitor failed...");
 		MsDelay(5 * 1000);
-		GetTemperature(t);
-		log("Temperature = %dC", t / 1000); 
+		log("Temperature = %dC, IO is 0x%08x", CPUThrottle.GetTemperature(), CGPIOPin::ReadAll()); 
 	}
 }
 
@@ -292,46 +332,45 @@ TKernelTimerHandle CKernel::timer_start(unsigned delay, TKernelTimerHandler *pHa
 
 void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 {
+	extern Options options;
+	int i = 10;/* 10 attempts for each network */
 	switch (core) {
 	case 1:
 		Kernel.log("launching emulator on core %d", core);
 		emulator();
 		break;
 	case 2:
-		Kernel.log("launching webserver on core %d", core);
-		Kernel.run_webserver();
+		if (!options.GetNetWifi() && !options.GetNetEthernet()) goto out;
+		if (options.GetNetEthernet()) // cable network has priority over Wifi
+		{
+			if (!Kernel.run_ethernet()) {
+				Kernel.log("setup ethernet failed");
+				i = 0;
+			} 
+		} 
+		if ((i == 0) && options.GetNetWifi()) 
+		{
+			i = 10;
+			do {
+				Kernel.log("attempt %d to launch WiFi on core %d", 11 - i, core);
+			} while (i-- && !Kernel.run_wifi());
+		}
+		if (i == 0) 
+		{
+			Kernel.log("network setup failed, giving up");
+		} else {
+			Kernel.log("launching webserver on core %d", core);
+			Kernel.run_webserver();
+		}
+	out:
+		Kernel.log("disabling network support");
 		break;
 	case 3:	/* health monitoring */
+		Kernel.log("launching system monitoring on core %d", core);
 		Kernel.run_tempmonitor();
 		break;
 	default:
 		break;
 	}
 }
-
-/* wrappers */
-void RPiConsole_put_pixel(uint32_t x, uint32_t y, uint16_t c) {	Kernel.set_pixel(x, y, c); }
-void SetACTLed(int v) { Kernel.SetACTLed(v); }
-void reboot_now(void) { reboot(); }
-void i2c_init(int BSCMaster, int fast) { Kernel.i2c_init(BSCMaster, fast); }
-void i2c_setclock(int BSCMaster, int clock_freq) { Kernel.i2c_setclock(BSCMaster, clock_freq); }
-int i2c_read(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count) { return Kernel.i2c_read(BSCMaster, slaveAddress, buffer, count); }
-int i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count) { return Kernel.i2c_write(BSCMaster, slaveAddress, buffer, count); }
-int i2c_scan(int BSCMaster, unsigned char slaveAddress) { return Kernel.i2c_scan(BSCMaster, slaveAddress); }
-void USPiInitialize(void) 
-{
-	if (Kernel.usb_updatepnp() == false) 
-	{
-		Kernel.log("usb update failed");
-	}
-}
-int USPiKeyboardAvailable(void) { return Kernel.usb_keyboard_available(); }
-void USPiKeyboardRegisterKeyStatusHandlerRaw(TKeyStatusHandlerRaw *handler) { Kernel.usb_reghandler(handler); }
-TKernelTimerHandle TimerStartKernelTimer(unsigned nDelay, TKernelTimerHandler *pHandler, void* pParam, void* pContext)
-{
-	return Kernel.timer_start(nDelay, pHandler, pParam, pContext);
-}
-void TimerCancelKernelTimer(TKernelTimerHandle hTimer) { Kernel.timer_cancel(hTimer); }
-int GetTemperature(unsigned &value) { unsigned ret = CPUThrottle.GetTemperature(); if (ret) value = ret * 1000; return ret; }
-int USPiMassStorageDeviceAvailable(void) { return Kernel.usb_massstorage_available(); }
 

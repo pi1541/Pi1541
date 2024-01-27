@@ -226,6 +226,7 @@ IEC_Commands::IEC_Commands()
 	displayingDevices = false;
 	lowercaseBrowseModeFilenames = false;
 	newDiskType = DiskImage::D64;
+	selectedImageName[0] = '\0';
 }
 
 void IEC_Commands::Reset(void)

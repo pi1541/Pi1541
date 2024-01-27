@@ -12,48 +12,57 @@ Credits to Stephen (@pi1541) [Pi1541](https://cbm-pi1541.firebaseapp.com/) and [
 Status
 ------
 Currently only tested for
-- Raspberry 3B+, PiZero 2W: successful load (JiffyDOS) of some games with fastloaders and GEOS
+- Raspberry models 3B+, PiZero 2W, 4: successful load (JiffyDOS) of some games with fastloaders and GEOS
 - LCD Display SSD1306
 - Option A (not support split IECLines) of Pi1541, **Option B cannot work** as of now!
 - Buzzer sound output 
-- USB Keyboard and USB Massstorage
-- WiFi starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
+- USB Keyboard and USB Massstorage, Keyboard supports plug-and-play, Massstorage not fully plug-and-play
+- if enabled Ethernet or WiFi starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
 
 <p>
 
-Startup currently unconditionally tries to connect to the WiFi. The LCD shows the desired Logo until an IP address is assigned.
+Startup currently unconditionally tries to connect to the WiFi. 
 The address is briefly shown, once received. One can check the IP address on the screen (HDMI).
 
 <p>
-**Attention**: the operating temperature is substantially higher than with the original kernel. It is recommended to use _active_ cooling as of now. Raspeberry PIs normally protect themselves through throtteling. This should work at 85C - for some reason I can't lower this threshold via `cmdline.txt` using `socmaxtemp=70`, as this doesn't set the limit as documented [here](https://circle-rpi.readthedocs.io/en/latest/basic-system-services/cpu-clock-rate-management.html#ccputhrottle) - at least not on my RPi3.
+
+**Attention**: the operating temperature is substantially higher than with the original kernel (legacy build). It is recommended to use _active_ cooling as of now. Raspeberry PIs normally protect themselves through throtteling. This should work at 85C - for some reason I can't lower this threshold via `cmdline.txt` using `socmaxtemp=70`, as this doesn't set the limit as documented [here](https://circle-rpi.readthedocs.io/en/latest/basic-system-services/cpu-clock-rate-management.html#ccputhrottle) - at least not on my RPi3.
 
 TODOs
 -----
 - Option B, split IEC lines
 - PWM/DMA Soundoutput
 - Rotary Input
-- Some better output on the LCD and Screen to instruct user: IP address, Status WiFi, etc.
-- GPIO handling is still not yet fully replaced by its circle counterpart, so most likely P4 (and younger) still won't work.
 - Make the webserver useful
-- Make screen output, WiFi optional via `options.txt`
-- Recover if WiFi isn't connecting after some attempts and continue booting
-- Introduce Ethernet netwoek as option (instead of WiFi)
 - Allow static IP Adresses for faster startup, to be configured in `options.txt`
 - Make execution more efficient wrt. CPU usage to keep temperature lower, use throtteling to protect the Pi.
 - Provide a helper script to collect all files to make Pi1541 sdcard build easy
-- find and fix strict RPI model specific sections, which don't fit to RP4+
 - Test more sophisticated loaders (RT behavior)
 
 What will not come
 ------------------
-- PiZero support, as it doesn't make sense due to lack of network support
-- Support for all variants of Pi1 and Pi2, as I don't have those to test
+- PiZero support for circle, as it doesn't make sense due to lack of network support
+- Circle Support for all variants of Pi1 and Pi2, as I don't have those to test
+
+Additional Options in `options.txt`
+-----------------------------------
+The following options control new functions available:
+| Option | Value | Purpose |
+|--------|-------|---------|
+| netEthernet | 0 or 1 | enable ethernet network|
+| netWifi | 0 or 1 | enable network network|
+
+Know Bugs
+---------
+
+- Enabling both `netEthernet` and `netWifi` leads to a crash
+- Pluging in a USB stick _after_ booting, won't show files on the USB mounted drive and display remains dark. Unplugging/re-plugging works as expected if USB is plugged in at startup
 
 Checkout & Build
 ----------------
 One can build the Version 1.24 (+some minor fixes: LED & Buzzer work, build/works with gcc > 10.x).
 
-The circle-version is built by:
+The circle-stdlib used by this project is built by:
 
 ```
 BUILDDIR=build-pottendo-Pi1541
@@ -64,16 +73,73 @@ git clone https://github.com/pottendo/pottendo-Pi1541.git
 # Checkout (circle-stdlib)[https://github.com/smuehlst/circle-stdlib]:
 git clone --recursive https://github.com/smuehlst/circle-stdlib.git
 cd circle-stdlib
-# configure for Rasppi3 (also 3 for PiZero2W!)
+# configure for Pi3 and Pi Zero 2 W:
 ./configure -r 3
+# alternatively configure for Pi4
+# ./configure -r 4
+
+# Path Circle sysconfigh on ffconf.h to adapt to Pi1541 needs
+
+cd libs/circle
+patch -p1 < ../../../pottendo-Pi1541/src/Circle/patch-circle.diff 
+cd ../..
+
+# build circle-lib
 make
 
-# Set/edit some options in libs/circle/include/circle/sysconfig.h and libs/circle/addon/fatfs/ffconf.h, see src/Circle/patch-circle.diff
-
+# build Pi1541 based on circle
 cd ${BUILDDIR}/pottendo-Pi1541
-make 
 ```
-Now copy `kernel8-32.img` to your Pi1541 SDCard. Make sure you have set the respective lines `kernel=kernel8-32.img` in `config.txt` on your SDcard.
+Depending on the RPi Model and on the chosen build (Circle vs. legacy):
+| Model | Version | build cmd | Image Name |
+|----------|-----------|----------- |----------------|
+| Pi Zero, 1RevXX, 2, 3 | legacy build | `make RASPPI={0,1BRev1,1BRev2,1BPlus,2,3} legacy` | `kernel.img` |
+| Pi Zero 2W, 3 | circle build | `make` | `kernel8-32.img` |
+| Pi 4 | circle build | `make` | `kernel7l.img` |
+
+*Hint*: in case you want to alternatively build for circle-lib and legacy make sure to `make clean` between the builds!
+
+Now copy the kernel image to your Pi1541 SDCard. Make sure you have set the respective lines `config.txt` on your Pi1541 SDcard:
+Model 3 and earlier - `config.txt`
+```
+arm_freq=1300
+over_voltage=4
+sdram_freq=500
+sdram_over_voltage=1
+force_turbo=1
+boot_delay=1
+
+# Run in 32-bit mode
+arm_64bit=0
+
+enable_uart=1
+gpu_mem=16
+
+hdmi_group=2
+#hdmi_mode=4
+hdmi_mode=16
+
+kernel=kernel8-32.img
+#kernel_address=0x1f00000
+#kernel=kernel.img
+
+```
+in case you use legacy build `kernel.img` you also have to uncomment the line `kernel_address=0x1f00000`!
+
+Model 4 - `config.txt`
+```
+# some genereic Pi4 configs can remain
+
+# Run in 32-bit mode
+arm_64bit=0
+force_turbo=1
+
+[all]
+enable_uart=1   # in case you have Pin 14/15 connected via TTL cable
+kernel=kernel7l.img
+```
+
+Uart console on pins *14(TX)/15(RX)* gives useful log information.
 
 WiFi needs the drivers on the flash card. You can download like this:
 ```
@@ -119,44 +185,9 @@ network={
 }
 ```
 
-In order to build the standard Pi1541 after building the circle library the tree has to be cleaned
-```
-cd ${BUILDDIR}/pottendo-Pi1541
-make clean
-```
-Note that this also removes all image files from previoues builds in `${BUILDDIR}/pottendo-Pi1541`
-The file `config.txt` on the SDCard must not set kernel_address (therefore commented below) for the circle version.
-It's mandatory to be set for the original Pi1541.
-
-```
-arm_freq=1300             # overclocking (for Rpi Zero 2 and 3 is needed)
-over_voltage=4
-sdram_freq=500
-sdram_over_voltage=2
-force_turbo=1             # go right with the above defined 1.3GHz
-boot_delay=1
-
-arm_64bit=0               # 64 bit won't work
-#armstub=no-prefetch.bin  # not sure if this is needed
-
-enable_uart=1             # Console 14(TX), 15(RX)
-gpu_mem=16
-
-hdmi_group=2
-hdmi_mode=16              # 1024x768 @ 60Hz (in group 2)
-
-#kernel_address=0x1f00000 # needed for original builds
-#kernel=kernel.img        # use this for the original build
-
-kernel=kernel8-32.img     # Circle build default name
-```
-
-This `config.txt` enables the uart console on pins *14(TX)/15(RX)* - this gives useful log information.
-`options.txt`` and all the other content on a Pi1541 sdcard are similar to the original Pi1541 requirements.
-
 # Disclaimer
 
-**Due to some unlikely, unexpected circumstances (e.g. overheating), you may damage your beloved devices (Raspberry Pi, Retro machines, C64s, VIC20s, etc) by using this software. I do not take any responsibility, so use at your own risk!**
+**Due to some unlikely, unexpected circumstances (e.g. overheating), you may damage your beloved devices (Raspberry Pi, Retro machines, C64s, VIC20s, SDCards, USBSticks, etc) by using this software. I do not take any responsibility, so use at your own risk!**
 
 # Pi1541
 

@@ -153,6 +153,11 @@ void Keyboard::USBKeyboardDeviceTimerHandler(unsigned hTimer, void *pParam, void
 		keyboard->timer = TimerStartKernelTimer(REPEAT_RATE, USBKeyboardDeviceTimerHandler, 0, pContext);
 }
 
+void Keyboard::re_register(void) 
+{
+	 USPiKeyboardRegisterKeyStatusHandlerRaw(KeyPressedHandlerRaw);
+}
+
 Keyboard::Keyboard()
 	: modifier(0)
 	, timer(0)

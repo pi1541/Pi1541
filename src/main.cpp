@@ -58,7 +58,11 @@ extern "C"
 
 unsigned versionMajor = 1;
 unsigned versionMinor = 24;
-
+#if defined (__CIRCLE__)
+#define CV "c"
+#else
+#define CV
+#endif
 // When the emulated CPU starts we execute the first million odd cycles in non-real-time (ie as fast as possible so the emulated 1541 becomes responsive to CBM-Browser asap)
 // During these cycles the CPU is executing the ROM self test routines (these do not need to be cycle accurate)
 // ***1581*** Skip to AFCA (how many cycles is this?)
@@ -115,6 +119,8 @@ Pi1581 pi1581;
 #endif
 #if !defined(__CIRCLE__)
 CEMMCDevice	m_EMMC;
+#else
+bool usb_mass_update = false;
 #endif
 Screen screen;
 ScreenLCD* screenLCD = 0;
@@ -488,8 +494,20 @@ void UpdateScreen()
 			//refreshUartStatusDisplay = true;
 		}
 #if defined (__CIRCLE__)
-		snprintf(tempBuffer, tempBufferSize, "IP address: %s", Kernel.get_ip());
-		screen.PrintText(false, 0, y + 20, tempBuffer, textColour, bgColour);		
+		{
+			const char *p;
+			if (Kernel.get_ip(&p)) {
+				snprintf(tempBuffer, tempBufferSize, "IP address: %s", p);
+				screen.PrintText(false, 0, y + 20, tempBuffer, textColour, bgColour);
+			}
+			if (Kernel.usb_updatepnp())
+			{
+				if  (!USBKeyboardDetected && (USBKeyboardDetected = USPiKeyboardAvailable()))
+					keyboard->re_register();
+				numberOfUSBMassStorageDevices = USPiMassStorageDeviceAvailable();
+				usb_mass_update = true;
+			}
+		}
 #endif
 		if (options.GraphIEC())
 			screen.DrawLineV(graphX, top3, bottom, BkColour);
@@ -1314,7 +1332,13 @@ void emulator()
 			inputMappings->SetKeyboardBrowseLCDScreen(screenLCD && options.KeyboardBrowseLCDScreen());
 #endif
 			fileBrowser->ShowDeviceAndROM();
-
+#if defined (__CIRCLE__)
+			if (usb_mass_update)
+			{
+				fileBrowser->PopFolder();
+				usb_mass_update = false;
+			}
+#endif
 			if (!options.GetDisableSD2IECCommands())
 			{
 				m_IEC_Commands.SimulateIECBegin();

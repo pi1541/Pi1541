@@ -160,6 +160,8 @@ Options::Options(void)
         , buttonInsert(5)
 	, rotaryEncoderEnable(0) //ROTARY:
 	, rotaryEncoderInvert(0) //ROTARY:
+	, netWifi(0)
+	, netEthernet(0)
 {
 	autoMountImageName[0] = 0;
 	strcpy(ROMFontName, "chargen");
@@ -252,6 +254,8 @@ void Options::Process(char* buffer)
 		ELSE_CHECK_DECIMAL_OPTION(buttonInsert)
 		ELSE_CHECK_DECIMAL_OPTION(rotaryEncoderEnable) //ROTARY:
 		ELSE_CHECK_DECIMAL_OPTION(rotaryEncoderInvert) //ROTARY:
+		ELSE_CHECK_DECIMAL_OPTION(netWifi)
+		ELSE_CHECK_DECIMAL_OPTION(netEthernet)
 		else if ((strcasecmp(pOption, "AutoBaseName") == 0))
 		{
 			strncpy(autoBaseName, pValue, 255);

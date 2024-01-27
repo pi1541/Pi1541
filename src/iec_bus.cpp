@@ -80,6 +80,17 @@ bool IEC_Bus::rotaryEncoderEnable;
 //ROTARY: Added for rotary encoder inversion (Issue#185) - 08/13/2020 by Geo...
 bool IEC_Bus::rotaryEncoderInvert;
 
+#if defined (__CIRCLE__)
+CGPIOPin IEC_Bus::IO_ATN;
+CGPIOPin IEC_Bus::IO_CLK;
+CGPIOPin IEC_Bus::IO_DAT;
+CGPIOPin IEC_Bus::IO_SRQ;
+CGPIOPin IEC_Bus::IO_RST;
+CGPIOPin IEC_Bus::IO_buttons[5];
+CGPIOPin IEC_Bus::IO_led;
+CGPIOPin IEC_Bus::IO_sound;
+#endif
+
 void IEC_Bus::ReadGPIOUserInput()
 {
 	//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
@@ -143,9 +154,11 @@ void IEC_Bus::ReadGPIOUserInput()
 void IEC_Bus::ReadBrowseMode(void)
 {
 	gplev0 = read32(ARM_GPIO_GPLEV0);
+	//XXXgplev0 = CGPIOPin::ReadAll();
 	ReadGPIOUserInput();
 
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
+	//XXXbool ATNIn = IEC_Bus::IO_ATN.Read() == (invertIECInputs ? PIGPIO_MASK_IN_DATA : 0);
 	if (PI_Atn != ATNIn)
 	{
 		PI_Atn = ATNIn;
@@ -154,6 +167,8 @@ void IEC_Bus::ReadBrowseMode(void)
 	if (!AtnaDataSetToOut && !DataSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
 	{
 		bool DATAIn = (gplev0 & PIGPIO_MASK_IN_DATA) == (invertIECInputs ? PIGPIO_MASK_IN_DATA : 0);
+		//IEC_Bus::IO_DAT.SetMode(GPIOModeInput, true);
+		//XXXbool DATAIn = IEC_Bus::IO_DAT.Read() == (invertIECInputs ? PIGPIO_MASK_IN_DATA : 0);
 		if (PI_Data != DATAIn)
 		{
 			PI_Data = DATAIn;
@@ -167,6 +182,8 @@ void IEC_Bus::ReadBrowseMode(void)
 	if (!ClockSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
 	{
 		bool CLOCKIn = (gplev0 & PIGPIO_MASK_IN_CLOCK) == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK  : 0);
+		//IEC_Bus::IO_CLK.SetMode(GPIOModeInput, true);
+		//XXXbool CLOCKIn = IEC_Bus::IO_CLK.Read() == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK  : 0);
 		if (PI_Clock != CLOCKIn)
 		{
 			PI_Clock = CLOCKIn;
@@ -176,8 +193,8 @@ void IEC_Bus::ReadBrowseMode(void)
 	{
 		PI_Clock = true;
 	}
-
 	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+	//XXXResetting = !ignoreReset && (IEC_Bus::IO_RST.Read() == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 }
 
 void IEC_Bus::ReadEmulationMode1541(void)
@@ -185,11 +202,13 @@ void IEC_Bus::ReadEmulationMode1541(void)
 	bool AtnaDataSetToOutOld = AtnaDataSetToOut;
 	IOPort* portB = 0;
 	gplev0 = read32(ARM_GPIO_GPLEV0);
+	//XXXgplev0 = CGPIOPin::ReadAll();
 
 	portB = port;
 
 #ifndef REAL_XOR
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
+	//XXXbool ATNIn = IEC_Bus::IO_ATN.Read() == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
 	if (PI_Atn != ATNIn)
 	{
 		PI_Atn = ATNIn;
@@ -219,6 +238,8 @@ void IEC_Bus::ReadEmulationMode1541(void)
 	if (!AtnaDataSetToOut && !DataSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
 	{
 		bool DATAIn = (gplev0 & PIGPIO_MASK_IN_DATA) == (invertIECInputs ? PIGPIO_MASK_IN_DATA : 0);
+		//IEC_Bus::IO_DAT.SetMode(GPIOModeInput, true);
+		//XXXbool DATAIn = IEC_Bus::IO_DAT.Read() == (invertIECInputs ? PIGPIO_MASK_IN_DATA : 0);
 		//if (PI_Data != DATAIn)
 		{
 			PI_Data = DATAIn;
@@ -261,6 +282,9 @@ void IEC_Bus::ReadEmulationMode1541(void)
 	if (!ClockSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
 	{
 		bool CLOCKIn = (gplev0 & PIGPIO_MASK_IN_CLOCK) == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK : 0);
+		//IEC_Bus::IO_CLK.SetMode(GPIOModeInput, true);
+		//XXXbool CLOCKIn = IEC_Bus::IO_CLK.Read() == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK : 0);
+
 		//if (PI_Clock != CLOCKIn)
 		{
 			PI_Clock = CLOCKIn;
@@ -274,16 +298,19 @@ void IEC_Bus::ReadEmulationMode1541(void)
 	}
 
 	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+	//XXXResetting = !ignoreReset && (IEC_Bus::IO_RST.Read() == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 }
 
 void IEC_Bus::ReadEmulationMode1581(void)
 {
 	IOPort* portB = 0;
 	gplev0 = read32(ARM_GPIO_GPLEV0);
+	//XXXgplev0 = CGPIOPin::ReadAll();
 
 	portB = port;
 
 	bool ATNIn = (gplev0 & PIGPIO_MASK_IN_ATN) == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
+	//XXXbool ATNIn = IEC_Bus::IO_ATN.Read() == (invertIECInputs ? PIGPIO_MASK_IN_ATN : 0);
 	if (PI_Atn != ATNIn)
 	{
 		PI_Atn = ATNIn;
@@ -309,6 +336,7 @@ void IEC_Bus::ReadEmulationMode1581(void)
 	if (!AtnaDataSetToOut && !DataSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
 	{
 		bool DATAIn = (gplev0 & PIGPIO_MASK_IN_DATA) == (invertIECInputs ? PIGPIO_MASK_IN_DATA : 0);
+		//XXXbool DATAIn = IO_DAT.Read() == (invertIECInputs ? PIGPIO_MASK_IN_DATA : 0);
 		if (PI_Data != DATAIn)
 		{
 			PI_Data = DATAIn;
@@ -324,6 +352,7 @@ void IEC_Bus::ReadEmulationMode1581(void)
 	if (!ClockSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
 	{
 		bool CLOCKIn = (gplev0 & PIGPIO_MASK_IN_CLOCK) == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK : 0);
+		//XXXbool CLOCKIn = IO_CLK.Read() == (invertIECInputs ? PIGPIO_MASK_IN_CLOCK : 0);
 		if (PI_Clock != CLOCKIn)
 		{
 			PI_Clock = CLOCKIn;
@@ -339,6 +368,7 @@ void IEC_Bus::ReadEmulationMode1581(void)
 	if (!SRQSetToOut)	// only sense if we have not brought the line low (because we can't as we have the pin set to output but we can simulate in software)
 	{
 		bool SRQIn = (gplev0 & PIGPIO_MASK_IN_SRQ) == (invertIECInputs ? PIGPIO_MASK_IN_SRQ : 0);
+		//XXXbool SRQIn = IEC_Bus::IO_SRQ.Read() == (invertIECInputs ? PIGPIO_MASK_IN_SRQ : 0);
 		if (PI_SRQ != SRQIn)
 		{
 			PI_SRQ = SRQIn;
@@ -350,6 +380,7 @@ void IEC_Bus::ReadEmulationMode1581(void)
 	}
 
 	Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+	//XXXResetting = !ignoreReset && (IO_RST.Read() == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
 }
 
 void IEC_Bus::RefreshOuts1541(void)
@@ -361,12 +392,23 @@ void IEC_Bus::RefreshOuts1541(void)
 	if (!splitIECLines)
 	{
 		unsigned outputs = 0;
-
+#if 1
 		if (AtnaDataSetToOut || DataSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_DATA - 10) * 3));
 		if (ClockSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_CLOCK - 10) * 3));
 
 		unsigned nValue = (myOutsGPFSEL1 & PI_OUTPUT_MASK_GPFSEL1) | outputs;
 		write32(ARM_GPIO_GPFSEL1, nValue);
+#else
+		if (AtnaDataSetToOut || DataSetToOut)
+			IEC_Bus::IO_DAT.SetMode(GPIOModeOutput, true);
+		else 
+			IEC_Bus::IO_DAT.SetMode(GPIOModeInput, true);
+		if (ClockSetToOut) {
+			IEC_Bus::IO_CLK.SetMode(GPIOModeOutput, true);
+		} else {
+			IEC_Bus::IO_CLK.SetMode(GPIOModeInput, true);
+		}
+#endif
 	}
 	else
 	{
@@ -383,6 +425,7 @@ void IEC_Bus::RefreshOuts1541(void)
 		}
 	}
 
+#if 1	/* this is needed, the Circle code won't work on RPI3s */
 	if (OutputLED) set |= 1 << PIGPIO_OUT_LED;
 	else clear |= 1 << PIGPIO_OUT_LED;
 
@@ -391,6 +434,13 @@ void IEC_Bus::RefreshOuts1541(void)
 
 	write32(ARM_GPIO_GPCLR0, clear);
 	write32(ARM_GPIO_GPSET0, set);
+#else
+	if (OutputLED) IEC_Bus::IO_led.Write(HIGH);
+	else IEC_Bus::IO_led.Write(LOW);
+	if (OutputSound) IEC_Bus::IO_sound.Write(HIGH);
+	else IEC_Bus::IO_sound.Write(LOW);
+#endif
+
 }
 
 void IEC_Bus::PortB_OnPortOut(void* pUserData, unsigned char status)
