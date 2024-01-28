@@ -402,7 +402,6 @@ public:
 		RPI_GpioBase->GPPUD = 0;
 		RPI_GpioBase->GPPUDCLK0 = 0;
 
-#if !defined (__CIRCLE__)
 		//ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
 		if (IEC_Bus::rotaryEncoderEnable == true)
 		{
@@ -416,7 +415,6 @@ public:
 				IEC_Bus::rotaryEncoder.Initialize(RPI_GPIO22, RPI_GPIO23, RPI_GPIO27);
 			}
 		}
-#endif
 	}
 
 	static inline void LetSRQBePulledHigh()

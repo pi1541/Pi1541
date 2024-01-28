@@ -109,9 +109,53 @@ boolean CKernel::Initialize (void)
 	return bOK;
 }
 
+void monitorhandler(TSystemThrottledState CurrentState, void *pParam)
+{
+	if (CurrentState & SystemStateUnderVoltageOccurred)
+	{
+		Kernel.log("%s: undervoltage occured...", __FUNCTION__);
+	}
+	if (CurrentState & SystemStateFrequencyCappingOccurred)
+	{
+		Kernel.log("%s: frequency capping occured...", __FUNCTION__);
+	}
+	if (CurrentState & SystemStateThrottlingOccurred)
+	{
+		Kernel.log("%s: throttling occured to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
+	}
+	if (CurrentState & SystemStateSoftTempLimitOccurred)
+	{
+		Kernel.log("%s: softtemplimit occured...", __FUNCTION__);
+	}
+}
+
 TShutdownMode CKernel::Run (void)
 {
 	mLogger.Write ("pottendo-kern", LogNotice, "pottendo-Pi1541 (%dx%d)", mScreen.GetWidth(), mScreen.GetHeight());
+
+    unsigned tmask = SystemStateUnderVoltageOccurred | SystemStateFrequencyCappingOccurred |
+					 SystemStateThrottlingOccurred | SystemStateSoftTempLimitOccurred;
+	CPUThrottle.RegisterSystemThrottledHandler(tmask, monitorhandler, nullptr);
+	// CPUThrottle.DumpStatus(true);
+	log("Maximum temp set to %d, dynamic adaption%spossible, curret freq = %dMHz (max=%dMHz)", 
+			CPUThrottle.GetMaxTemperature(), 
+			CPUThrottle.IsDynamic() ? " " : " not ",
+			CPUThrottle.GetClockRate() / 1000000L, 
+			CPUThrottle.GetMaxClockRate() / 1000000L);
+
+	CMachineInfo *mi = CMachineInfo::Get();
+	if (mi)
+	{
+		TMachineModel model = mi->GetMachineModel();
+		if (((model == MachineModel4B) ||
+			 (model == MachineModel400) ||
+			 (model == MachineModelCM4)) &&
+			(CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown))
+		{
+			log("maxed freq to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
+		}
+	}
+
 	kernel_main(0, 0, 0);
 	new_ip = true;
 	Kernel.launch_cores();
@@ -279,50 +323,13 @@ int CKernel::usb_massstorage_available(void)
 	return 1;
 }
 
-void monitorhandler(TSystemThrottledState CurrentState, void *pParam)
-{
-	if (CurrentState & SystemStateUnderVoltageOccurred)
-	{
-		Kernel.log("%s: undervoltage occured...", __FUNCTION__);
-	}
-	if (CurrentState & SystemStateFrequencyCappingOccurred)
-	{
-		Kernel.log("%s: frequency capping occured...", __FUNCTION__);
-	}
-	if (CurrentState & SystemStateThrottlingOccurred)
-	{
-		Kernel.log("%s: throttling occured to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
-	}
-	if (CurrentState & SystemStateSoftTempLimitOccurred)
-	{
-		Kernel.log("%s: softtemplimit occured...", __FUNCTION__);
-	}
-}
-
-#include <circle/gpiopin.h>
-
 void CKernel::run_tempmonitor(void)
 {
-    unsigned tmask = SystemStateUnderVoltageOccurred | SystemStateFrequencyCappingOccurred |
-					 SystemStateThrottlingOccurred | SystemStateSoftTempLimitOccurred;
-	CPUThrottle.RegisterSystemThrottledHandler(tmask, monitorhandler, nullptr);
-	// CPUThrottle.DumpStatus(true);
-	log("Maximum temp set to %d, dynamic adaption%spossible, curret freq = %dMHz (max=%dMHz)", 
-			CPUThrottle.GetMaxTemperature(), 
-			CPUThrottle.IsDynamic() ? " " : " not ",
-			CPUThrottle.GetClockRate() / 1000000L, 
-			CPUThrottle.GetMaxClockRate() / 1000000L);
-	//if (CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown)
-	//	log ("maxed freq to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
-	log("ARM_GPIO_GPFSEL1 = 0x%08x", ARM_GPIO_GPFSEL1);
-	log("ARM_GPIO_GPSET0 = 0x%08x", ARM_GPIO_GPSET0);
-	log("ARM_GPIO_GPCLR0 = 0x%08x", ARM_GPIO_GPCLR0);
-
 	while (true) {
 		if (CPUThrottle.SetOnTemperature() == false)
 			log("temperature monitor failed...");
 		MsDelay(5 * 1000);
-		log("Temperature = %dC, IO is 0x%08x", CPUThrottle.GetTemperature(), CGPIOPin::ReadAll()); 
+		log("Temperature = %dC", CPUThrottle.GetTemperature()); 
 	}
 }
 

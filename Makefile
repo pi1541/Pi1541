@@ -39,14 +39,14 @@ CIRCLEBASE ?= ../circle-stdlib
 CIRCLEHOME ?= $(CIRCLEBASE)/libs/circle
 
 LEGACY_OBJS = 	armc-start.o armc-cstartup.o armc-cstubs.o armc-cppstubs.o emmc.o ff.o cache.o exception.o performance.o \
-	      	rpi-interrupts.o Timer.o diskio.o interrupt.o rpi-aux.o  rpi-i2c.o rpi-mailbox-interface.o rpi-mailbox.o rpi-gpio.o dmRotary.o
+	      	rpi-interrupts.o Timer.o diskio.o interrupt.o rpi-aux.o  rpi-i2c.o rpi-mailbox-interface.o rpi-mailbox.o rpi-gpio.o
 
 CIRCLE_OBJS = 	circle-main.o circle-kernel.o webserver.o legacy-wrappers.o
 
 COMMON_OBJS = 	main.o Drive.o Pi1541.o DiskImage.o iec_bus.o iec_commands.o m6502.o m6522.o \
 		gcr.o prot.o lz.o options.o Screen.o SSD1306.o ScreenLCD.o \
 		FileBrowser.o DiskCaddy.o ROMs.o InputMappings.o xga_font_data.o \
-		m8520.o wd177x.o Pi1581.o SpinLock.o Keyboard.o
+		m8520.o wd177x.o Pi1581.o SpinLock.o Keyboard.o dmRotary.o
 SRCDIR   = src
 OBJS_CIRCLE  := $(addprefix $(SRCDIR)/, $(CIRCLE_OBJS) $(COMMON_OBJS))
 OBJS_LEGACY  := $(addprefix $(SRCDIR)/, $(LEGACY_OBJS) $(COMMON_OBJS))
