@@ -21,8 +21,8 @@ Currently only tested for
 
 <p>
 
-Startup currently unconditionally tries to connect to the WiFi. 
-The address is briefly shown, once received. One can check the IP address on the screen (HDMI).
+If enabled (see below), network is activated in the background. For Wifi it may take a few seconds to connect and retreive the IP Address via DHCP.
+The IP address is briefly shown on the LCD, once received. One can check the IP address on the screen (HDMI).
 
 <p>
 
