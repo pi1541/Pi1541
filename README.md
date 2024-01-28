@@ -14,11 +14,13 @@ Status
 Currently only tested for
 - Raspberry models 3B+, PiZero 2W, 4: successful load (JiffyDOS) of some games with fastloaders and GEOS
 - LCD Display SSD1306
-- Option A (not support split IECLines) of Pi1541, **Option B cannot work** as of now!
+- Option A HW Support 
 - Buzzer sound output 
 - USB Keyboard and USB Massstorage, Keyboard supports plug-and-play, Massstorage not fully plug-and-play
 - if enabled, Ethernet or WiFi starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
+- Rotary Input
 
+Note that Option B hardware (split IECLines) of Pi1541 is not tested (I don't have the necessay hardware). The code uses `<somePin>.SetMode(GPIOModeInput)` method. This should neither activate _PullUp_ nor _PullDown_ for any of the respective input pins. 
 <p>
 
 If enabled (see below), network is activated in the background. For Wifi it may take a few seconds to connect and retreive the IP Address via DHCP.
@@ -30,9 +32,8 @@ The IP address is briefly shown on the LCD, once received. One can check the IP 
 
 TODOs
 -----
-- Option B, split IEC lines
+- Testing of Option B, split IEC lines
 - PWM/DMA Soundoutput
-- Rotary Input
 - Make the webserver useful
 - Allow static IP Adresses for faster startup, to be configured in `options.txt`
 - Make execution more efficient wrt. CPU usage to keep temperature lower, use throtteling to protect the Pi.

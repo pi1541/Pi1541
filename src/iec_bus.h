@@ -305,6 +305,27 @@ class IEC_Bus
 	static CGPIOPin IO_SRQ;
 	static CGPIOPin IO_RST;
 	static CGPIOPin IO_buttons[5];
+
+	static CGPIOPin IO_IN_BUTTON4;
+	static CGPIOPin IO_IN_BUTTON5;
+	static CGPIOPin IO_IN_RESET;
+	static CGPIOPin IO_IN_SRQ;
+	static CGPIOPin IO_IN_BUTTON2;
+	static CGPIOPin IO_IN_BUTTON3;
+	static CGPIOPin IO_IN_ATN;
+	static CGPIOPin IO_IN_DATA;
+	static CGPIOPin IO_IN_CLOCK;
+	static CGPIOPin IO_IN_BUTTON1;
+
+	//static CGPIOPin IO_OUT_RESET;
+	static CGPIOPin IO_OUT_SPI0_RS;
+
+	static CGPIOPin IO_OUT_ATN;
+	static CGPIOPin IO_OUT_SOUND;
+	static CGPIOPin IO_OUT_LED;
+	static CGPIOPin IO_OUT_CLOCK;
+	static CGPIOPin IO_OUT_DATA;
+	static CGPIOPin IO_OUT_SRQ;
 #endif	
 public:
 	static inline void Initialise(void)
@@ -365,6 +386,27 @@ public:
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_CLOCK, FS_OUTPUT);
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_DATA, FS_OUTPUT);
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_SRQ, FS_OUTPUT);
+#else
+			IEC_Bus::IO_IN_BUTTON4.AssignPin(PIGPIO_IN_BUTTON4); IEC_Bus::IO_IN_BUTTON4.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_BUTTON5.AssignPin(PIGPIO_IN_BUTTON5); IEC_Bus::IO_IN_BUTTON5.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_RESET.AssignPin(PIGPIO_IN_RESET); IEC_Bus::IO_IN_RESET.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_SRQ.AssignPin(PIGPIO_IN_SRQ); IEC_Bus::IO_IN_SRQ.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_BUTTON2.AssignPin(PIGPIO_IN_BUTTON2); IEC_Bus::IO_IN_BUTTON2.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_BUTTON3.AssignPin(PIGPIO_IN_BUTTON3); IEC_Bus::IO_IN_BUTTON3.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_ATN.AssignPin(PIGPIO_IN_ATN); IEC_Bus::IO_IN_ATN.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_DATA.AssignPin(PIGPIO_IN_DATA); IEC_Bus::IO_IN_DATA.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_CLOCK.AssignPin(PIGPIO_IN_CLOCK); IEC_Bus::IO_IN_CLOCK.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_BUTTON1.AssignPin(PIGPIO_IN_BUTTON1); IEC_Bus::IO_IN_BUTTON1.SetMode(GPIOModeInput);
+
+			//IO_OUT_RESET.AssignPin(PIGPIO_OUT_RESET); IEC_Bus::IO_OUT_RESET.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_OUT_SPI0_RS.AssignPin(PIGPIO_OUT_SPI0_RS); IEC_Bus::IO_OUT_SPI0_RS.SetMode(GPIOModeOutput);
+
+			IEC_Bus::IO_OUT_ATN.AssignPin(PIGPIO_OUT_ATN); IEC_Bus::IO_OUT_ATN.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_OUT_SOUND.AssignPin(PIGPIO_OUT_SOUND); IEC_Bus::IO_OUT_SOUND.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_OUT_LED.AssignPin(PIGPIO_OUT_LED); IEC_Bus::IO_OUT_LED.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_OUT_CLOCK.AssignPin(PIGPIO_OUT_CLOCK); IEC_Bus::IO_OUT_CLOCK.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_OUT_DATA.AssignPin(PIGPIO_OUT_DATA); IEC_Bus::IO_OUT_DATA.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_OUT_SRQ.AssignPin(PIGPIO_OUT_SRQ); IEC_Bus::IO_OUT_SRQ.SetMode(GPIOModeOutput);						
 #endif			
 		}
 	
