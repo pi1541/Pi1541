@@ -1,27 +1,27 @@
 # Pi1541 - Circle ported, ready for new features
 
-This is an optional port of Pi1541 to the current Circle bare metal library (as of Jan. 2024, Version 45.3.1).
+This is an optional port of Pi1541 (V1.24) to the current Circle bare metal library (as of Jan. 2024, Version 45.3.1).
 
 As almost all Pi model specific bindings which have a counterparts in Circle have been removed. This allows to use the potential of Circle to extend Pi1541 with new functionalities. Some ideas:
 - Webserver to download images
-- Pi4/400 and 5 (later, once supported by Circle)
+- Support for Pi5 (later, once supported by Circle)
 - ...
 
 Credits to Stephen (@pi1541) [Pi1541](https://cbm-pi1541.firebaseapp.com/) and [Pi1541-github](https://github.com/pi1541/Pi1541), Rene (@rsta2) [circle](https://github.com/rsta2/circle), Stephan (@smuehlst) [circle-stdlib](https://github.com/smuehlst/circle-stdlib) for the brilliant base packages!
 
 Status
 ------
-Currently only tested for
-- Raspberry models 3B+, PiZero 2W, 4: successful load (JiffyDOS) of some games with fastloaders and GEOS
+The following is supposed to work no the the circle based _V1.24c_, as I've tested those functions a bit:
+- Pi1541 on Raspberry models 3B+, PiZero 2W, 4: successful load (JiffyDOS) of some games with fastloaders and GEOS
 - LCD Display SSD1306
-- Option A HW Support 
-- Buzzer sound output 
-- PWM/DMA Soundoutput
-- USB Keyboard and USB Massstorage, Keyboard supports plug-and-play, Massstorage not fully plug-and-play
-- if enabled, Ethernet or WiFi starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
 - Rotary Input
+- Option A HW Support 
+- Buzzer sound output
+- PWM/DMA Soundoutput (sounds nicer than in legacy codebase, IMHO)
+- USB Keyboard and USB Massstorage (improved over original, see also Bugs below)
+- Ethernet or WiFi network (if configured) starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
 
-Note that Option B hardware (split IECLines) of Pi1541 is not tested (I don't have the necessay hardware). The code uses `<somePin>.SetMode(GPIOModeInput)` method. This should neither activate _PullUp_ nor _PullDown_ for any of the respective input pins. 
+Note that Option B hardware (split IECLines) of Pi1541 is not tested (I don't have the necessay hardware). The code uses `<somePin>.SetMode(GPIOModeInput)` method. This should neither activate _PullUp_ nor _PullDown_ for any of the respective input pins.
 <p>
 
 If enabled (see below), network is activated in the background. For Wifi it may take a few seconds to connect and retreive the IP Address via DHCP.
@@ -29,7 +29,17 @@ The IP address is briefly shown on the LCD, once received. One can check the IP 
 
 <p>
 
-**Attention**: the operating temperature is substantially higher than with the original kernel (legacy build). It is recommended to use _active_ cooling as of now. Raspeberry PIs normally protect themselves through throtteling. This should work at 85C - for some reason I can't lower this threshold via `cmdline.txt` using `socmaxtemp=70`, as this doesn't set the limit as documented [here](https://circle-rpi.readthedocs.io/en/latest/basic-system-services/cpu-clock-rate-management.html#ccputhrottle) - at least not on my RPi3.
+The codebase is the publically available Pi1541 code, V1.24 (as of Jan. 2024) with some improvements:
+- LED/Buzzer work again as in 1.23
+- some bugfixes to avoid crash (missing initializer)
+- build support for moden GCCs (-mno-unaligend-access)
+
+Still the legacy code can be built with support for all supported hardware variants, include PiZero, Pi1 and Pi2 variants - see build chapter _Build_.
+The floppy emulation is entirely untouched, so it's as good as it was/is in V1.24 - which is pretty good, IMHO! **Credits to Stephen!**
+
+<p>
+
+**Attention**: the operating temperature is substantially higher than with the original kernel (legacy build). It is recommended to use _active_ cooling as of now. Raspeberry PIs normally protect themselves through throtteling. This should work at 85C - for some reason I can't lower this threshold via `cmdline.txt` using `socmaxtemp=70`, as this doesn't set the limit as documented [here](https://circle-rpi.readthedocs.io/en/latest/basic-system-services/cpu-clock-rate-management.html#ccputhrottle) - at least not on my RPi3/RPi4.
 
 TODOs
 -----
@@ -190,7 +200,14 @@ network={
 
 # Disclaimer
 
-**Due to some unlikely, unexpected circumstances (e.g. overheating), you may damage your beloved devices (Raspberry Pi, Retro machines, C64s, VIC20s, SDCards, USBSticks, etc) by using this software. I do not take any responsibility, so use at your own risk!**
+**Due to some unlikely, unexpected circumstances (e.g. overheating), you may damage your beloved devices (Raspberry Pi, Retro machines, Floppy Drives, C64s, VIC20s, C128s, SDCards, USBSticks, etc) by using this software. I do not take any responsibility, so use at your own risk!**
+
+Circle based Pi1541 is distributed in the hope that it will be useful,
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+ 
+You should have received a copy of the GNU General Public License along with Pi1541. If not, see <http://www.gnu.org/licenses/>.
 
 # Pi1541
 
