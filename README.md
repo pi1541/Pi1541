@@ -16,6 +16,7 @@ Currently only tested for
 - LCD Display SSD1306
 - Option A HW Support 
 - Buzzer sound output 
+- PWM/DMA Soundoutput
 - USB Keyboard and USB Massstorage, Keyboard supports plug-and-play, Massstorage not fully plug-and-play
 - if enabled, Ethernet or WiFi starts and seeks for a DHCP server, Webserver runs, but one can only control the led so far
 - Rotary Input
@@ -33,7 +34,6 @@ The IP address is briefly shown on the LCD, once received. One can check the IP 
 TODOs
 -----
 - Testing of Option B, split IEC lines
-- PWM/DMA Soundoutput
 - Make the webserver useful
 - Allow static IP Adresses for faster startup, to be configured in `options.txt`
 - Make execution more efficient wrt. CPU usage to keep temperature lower, use throtteling to protect the Pi.

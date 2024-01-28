@@ -51,3 +51,5 @@ TKernelTimerHandle TimerStartKernelTimer(unsigned nDelay, TKernelTimerHandler *p
 void TimerCancelKernelTimer(TKernelTimerHandle hTimer) { Kernel.timer_cancel(hTimer); }
 int GetTemperature(unsigned &value) { unsigned ret = CPUThrottle.GetTemperature(); if (ret) value = ret * 1000; return ret; }
 int USPiMassStorageDeviceAvailable(void) { return Kernel.usb_massstorage_available(); }
+
+void PlaySoundDMA(void) { Kernel.playsound(); }

@@ -753,8 +753,8 @@ EmulatingMode BeginEmulating(FileBrowser* fileBrowser, const char* filenameForIc
 	inputMappings->WaitForClearButtons();
 	return IEC_COMMANDS;
 }
-#if not defined(EXPERIMENTALZERO)
 #if !defined (__CIRCLE__)
+#if not defined(EXPERIMENTALZERO)
 static u32* dmaSound;
 
 struct DMA_ControlBlock
@@ -779,20 +779,16 @@ DMA_ControlBlock dmaSoundCB =
 	0,//&dmaSoundCB,
 	0, 0
 };
-#endif
-#endif
 
-#if not defined(EXPERIMENTALZERO)
 static void PlaySoundDMA()
 {
-#if !defined (__CIRCLE__)	
 	write32(PWM_DMAC, PWM_ENAB + 0x0001);
 	write32(DMA_ENABLE, 1);	// DMA_EN0
 	write32(DMA0_BASE + DMA_CONBLK_AD, (u32)&dmaSoundCB);
 	write32(DMA0_BASE + DMA_CS, DMA_ACTIVE);
-#endif	
 }
-#endif
+#endif	/* EXPERIMENTALZERO */
+#endif	/* __CIRCLE__ */
 
 void GlobalSetDeviceID(u8 id)
 {

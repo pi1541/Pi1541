@@ -42,6 +42,7 @@ void InitialiseLCD();
 void UpdateLCD(const char* track, unsigned temperature);
 void DisplayI2CScan(int y_pos);
 void emulator(void);
+void PlaySoundDMA(void);
 
 extern "C" {
 	void kernel_main(unsigned int r0, unsigned int r1, unsigned int atags);

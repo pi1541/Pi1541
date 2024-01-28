@@ -35,6 +35,7 @@
 #include <circle/memio.h>
 #include <SDCard/emmc.h>
 #include <circle/i2cmaster.h>
+#include <circle/sound/pwmsounddevice.h>
 #include <fatfs/ff.h>
 #include <wlan/bcm4343.h>
 #include <wlan/hostap/wpa_supplicant/wpasupplicant.h>
@@ -97,6 +98,8 @@ public:
 	void run_tempmonitor(void);
 	CUSBKeyboardDevice *get_kbd(void) { return m_pKeyboard; }
 	void set_kbd(CUSBKeyboardDevice *kbd) { m_pKeyboard = kbd; }
+	void playsound(void);
+	
 private:
 	CActLED				m_ActLED;
 	CKernelOptions		mOptions;
@@ -113,6 +116,7 @@ private:
 	CDevice 			*pUMSD1;
 	CEMMCDevice			m_EMMC;
 	CI2CMaster			m_I2c;
+	CPWMSoundDevice		m_PWMSoundDevice;
 	FATFS				m_FileSystem;
 	CBcm4343Device		m_WLAN;
 	CSynchronizationEvent	mEvent;

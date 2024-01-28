@@ -54,6 +54,7 @@ CKernel::CKernel(void) :
 	m_pKeyboard (0),
 	m_EMMC (&mInterrupt, &mTimer, &m_ActLED),
 	m_I2c (0, true),
+	m_PWMSoundDevice (&mInterrupt),
 	m_WLAN (_FIRMWARE_PATH),
 	m_Net(nullptr),
 	m_WPASupplicant (_CONFIG_FILE),
@@ -336,6 +337,16 @@ void CKernel::run_tempmonitor(void)
 TKernelTimerHandle CKernel::timer_start(unsigned delay, TKernelTimerHandler *pHandler, void *pParam, void *pContext)
 {
 	return mTimer.StartKernelTimer(delay, pHandler, pParam, pContext);
+}
+
+#include "sample.h"
+//extern const long int Sample_bin_size;
+//extern const unsigned char *Sample_bin;
+void CKernel::playsound(void)
+{
+	if (m_PWMSoundDevice.PlaybackActive())
+		return;
+	m_PWMSoundDevice.Playback ((void *)Sample_bin, Sample_bin_size, 1, 8);
 }
 
 void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
