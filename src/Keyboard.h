@@ -306,7 +306,7 @@ protected:
 	TKernelTimerHandle timer;
 	static void KeyPressedHandlerRaw(unsigned char modifiers, const unsigned char RawKeys[6]);
 #endif	
-	static void USBKeyboardDeviceTimerHandler(unsigned hTimer, void *pParam, void *pContext);
+	static void USBKeyboardDeviceTimerHandler(unsigned long hTimer, void *pParam, void *pContext);
 	/*volatile*/ u32 updateCount;
 	u32 updateCountLastRead;
 

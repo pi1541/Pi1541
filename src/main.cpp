@@ -21,6 +21,7 @@
 #include <strings.h>
 #if !defined (__CIRCLE__)
 #include "Timer.h"
+#include "SpinLock.h"
 #else 
 #include "circle-kernel.h"
 #endif
@@ -50,7 +51,6 @@ extern "C"
 #include "Pi1581.h"
 #include "FileBrowser.h"
 #include "ScreenLCD.h"
-#include "SpinLock.h"
 
 #include "logo.h"
 #include "sample.h"
@@ -60,6 +60,7 @@ unsigned versionMajor = 1;
 unsigned versionMinor = 24;
 #if defined (__CIRCLE__)
 #define CV "c"
+#define SpinLock CSpinLock
 #else
 #define CV
 #endif

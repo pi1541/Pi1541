@@ -153,7 +153,7 @@ TShutdownMode CKernel::Run (void)
 			 (model == MachineModelCM4)) &&
 			(CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown))
 		{
-			log("maxed freq to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
+			log("maxed freq to %.04dGHz", __FUNCTION__, CPUThrottle.GetClockRate() / (1000000L * 1000L));
 		}
 	}
 

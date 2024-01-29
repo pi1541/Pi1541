@@ -113,7 +113,7 @@ void Keyboard::KeyPressedHandlerRaw(unsigned char modifiers, const unsigned char
 	keyboard->updateCount++;
 }
 
-void Keyboard::USBKeyboardDeviceTimerHandler(unsigned hTimer, void *pParam, void *pContext)
+void Keyboard::USBKeyboardDeviceTimerHandler(unsigned long hTimer, void *pParam, void *pContext)
 {
 	Keyboard* keyboard = Keyboard::Instance();
 	bool anyDown = false;

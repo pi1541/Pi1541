@@ -33,7 +33,7 @@ int USPiMassStorageDeviceAvailable(void);
 int USPiKeyboardAvailable(void);
 void USPiKeyboardRegisterKeyStatusHandlerRaw(TKeyStatusHandlerRaw *handler);
 void TimerCancelKernelTimer(TKernelTimerHandle hTimer);
-TKernelTimerHandle TimerStartKernelTimer(unsigned nDelay, TKernelTimerHandler *pHandler, void* pParam,void* pContext);
+TKernelTimerHandle TimerStartKernelTimer(unsigned long nDelay, TKernelTimerHandler *pHandler, void* pParam,void* pContext);
 int GetTemperature(unsigned &value);
 void SetACTLed(int v);
 void _enable_unaligned_access(void);

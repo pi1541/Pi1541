@@ -44,7 +44,7 @@ int USPiKeyboardAvailable(void)
     return n;
 }
 void USPiKeyboardRegisterKeyStatusHandlerRaw(TKeyStatusHandlerRaw *handler) { Kernel.usb_reghandler(handler); }
-TKernelTimerHandle TimerStartKernelTimer(unsigned nDelay, TKernelTimerHandler *pHandler, void* pParam, void* pContext)
+TKernelTimerHandle TimerStartKernelTimer(unsigned long nDelay, TKernelTimerHandler *pHandler, void* pParam, void* pContext)
 {
 	return Kernel.timer_start(nDelay, pHandler, pParam, pContext);
 }

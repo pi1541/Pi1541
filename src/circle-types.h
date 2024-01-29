@@ -7,7 +7,7 @@
 typedef unsigned char		u8;
 typedef unsigned short		u16;
 typedef unsigned int		u32;
-typedef unsigned long long	u64;
+typedef long unsigned int   u64;
 typedef int TUSBKeyboardDevice;
 //typedef char                s8;
 //typedef short               s16;
