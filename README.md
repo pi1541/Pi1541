@@ -72,8 +72,16 @@ Know Bugs
 Checkout & Build
 ----------------
 One can build the Version 1.24 (+some minor fixes: LED & Buzzer work, build/works with gcc > 10.x).
+The following compiler suites were used for development:
 
-The circle-stdlib used by this project is built by:
+| Compiler | Package name | Link | Arch |
+| ---------|--------------|------|------|
+| GCC | AArch32 bare-metal target (arm-none-eabi) | [download](https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi.tar.xz) | 32 bit |
+| GCC | AArch64 ELF bare-metal target (aarch64-none-elf) | [download](https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-x86_64-aarch64-none-elf.tar.xz)| 64 bit (RPi4 only) |
+
+Make sure your `PATH` variable is set appropriately to find the installed compiler suite.
+
+The project is built by:
 
 ```
 BUILDDIR=build-pottendo-Pi1541
@@ -86,8 +94,10 @@ git clone --recursive https://github.com/smuehlst/circle-stdlib.git
 cd circle-stdlib
 # configure for Pi3 and Pi Zero 2 W:
 ./configure -r 3
-# alternatively configure for Pi4
+# alternatively configure for Pi4 32 bit
 # ./configure -r 4
+# or even Pi4 64 bit
+# ./configure -r 4 -p aarch64-none-elf-
 
 # Path Circle sysconfigh on ffconf.h to adapt to Pi1541 needs
 
@@ -98,7 +108,7 @@ cd ../..
 # build circle-lib
 make
 
-# build Pi1541 based on circle
+# now build Pi1541 based on circle
 cd ${BUILDDIR}/pottendo-Pi1541
 ```
 Depending on the RPi Model and on the chosen build (Circle vs. legacy):
@@ -120,7 +130,7 @@ sdram_over_voltage=1
 force_turbo=1
 boot_delay=1
 
-# Run in 32-bit mode
+# Run in 32-bit mode, 64-bit won't work
 arm_64bit=0
 
 enable_uart=1
@@ -141,9 +151,9 @@ Model 4 - `config.txt`
 ```
 # some genereic Pi4 configs can remain
 
-# Run in 32-bit mode
+# Run in 32-bit mode or set to 1 if 64 bit mode was chosen
 arm_64bit=0
-force_turbo=1
+#force_turbo=1    # not needed for RPi4's, it's fast enough
 
 [all]
 enable_uart=1   # in case you have Pin 14/15 connected via TTL cable
