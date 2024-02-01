@@ -80,7 +80,7 @@ CKernel::CKernel(void) :
 			pTarget = &mScreen;
 		bOK = mLogger.Initialize (&mSerial);
 	} 
-	strcpy(ip_address, "<not assigned>");
+	strcpy(ip_address, "<n/a>");
 }
 
 boolean CKernel::Initialize (void) 
@@ -245,9 +245,9 @@ void CKernel::run_webserver(void)
 		log("webserver waits for network... waiting 5s");
 		mScheduler.MsSleep (5000);
 	}
-	m_Net->GetConfig()->GetIPAddress()->Format (&IPString);
-	log ("Open \"http://%s/\" in your web browser!", (const char *) IPString);
-	memcpy(ip_address, (const char *) IPString, strlen((const char *) IPString) + 1);
+	m_Net->GetConfig()->GetIPAddress()->Format(&IPString);
+	strcpy(ip_address, (const char *) IPString);
+	log ("Open \"http://%s/\" in your web browser!", ip_address);
 	new_ip = true;
 	mScheduler.MsSleep (1000);/* wait a bit, LCD output */
 	DisplayMessage(0, 24, true, (const char*) IPString, 0xffffff, 0x0);
