@@ -16,10 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Pi1541. If not, see <http://www.gnu.org/licenses/>.
 
-#include "defs.h"
 #include <string.h>
 #include <strings.h>
 #if !defined (__CIRCLE__)
+#include "defs.h"
 #include "Timer.h"
 #include "SpinLock.h"
 #else 

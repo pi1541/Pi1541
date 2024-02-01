@@ -25,6 +25,7 @@ extern "C"
 {
 #include <uspi/usbkeyboard.h>
 }
+#include "rpi-base.h"
 #else
 #include "circle-types.h"
 #endif
@@ -306,7 +307,7 @@ protected:
 	TKernelTimerHandle timer;
 	static void KeyPressedHandlerRaw(unsigned char modifiers, const unsigned char RawKeys[6]);
 #endif	
-	static void USBKeyboardDeviceTimerHandler(unsigned long hTimer, void *pParam, void *pContext);
+	static void USBKeyboardDeviceTimerHandler(KTHType hTimer, void *pParam, void *pContext);
 	/*volatile*/ u32 updateCount;
 	u32 updateCountLastRead;
 

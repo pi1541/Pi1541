@@ -43,6 +43,8 @@
 
 #if !defined (__CIRCLE__)
 
+typedef unsigned KTHType;        /* needed for backward compatibility, Circle 64 bit builds, KernelHandleTimer type, 'unsinged' for 32 bit */
+
 #if defined(RPI2) || defined(RPI3)
     #define PERIPHERAL_BASE     0x3F000000UL
 #else

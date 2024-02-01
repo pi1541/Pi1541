@@ -12,5 +12,10 @@ typedef int TUSBKeyboardDevice;
 //typedef char                s8;
 //typedef short               s16;
 //typedef int                 s32;
+#if (AARCH == 64)
+typedef unsigned long KTHType;
+#else
+typedef unsigned KTHType;
+#endif
 
 #endif

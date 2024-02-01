@@ -58,9 +58,17 @@ INCLUDE  = -Iuspi/include/
 ifeq ($(RASPPI),)
 include $(CIRCLEHOME)/Config.mk
 ifeq ($(strip $(RASPPI)),3)
+ifeq ($(strip $(AARCH)),64)
+TARGET_CIRCLE ?= kernel8.img
+else
 TARGET_CIRCLE ?= kernel8-32.img
+endif
 else ifeq ($(strip $(RASPPI)),4)
+ifeq ($(strip $(AARCH)),64)
+TARGET_CIRCLE ?= kernel8-rpi4.img
+else
 TARGET_CIRCLE ?= kernel7l.img
+endif
 else
 $(error Circle build only for RASPPI 3, Zero 2W or 4)
 endif
