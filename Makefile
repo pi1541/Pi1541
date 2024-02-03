@@ -69,6 +69,12 @@ TARGET_CIRCLE ?= kernel8-rpi4.img
 else
 TARGET_CIRCLE ?= kernel7l.img
 endif
+else ifeq ($(strip $(RASPPI)),5)
+ifeq ($(strip $(AARCH)),64)
+TARGET_CIRCLE ?= kernel_2712.img
+else
+$(error RPi5 supports only 64-bit)
+endif
 else
 $(error Circle build only for RASPPI 3, Zero 2W or 4)
 endif

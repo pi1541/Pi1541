@@ -117,7 +117,9 @@ private:
 	CDevice 			*pUMSD1;
 	CEMMCDevice			m_EMMC;
 	CI2CMaster			m_I2c;
+#if RASPPI <= 4	
 	CPWMSoundDevice		m_PWMSoundDevice;
+#endif	
 	FATFS				m_FileSystem;
 	CBcm4343Device		m_WLAN;
 	CSynchronizationEvent	mEvent;
@@ -125,7 +127,7 @@ private:
 	CWPASupplicant		m_WPASupplicant;
 	Pi1541Cores		 	m_MCores;
 	char ip_address[32];
-	bool new_ip;
+	bool new_ip, screen_failed;
 };
 
 extern CKernel Kernel;

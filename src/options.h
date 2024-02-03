@@ -110,6 +110,7 @@ public:
 
 	inline unsigned int GetNetWifi() const { return netWifi; }
 	inline unsigned int GetNetEthernet() const { return netEthernet; }
+	inline unsigned int GetHeadLess() const { return headLess; }
 
 	// Page up and down will jump a different amount based on the maximum number rows displayed.
 	// Perhaps we should use some keyboard modifier to the the other screen?
@@ -198,5 +199,8 @@ private:
 	// WiFi
 	unsigned int netWifi;
 	unsigned int netEthernet;
+
+	// headless
+	unsigned int headLess;
 };
 #endif

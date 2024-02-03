@@ -37,6 +37,7 @@ int main (void)
 	//Kernel.blink(4);
 	if (!Kernel.Initialize ())
 	{
+		Kernel.log("initialization failed - system halted");
 		halt ();
 		return EXIT_HALT;
 	}

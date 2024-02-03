@@ -45,6 +45,7 @@ static const u8 DNSServer[]      = {192, 168, 188, 1};
 
 CCPUThrottle CPUThrottle;
 extern CKernel Kernel;
+extern Options options;
 
 CKernel::CKernel(void) :
 	mScreen (mOptions.GetWidth (), mOptions.GetHeight ()),
@@ -54,46 +55,42 @@ CKernel::CKernel(void) :
 	m_pKeyboard (0),
 	m_EMMC (&mInterrupt, &mTimer, &m_ActLED),
 	m_I2c (0, true),
+#if RASPPI <= 4
 	m_PWMSoundDevice (&mInterrupt),
+#endif	
 	m_WLAN (_FIRMWARE_PATH),
 	m_Net(nullptr),
 	m_WPASupplicant (_CONFIG_FILE),
-	m_MCores(CMemorySystem::Get())
+	m_MCores(CMemorySystem::Get()),
+	screen_failed(false)
 {
-	//blink(3);
-	//mLogger.Write("pottendo-kern", LogNotice, "CKernel Constructor...");
-	boolean bOK = TRUE;
-	if (bOK) {
-		bOK = mScreen.Initialize ();
-	} else {
-		//m_ActLED.Blink(2);
-	}
-	if (bOK) {
-		bOK = mSerial.Initialize (115200);
-	} else {
-		//m_ActLED.Blink(5);
-	}
-	if (bOK)
+	if (mScreen.Initialize() == false) 
 	{
-		CDevice *pTarget = m_DeviceNameService.GetDevice (mOptions.GetLogDevice (), FALSE);
-		if (pTarget == 0)
-			pTarget = &mScreen;
-		bOK = mLogger.Initialize (&mSerial);
-	} 
+		m_ActLED.Blink(2);
+		screen_failed = true;
+	}
+	if (mSerial.Initialize (115200) == true)
+		mLogger.Initialize (&mSerial);
+	else
+		m_ActLED.Blink(3);
+
+	if (screen_failed)
+		log("screen initialization failed...  trying headless");
 	strcpy(ip_address, "<n/a>");
 }
 
 boolean CKernel::Initialize (void) 
 {
-	boolean bOK = TRUE;
-	if (bOK) bOK = mInterrupt.Initialize ();
-	mLogger.Write ("pottendo-kern", LogNotice, "Interrupt done");
+	boolean bOK;
+	if (bOK = mInterrupt.Initialize ())
+	mLogger.Write ("pottendo-kern", LogNotice, "Interrupt %s", bOK ? "ok" : "failed");
 	if (bOK) bOK = mTimer.Initialize ();
-	mLogger.Write ("pottendo-kern", LogNotice, "mTimer done");
+	mLogger.Write ("pottendo-kern", LogNotice, "mTimer %s", bOK ? "ok" : "failed");
 	if (bOK) bOK = m_USBHCI.Initialize ();
-	mLogger.Write ("pottendo-kern", LogNotice, "USBHCI done");
+	mLogger.Write ("pottendo-kern", LogNotice, "USBHCI %s", bOK ? "ok" : "failed");
+	bOK = true;	/* USB may not be needed */
 	if (bOK) bOK = m_EMMC.Initialize ();
-	mLogger.Write ("pottendo-kern", LogNotice, "EMMC done");
+	mLogger.Write ("pottendo-kern", LogNotice, "EMMC %s", bOK ? "ok" : "failed");
 	if (bOK) 
 	{ 
 		if (f_mount (&m_FileSystem, _DRIVE, 1) != FR_OK)
@@ -106,7 +103,7 @@ boolean CKernel::Initialize (void)
 		}
 	}
 	if (bOK) bOK = m_I2c.Initialize();
-	mLogger.Write ("pottendo-kern", LogNotice, "I2C done");
+	mLogger.Write ("pottendo-kern", LogNotice, "I2C %s", bOK ? "ok" : "failed");
 	return bOK;
 }
 
@@ -160,8 +157,18 @@ TShutdownMode CKernel::Run (void)
 	kernel_main(0, 0, 0);
 	new_ip = true;
 	Kernel.launch_cores();
-	UpdateScreen();
-	log("unexpected return of display thread");
+	if (!screen_failed && (options.GetHeadLess() != false))
+	{
+		UpdateScreen();
+		log("unexpected return of display thread");
+	} 
+	else 
+	{
+		log("running headless...");
+		while (true) {
+			MsDelay(1000 * 3600);
+		}
+	}
 	return ShutdownHalt;
 }
 
@@ -176,6 +183,7 @@ void CKernel::log(const char *fmt, ...)
 
 boolean CKernel::init_screen(u32 widthDesired, u32 heightDesired, u32 colourDepth, u32 &width, u32 &height, u32 &bpp, u32 &pitch, u8** framebuffer)
 {
+	if (screen_failed) return false;
 	Kernel.log("init_screen for %dx%dx%d", widthDesired, heightDesired, colourDepth);
 	width = mScreen.GetWidth();
 	height = mScreen.GetHeight();
@@ -344,14 +352,15 @@ TKernelTimerHandle CKernel::timer_start(unsigned delay, TKernelTimerHandler *pHa
 //extern const unsigned char *Sample_bin;
 void CKernel::playsound(void)
 {
+#if RASPPI <= 4
 	if (m_PWMSoundDevice.PlaybackActive())
 		return;
 	m_PWMSoundDevice.Playback ((void *)Sample_bin, Sample_bin_size, 1, 8);
+#endif	
 }
 
 void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 {
-	extern Options options;
 	int i = 0;
 	switch (core) {
 	case 1:
