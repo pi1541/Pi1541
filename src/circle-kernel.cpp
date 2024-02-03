@@ -154,10 +154,12 @@ TShutdownMode CKernel::Run (void)
 		}
 	}
 
-	kernel_main(0, 0, 0);
+	kernel_main(0, 0, 0);/* options will be initialized */
 	new_ip = true;
+	if (screen_failed)
+		options.SetHeadLess(1);
 	Kernel.launch_cores();
-	if (!screen_failed && (options.GetHeadLess() != false))
+	if (options.GetHeadLess() == false)
 	{
 		UpdateScreen();
 		log("unexpected return of display thread");
