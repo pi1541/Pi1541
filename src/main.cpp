@@ -24,6 +24,11 @@
 #include "SpinLock.h"
 #else 
 #include "circle-kernel.h"
+#if RASPPI <= 3
+#include "SpinLock.h"
+#else
+#define SpinLock CSpinLock
+#endif
 #endif
 #include "ROMs.h"
 #include "stb_image.h"
@@ -61,7 +66,6 @@ unsigned versionMajor = 1;
 unsigned versionMinor = 24;
 #if defined (__CIRCLE__)
 #define CV "c"
-#define SpinLock CSpinLock
 #else
 #define CV
 #endif

@@ -62,6 +62,7 @@ ifeq ($(strip $(AARCH)),64)
 TARGET_CIRCLE ?= kernel8.img
 else
 TARGET_CIRCLE ?= kernel8-32.img
+COMMON_OBJS += SpinLock.o
 endif
 else ifeq ($(strip $(RASPPI)),4)
 ifeq ($(strip $(AARCH)),64)

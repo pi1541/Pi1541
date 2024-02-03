@@ -25,7 +25,9 @@
 #include <circle/serial.h>
 #include <circle/exceptionhandler.h>
 #include <circle/interrupt.h>
+#if RASPPI <= 3
 #include <circle/spinlock.h>
+#endif
 #include <circle/memio.h>
 #include <circle/timer.h>
 #include <circle/logger.h>
