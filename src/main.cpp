@@ -38,6 +38,7 @@ extern "C"
 #include "rpi-mailbox-interface.h"
 #include "interrupt.h"
 #include <uspi.h>
+#include "sample.h"
 #else
 #include "circle-types.h"
 #endif
@@ -53,7 +54,6 @@ extern "C"
 #include "ScreenLCD.h"
 
 #include "logo.h"
-#include "sample.h"
 #include "ssd_logo.h"
 
 unsigned versionMajor = 1;
