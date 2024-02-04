@@ -110,12 +110,18 @@ make
 
 # now build Pi1541 based on circle
 cd ${BUILDDIR}/pottendo-Pi1541
+make
+
+# for PiZero2W you need to disable PWM sound, as it won't work anyway without 3.5mm jack
+# make PIZERO2=1
+
 ```
 Depending on the RPi Model and on the chosen build (Circle vs. legacy):
 | Model | Version | build cmd | Image Name |
 |----------|-----------|----------- |----------------|
 | Pi Zero, 1RevXX, 2, 3 | legacy build | `make RASPPI={0,1BRev1,1BRev2,1BPlus,2,3} legacy` | `kernel.img` |
-| Pi Zero 2W, 3 | circle build | `make` | `kernel8-32.img` |
+| 3 | circle build | `make` | `kernel8-32.img` |
+| Pi Zero 2W | circle build | `make PIZERO2W=1` | `kernel8-32-PZ2W.img` |
 | Pi 4 | circle build | `make` | `kernel7l.img` |
 
 *Hint*: in case you want to alternatively build for circle-lib and legacy make sure to `make clean` between the builds!
@@ -140,7 +146,15 @@ hdmi_group=2
 #hdmi_mode=4
 hdmi_mode=16
 
+# uncomment as needed for your model/kernel
+
+# Pi 3
 kernel=kernel8-32.img
+
+# Pi Zero 2W
+#kernel=kernel8-32-PZ2W.img
+
+# Legacy kernal all models
 #kernel_address=0x1f00000
 #kernel=kernel.img
 

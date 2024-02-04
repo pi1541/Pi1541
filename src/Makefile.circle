@@ -31,7 +31,7 @@ ADDONINC = -I$(CIRCLEHOME)/addon/linux
 CFLAGS += -D__CIRCLE__ -I. -I./Circle -I "$(NEWLIBDIR)/include" \
        	  -I $(STDDEF_INCPATH) -I $(CIRCLEBASE)/include $(ADDONINC) \
 	  -Wno-psabi -Wno-write-strings -Wno-unused-variable -Wno-unused-but-set-variable -Wno-address \
-	  -DRPI3=1
+	  -DRPI3=1 $(XFLAGS)
 AFLAGS = -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8 -mfloat-abi=hard -marm -DRPI3=1 -DDEBUG=1
 
 # -mno-unaligned-access \

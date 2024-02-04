@@ -34,6 +34,9 @@
 #
 # if you switch from legacy build to circle build 'make clean' is mandatory
 #
+# here some features can be disabled, as they may not work on the specific Pi model in circle builds
+# e.g. NOPWMSOUND needed for PiZero (has no 3.5mm Jack) as it clashes with Wifi
+# DISABLE ?= -DNOPWMSOUND
 
 CIRCLEBASE ?= ../circle-stdlib
 CIRCLEHOME ?= $(CIRCLEBASE)/libs/circle
@@ -61,6 +64,10 @@ ifeq ($(strip $(RASPPI)),3)
 ifeq ($(strip $(AARCH)),64)
 TARGET_CIRCLE ?= kernel8.img
 else
+ifneq ($(PIZERO2W),)
+TARGET_PZ2 ?= -PZ2W
+DISABLE ?= -DNOPWMSOUND
+endif
 TARGET_CIRCLE ?= kernel8-32.img
 COMMON_OBJS += SpinLock.o
 endif
@@ -91,8 +98,8 @@ all: $(TARGET_CIRCLE)
 legacy: $(TARGET)
 
 $(TARGET_CIRCLE): circlebuild
-	$(MAKE) -C $(SRCDIR) -f Makefile.circle COMMON_OBJS="$(COMMON_OBJS)" CIRCLE_OBJS="$(CIRCLE_OBJS)"
-	@cp $(SRCDIR)/$@ .
+	$(MAKE) -C $(SRCDIR) -f Makefile.circle COMMON_OBJS="$(COMMON_OBJS)" CIRCLE_OBJS="$(CIRCLE_OBJS)" XFLAGS="$(DISABLE)"
+	@cp $(SRCDIR)/$@ ./`basename $@ .img`$(TARGET_PZ2).img
 
 $(TARGET): $(OBJS_LEGACY) $(LIBS)
 	@echo "  LINK $@"
@@ -104,7 +111,7 @@ uspi/libuspi.a:
 	$(MAKE) -C uspi
 
 clean:
-	$(Q)$(RM) $(OBJS_LEGACY) $(OBJS_CIRCLE) $(TARGET).elf $(TARGET).map $(TARGET).lst $(TARGET).img $(TARGET_CIRCLE)
+	$(Q)$(RM) $(OBJS_LEGACY) $(OBJS_CIRCLE) $(TARGET).elf $(TARGET).map $(TARGET).lst $(TARGET).img $(TARGET_CIRCLE) *.img
 	$(MAKE) -C uspi clean
 	$(MAKE) -C $(SRCDIR) -f Makefile.circle clean
 

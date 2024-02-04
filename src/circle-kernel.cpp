@@ -55,7 +55,7 @@ CKernel::CKernel(void) :
 	m_pKeyboard (0),
 	m_EMMC (&mInterrupt, &mTimer, &m_ActLED),
 	m_I2c (0, true),
-#if RASPPI <= 4
+#if !defined NOPWMSOUND && RASPPI <= 4
 	m_PWMSoundDevice (&mInterrupt),
 #endif	
 	m_WLAN (_FIRMWARE_PATH),
@@ -354,7 +354,7 @@ TKernelTimerHandle CKernel::timer_start(unsigned delay, TKernelTimerHandler *pHa
 //extern const unsigned char *Sample_bin;
 void CKernel::playsound(void)
 {
-#if RASPPI <= 4
+#if !defined NOPWMSOUND && RASPPI <= 4
 	if (m_PWMSoundDevice.PlaybackActive())
 		return;
 	m_PWMSoundDevice.Playback ((void *)Sample_bin, Sample_bin_size, 1, 8);

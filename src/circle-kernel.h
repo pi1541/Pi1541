@@ -120,7 +120,7 @@ private:
 	CDevice 			*pUMSD1;
 	CEMMCDevice			m_EMMC;
 	CI2CMaster			m_I2c;
-#if RASPPI <= 4	
+#if !defined NOPWMSOUND && RASPPI <= 4	
 	CPWMSoundDevice		m_PWMSoundDevice;
 #endif	
 	FATFS				m_FileSystem;
