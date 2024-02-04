@@ -60,8 +60,9 @@ Additional Options in `options.txt`
 The following options control new functions available:
 | Option | Value | Purpose |
 |--------|-------|---------|
-| netEthernet | 0 or 1 | enable ethernet network|
-| netWifi | 0 or 1 | enable network network|
+| netEthernet | 0 or 1 | disable/enable Ethernet network|
+| netWifi | 0 or 1 | disable/enable Wifi network|
+| headLess | 0 or 1 | disable/enable headless (no HDMI output)|
 
 Know Bugs
 ---------
