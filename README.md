@@ -33,6 +33,7 @@ The codebase is the publically available Pi1541 code, V1.24 (as of Jan. 2024) wi
 - LED/Buzzer work again as in 1.23
 - some bugfixes to avoid crash (missing initializer)
 - build support for moden GCCs (-mno-unaligend-access)
+- new option `headLess`, see below
 
 Still the legacy code can be built with support for all supported hardware variants, include PiZero, Pi1 and Pi2 variants - see build chapter _Build_.
 The floppy emulation is entirely untouched, so it's as good as it was/is in V1.24 - which is pretty good, IMHO! **Credits to Stephen!**
@@ -118,12 +119,12 @@ make
 
 ```
 Depending on the RPi Model and on the chosen build (Circle vs. legacy):
-| Model | Version | build cmd | Image Name |
-|----------|-----------|----------- |----------------|
-| Pi Zero, 1RevXX, 2, 3 | legacy build | `make RASPPI={0,1BRev1,1BRev2,1BPlus,2,3} legacy` | `kernel.img` |
-| 3 | circle build | `make` | `kernel8-32.img` |
-| Pi Zero 2W | circle build | `make PIZERO2W=1` | `kernel8-32-PZ2W.img` |
-| Pi 4 | circle build | `make` | `kernel7l.img` |
+| Model | Version | build cmd | Image Name | Note
+|----------|-----------|----------- |----------------|-------|
+| Pi Zero, 1RevXX, 2, 3 | legacy build | `make RASPPI={0,1BRev1,1BRev2,1BPlus,2,3} legacy` | `kernel.img` ||
+| 3 | circle build | `make` | `kernel8-32.img` ||
+| Pi Zero 2W | circle build | `make` | `kernel8-32.img` | PWM Sound not upported |
+| Pi 4 | circle build | `make` | `kernel7l.img` ||
 
 *Hint*: in case you want to alternatively build for circle-lib and legacy make sure to `make clean` between the builds!
 

@@ -8,3 +8,4 @@
 *.d
 *~
 
+src/version.h

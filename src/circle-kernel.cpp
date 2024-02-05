@@ -30,6 +30,7 @@
 #include <circle/usb/usbmassdevice.h>
 #include "options.h"
 #include "webserver.h"
+#include "version.h"
 
 #define _DRIVE		"SD:"
 #define _FIRMWARE_PATH	_DRIVE "/firmware/"		// firmware files must be provided here
@@ -110,7 +111,7 @@ boolean CKernel::Initialize (void)
 
 TShutdownMode CKernel::Run (void)
 {
-	mLogger.Write ("pottendo-kern", LogNotice, "pottendo-Pi1541 (%dx%d)", mScreen.GetWidth(), mScreen.GetHeight());
+	log("pottendo-Pi1541 (%s)", PPI1541VERSION);
 
 	if (CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown)
 	{	

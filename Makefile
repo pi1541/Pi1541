@@ -84,13 +84,17 @@ include Makefile.rules
 endif
 
 TARGET ?= kernel
-.PHONY: all circlebuild $(LIBS)
+.PHONY: all $(LIBS)
 
 all: $(TARGET_CIRCLE)
 
 legacy: $(TARGET)
 
-$(TARGET_CIRCLE): circlebuild
+version: 
+	@echo "#define PPI1541VERSION \"`git describe --tags`\"" > /tmp/__version_cmp
+	@cmp -s /tmp/__version_cmp $(SRCDIR)/version.h || echo "#define PPI1541VERSION \"`git describe --tags`\"" > $(SRCDIR)/version.h 
+
+$(TARGET_CIRCLE): version
 	$(MAKE) -C $(SRCDIR) -f Makefile.circle COMMON_OBJS="$(COMMON_OBJS)" CIRCLE_OBJS="$(CIRCLE_OBJS)"
 	@cp $(SRCDIR)/$@ ./`basename $@ .img`$(TARGET_PZ2).img
 
