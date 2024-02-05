@@ -120,8 +120,8 @@ private:
 	CDevice 			*pUMSD1;
 	CEMMCDevice			m_EMMC;
 	CI2CMaster			m_I2c;
-#if !defined NOPWMSOUND && RASPPI <= 4	
-	CPWMSoundDevice		m_PWMSoundDevice;
+#if RASPPI <= 4	
+	CPWMSoundDevice		*m_PWMSoundDevice;
 #endif	
 	FATFS				m_FileSystem;
 	CBcm4343Device		m_WLAN;
@@ -130,7 +130,7 @@ private:
 	CWPASupplicant		m_WPASupplicant;
 	Pi1541Cores		 	m_MCores;
 	char ip_address[32];
-	bool new_ip, screen_failed;
+	bool new_ip, screen_failed, no_pwm;
 };
 
 extern CKernel Kernel;

@@ -55,14 +55,15 @@ CKernel::CKernel(void) :
 	m_pKeyboard (0),
 	m_EMMC (&mInterrupt, &mTimer, &m_ActLED),
 	m_I2c (0, true),
-#if !defined NOPWMSOUND && RASPPI <= 4
-	m_PWMSoundDevice (&mInterrupt),
+#if RASPPI <= 4
+	m_PWMSoundDevice (nullptr),
 #endif	
 	m_WLAN (_FIRMWARE_PATH),
 	m_Net(nullptr),
 	m_WPASupplicant (_CONFIG_FILE),
 	m_MCores(CMemorySystem::Get()),
-	screen_failed(false)
+	screen_failed(false),
+	no_pwm(false)
 {
 	if (mScreen.Initialize() == false) 
 	{
@@ -111,17 +112,37 @@ TShutdownMode CKernel::Run (void)
 {
 	mLogger.Write ("pottendo-kern", LogNotice, "pottendo-Pi1541 (%dx%d)", mScreen.GetWidth(), mScreen.GetHeight());
 
+	if (CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown)
+	{	
+		log("maxed freq to %dMHz", CPUThrottle.GetClockRate() / 1000000L);
+	}
 
 	CMachineInfo *mi = CMachineInfo::Get();
 	if (mi)
 	{
 		TMachineModel model = mi->GetMachineModel();
-		if (((model == MachineModel4B) ||
-			 (model == MachineModel400) ||
-			 (model == MachineModelCM4)) &&
-			(CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown))
+		if (model == MachineModelZero2W)
 		{
-			log("maxed freq to %dMHz", CPUThrottle.GetClockRate() / 1000000L);
+			// disable PWM sound
+			log("%s won't support PWM sound, disabling it", mi->GetMachineName());
+			no_pwm = true;
+		}
+		switch (model) {
+			case MachineModelZero2W:
+				// disable PWM sound
+
+				break;
+			case MachineModel3B:
+			case MachineModel3BPlus:
+			case MachineModel4B:
+				m_PWMSoundDevice = new CPWMSoundDevice(&mInterrupt);
+				if (!m_PWMSoundDevice)
+					no_pwm = true;
+				break;
+			default:
+				log ("model '%s' not tested, use at your onw risk...", mi->GetMachineName());
+				MsDelay(2000);
+				break;
 		}
 	}
 
@@ -357,10 +378,11 @@ TKernelTimerHandle CKernel::timer_start(unsigned delay, TKernelTimerHandler *pHa
 //extern const unsigned char *Sample_bin;
 void CKernel::playsound(void)
 {
-#if !defined NOPWMSOUND && RASPPI <= 4
-	if (m_PWMSoundDevice.PlaybackActive())
+	if (no_pwm) return;
+#if RASPPI <= 4
+	if (m_PWMSoundDevice->PlaybackActive())
 		return;
-	m_PWMSoundDevice.Playback ((void *)Sample_bin, Sample_bin_size, 1, 8);
+	m_PWMSoundDevice->Playback ((void *)Sample_bin, Sample_bin_size, 1, 8);
 #endif	
 }
 
