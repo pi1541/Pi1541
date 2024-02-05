@@ -98,7 +98,7 @@ $(TARGET_CIRCLE): version
 	$(MAKE) -C $(SRCDIR) -f Makefile.circle COMMON_OBJS="$(COMMON_OBJS)" CIRCLE_OBJS="$(CIRCLE_OBJS)"
 	@cp $(SRCDIR)/$@ ./`basename $@ .img`$(TARGET_PZ2).img
 
-$(TARGET): $(OBJS_LEGACY) $(LIBS)
+$(TARGET): version $(OBJS_LEGACY) $(LIBS)
 	@echo "  LINK $@"
 	$(Q)$(CC) $(CFLAGS) -o $(TARGET).elf -Xlinker -Map=$(TARGET).map -T linker.ld -nostartfiles $(OBJS_LEGACY) $(LIBS)
 	$(Q)$(PREFIX)objdump -d $(TARGET).elf | $(PREFIX)c++filt > $(TARGET).lst
