@@ -111,40 +111,36 @@ boolean CKernel::Initialize (void)
 
 TShutdownMode CKernel::Run (void)
 {
-	log("pottendo-Pi1541 (%s)", PPI1541VERSION);
-
-	if (CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown)
-	{	
-		log("maxed freq to %dMHz", CPUThrottle.GetClockRate() / 1000000L);
-	}
-
 	CMachineInfo *mi = CMachineInfo::Get();
 	if (mi)
 	{
 		TMachineModel model = mi->GetMachineModel();
-		if (model == MachineModelZero2W)
-		{
-			// disable PWM sound
-			log("%s won't support PWM sound, disabling it", mi->GetMachineName());
-			no_pwm = true;
-		}
 		switch (model) {
 			case MachineModelZero2W:
 				// disable PWM sound
-
+				log("%s won't support PWM sound, disabling it", mi->GetMachineName());
+				no_pwm = true;
 				break;
 			case MachineModel3B:
 			case MachineModel3BPlus:
 			case MachineModel4B:
 				m_PWMSoundDevice = new CPWMSoundDevice(&mInterrupt);
-				if (!m_PWMSoundDevice)
-					no_pwm = true;
+				if (!m_PWMSoundDevice) no_pwm = true;
 				break;
 			default:
 				log ("model '%s' not tested, use at your onw risk...", mi->GetMachineName());
 				MsDelay(2000);
 				break;
 		}
+		log("pottendo-Pi1541 (%s) on %s", PPI1541VERSION, mi->GetMachineName());
+	} else {
+		log("GetMachinModel failed - halting system"); 
+		return ShutdownHalt;
+	}
+
+	if (CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown)
+	{	
+		log("maxed freq to %dMHz", CPUThrottle.GetClockRate() / 1000000L);
 	}
 
 	kernel_main(0, 0, 0);/* options will be initialized */
