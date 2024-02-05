@@ -132,7 +132,10 @@ TShutdownMode CKernel::Run (void)
 				MsDelay(2000);
 				break;
 		}
-		log("pottendo-Pi1541 (%s) on %s", PPI1541VERSION, mi->GetMachineName());
+		extern unsigned versionMajor;
+		extern unsigned versionMinor;
+
+		log("pottendo-Pi1541 (%s) on %s, Pi1541 V%d.%02d", PPI1541VERSION, mi->GetMachineName(), versionMajor, versionMinor);
 	} else {
 		log("GetMachinModel failed - halting system"); 
 		return ShutdownHalt;

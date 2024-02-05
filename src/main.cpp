@@ -61,6 +61,7 @@ extern "C"
 
 #include "logo.h"
 #include "ssd_logo.h"
+#include "version.h"
 
 unsigned versionMajor = 1;
 unsigned versionMinor = 24;
@@ -527,6 +528,10 @@ void UpdateScreen()
 				numberOfUSBMassStorageDevices = USPiMassStorageDeviceAvailable();
 				usb_mass_update = true;
 			}
+			snprintf(tempBuffer, tempBufferSize, 
+					 "pottendo-Pi1541 (%s) Pi1541 V%d.%02d", PPI1541VERSION, versionMajor, versionMinor);
+			screen->PrintText(false, 0, y + 40, tempBuffer, textColour, bgColour);
+
 		}
 #endif
 		if (options.GraphIEC())
@@ -1558,7 +1563,7 @@ static void DisplayLogo()
 
 	screen->PlotImage((u32*)image, 0, 0, w, h);
 
-	snprintf(tempBuffer, tempBufferSize, "V%d.%02d" CV, versionMajor, versionMinor);
+	snprintf(tempBuffer, tempBufferSize, "V%d.%02d pottendo-Pi1541 (%s)" , versionMajor, versionMinor, PPI1541VERSION);
 	screen->PrintText(false, 20, 180, tempBuffer, FileBrowser::Colour(VIC2_COLOUR_INDEX_BLUE));
 #endif
 }
