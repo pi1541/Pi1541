@@ -57,7 +57,14 @@ INCLUDE  = -Iuspi/include/
 
 ifeq ($(RASPPI),)
 include $(CIRCLEHOME)/Config.mk
-ifeq ($(strip $(RASPPI)),3)
+ifeq ($(strip $(RASPPI)),1)
+ifeq ($(strip $(AARCH)),64)
+$(error RPi1 supports only 32-bit)
+else
+TARGET_CIRCLE ?= kernel8-32XX.img
+COMMON_OBJS += SpinLock.o
+endif
+else ifeq ($(strip $(RASPPI)),3)
 ifeq ($(strip $(AARCH)),64)
 TARGET_CIRCLE ?= kernel8.img
 else
