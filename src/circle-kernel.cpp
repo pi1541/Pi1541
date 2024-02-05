@@ -107,39 +107,10 @@ boolean CKernel::Initialize (void)
 	return bOK;
 }
 
-void monitorhandler(TSystemThrottledState CurrentState, void *pParam)
-{
-	if (CurrentState & SystemStateUnderVoltageOccurred)
-	{
-		Kernel.log("%s: undervoltage occured...", __FUNCTION__);
-	}
-	if (CurrentState & SystemStateFrequencyCappingOccurred)
-	{
-		Kernel.log("%s: frequency capping occured...", __FUNCTION__);
-	}
-	if (CurrentState & SystemStateThrottlingOccurred)
-	{
-		Kernel.log("%s: throttling occured to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
-	}
-	if (CurrentState & SystemStateSoftTempLimitOccurred)
-	{
-		Kernel.log("%s: softtemplimit occured...", __FUNCTION__);
-	}
-}
-
 TShutdownMode CKernel::Run (void)
 {
 	mLogger.Write ("pottendo-kern", LogNotice, "pottendo-Pi1541 (%dx%d)", mScreen.GetWidth(), mScreen.GetHeight());
 
-    unsigned tmask = SystemStateUnderVoltageOccurred | SystemStateFrequencyCappingOccurred |
-					 SystemStateThrottlingOccurred | SystemStateSoftTempLimitOccurred;
-	CPUThrottle.RegisterSystemThrottledHandler(tmask, monitorhandler, nullptr);
-	// CPUThrottle.DumpStatus(true);
-	log("Maximum temp set to %d, dynamic adaption%spossible, curret freq = %dMHz (max=%dMHz)", 
-			CPUThrottle.GetMaxTemperature(), 
-			CPUThrottle.IsDynamic() ? " " : " not ",
-			CPUThrottle.GetClockRate() / 1000000L, 
-			CPUThrottle.GetMaxClockRate() / 1000000L);
 
 	CMachineInfo *mi = CMachineInfo::Get();
 	if (mi)
@@ -150,7 +121,7 @@ TShutdownMode CKernel::Run (void)
 			 (model == MachineModelCM4)) &&
 			(CPUThrottle.SetSpeed(CPUSpeedMaximum, true) != CPUSpeedUnknown))
 		{
-			log("maxed freq to %.04dGHz", __FUNCTION__, CPUThrottle.GetClockRate() / (1000000L * 1000L));
+			log("maxed freq to %dMHz", CPUThrottle.GetClockRate() / 1000000L);
 		}
 	}
 
@@ -203,8 +174,11 @@ bool CKernel::run_ethernet(void)
 {
 	bool bOK;
 	int retry;
-	if (m_Net)
+	if (m_Net) 
+	{
+		log("%s: cleaning up network stack...", __FUNCTION__);
 		delete m_Net;
+	}
 	Kernel.log("Initializing ethernet network");
 #ifndef USE_DHCP
 	m_Net = new CNetSubSystem(IPAddress, NetMask, DefaultGateway, DNSServer, DEFAULT_HOSTNAME, NetDeviceTypeWLAN);
@@ -227,7 +201,7 @@ bool CKernel::run_wifi(void)
 {
 	if (m_Net)
 	{
-		log("%s: cleaning up network stack, may crash here...", __FUNCTION__);
+		log("%s: cleaning up network stack...", __FUNCTION__);
 		delete m_Net; m_Net = nullptr;
 	}
 #ifndef USE_DHCP
@@ -237,8 +211,8 @@ bool CKernel::run_wifi(void)
 #endif
 	if (!m_Net) return false;
 	bool bOK = true;
-	if (bOK) bOK = m_WLAN.Initialize();
 	if (bOK) bOK = m_Net->Initialize(FALSE);
+	if (bOK) bOK = m_WLAN.Initialize();
 	if (bOK) bOK = m_WPASupplicant.Initialize();
 	if (!bOK) {
 		log("couldn't start wifi network...waiting 5s"); 
@@ -334,13 +308,42 @@ int CKernel::usb_massstorage_available(void)
 	return 1;
 }
 
+void monitorhandler(TSystemThrottledState CurrentState, void *pParam)
+{
+	Kernel.log("%s - state = 0x%04x", __FUNCTION__, CurrentState);
+	if (CurrentState & SystemStateUnderVoltageOccurred) {
+		Kernel.log("%s: undervoltage occured...", __FUNCTION__);
+	}
+	if (CurrentState & SystemStateFrequencyCappingOccurred) {
+		Kernel.log("%s: frequency capping occured...", __FUNCTION__);
+	}
+	if (CurrentState & SystemStateThrottlingOccurred) {
+		Kernel.log("%s: throttling occured to %dMHz", __FUNCTION__, CPUThrottle.GetClockRate() / 1000000L);
+	}
+	if (CurrentState & SystemStateSoftTempLimitOccurred) {
+		Kernel.log("%s: softtemplimit occured...", __FUNCTION__);
+	}
+}
+
 void CKernel::run_tempmonitor(void)
 {
+    unsigned tmask = SystemStateUnderVoltageOccurred | SystemStateFrequencyCappingOccurred |
+					 SystemStateThrottlingOccurred | SystemStateSoftTempLimitOccurred;
+	CPUThrottle.RegisterSystemThrottledHandler(tmask, monitorhandler, nullptr);
+	CPUThrottle.Update();
+	// CPUThrottle.DumpStatus(true);
 	while (true) {
 		if (CPUThrottle.SetOnTemperature() == false)
 			log("temperature monitor failed...");
 		MsDelay(5 * 1000);
-		log("Temperature = %dC", CPUThrottle.GetTemperature()); 
+		if (!CPUThrottle.Update())
+			log("CPUThrottle Update failed");
+		log("Temp %dC (max=%dC), dynamic adaption%spossible, current freq = %dMHz (max=%dMHz)", 
+			CPUThrottle.GetTemperature(),
+			CPUThrottle.GetMaxTemperature(), 
+			CPUThrottle.IsDynamic() ? " " : " not ",
+			CPUThrottle.GetClockRate() / 1000000L, 
+			CPUThrottle.GetMaxClockRate() / 1000000L);
 	}
 }
 

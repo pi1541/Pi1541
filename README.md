@@ -67,8 +67,8 @@ The following options control new functions available:
 Know Bugs
 ---------
 
-- Enabling both `netEthernet` and `netWifi` leads to a crash
 - Pluging in a USB stick _after_ booting, won't show files on the USB mounted drive and display remains dark. Unplugging/re-plugging works as expected if USB is plugged in at startup
+- Pi5 not yet working
 
 Checkout & Build
 ----------------
