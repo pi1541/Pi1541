@@ -114,9 +114,6 @@ make
 cd ${BUILDDIR}/pottendo-Pi1541
 make
 
-# for PiZero2W you need to disable PWM sound, as it won't work anyway without 3.5mm jack
-# make PIZERO2=1
-
 ```
 Depending on the RPi Model and on the chosen build (Circle vs. legacy):
 | Model | Version | build cmd | Image Name | Note
@@ -150,11 +147,8 @@ hdmi_mode=16
 
 # uncomment as needed for your model/kernel
 
-# Pi 3
+# Pi 3 & Pi Zero 2W
 kernel=kernel8-32.img
-
-# Pi Zero 2W
-#kernel=kernel8-32-PZ2W.img
 
 # Legacy kernal all models
 #kernel_address=0x1f00000
@@ -165,7 +159,7 @@ in case you use legacy build `kernel.img` you also have to uncomment the line `k
 
 Model 4 - `config.txt`
 ```
-# some genereic Pi4 configs can remain
+# some generic Pi4 configs can remain
 
 # Run in 32-bit mode or set to 1 if 64 bit mode was chosen
 arm_64bit=0

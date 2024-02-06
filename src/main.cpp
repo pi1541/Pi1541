@@ -288,18 +288,18 @@ void InitialiseHardware()
 		options.SetHeadLess(1);
 #endif
 #if not defined(EXPERIMENTALZERO)
-	if (options.GetHeadLess())
-	{
-		screen = new ScreenHeadLess();
-		DEBUG_LOG("running headless\r\n");
-	}
-	else 
+	if (!options.GetHeadLess())
 	{
 		screen = new Screen();
 		DEBUG_LOG("opening screen\r\n");
 	}
-	screen->Open(screenWidth, screenHeight, 16);
+	else 
 #endif
+	{
+		screen = new ScreenHeadLess();
+		DEBUG_LOG("running headless\r\n");
+	}
+	screen->Open(screenWidth, screenHeight, 16);
 #if !defined (__CIRCLE__)
 	RPI_PropertyInit();
 	RPI_PropertyAddTag(TAG_GET_MAX_CLOCK_RATE, ARM_CLK_ID);
