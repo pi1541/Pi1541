@@ -124,8 +124,10 @@ TShutdownMode CKernel::Run (void)
 			case MachineModel3B:
 			case MachineModel3BPlus:
 			case MachineModel4B:
+#if RASPPI <= 4			
 				m_PWMSoundDevice = new CPWMSoundDevice(&mInterrupt);
 				if (!m_PWMSoundDevice) no_pwm = true;
+#endif				
 				break;
 			default:
 				log ("model '%s' not tested, use at your onw risk...", mi->GetMachineName());
@@ -395,6 +397,7 @@ void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 		emulator();
 		break;
 	case 2:
+#if RASPPI >= 3 && RASPPI <= 4	
 		if (!options.GetNetWifi() && !options.GetNetEthernet()) goto out;
 		if (options.GetNetEthernet()) // cable network has priority over Wifi
 		{
@@ -420,6 +423,7 @@ void Pi1541Cores::Run(unsigned int core)			/* Virtual method */
 			Kernel.run_webserver();
 		}
 	out:
+#endif	
 		Kernel.log("disabling network support");
 		break;
 	case 3:	/* health monitoring */
