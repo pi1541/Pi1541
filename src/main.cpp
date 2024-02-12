@@ -16,14 +16,25 @@
 // You should have received a copy of the GNU General Public License
 // along with Pi1541. If not, see <http://www.gnu.org/licenses/>.
 
-#include "defs.h"
 #include <string.h>
 #include <strings.h>
+#if !defined (__CIRCLE__)
+#include "defs.h"
 #include "Timer.h"
+#include "SpinLock.h"
+#else 
+#include "circle-kernel.h"
+#if RASPPI <= 3
+#include "SpinLock.h"
+#else
+#define SpinLock CSpinLock
+#endif
+#endif
 #include "ROMs.h"
 #include "stb_image.h"
 extern "C"
 {
+#if !defined(__CIRCLE__)
 #include "rpi-aux.h"
 #include "rpi-i2c.h"
 #include "rpi-gpio.h"
@@ -32,6 +43,10 @@ extern "C"
 #include "rpi-mailbox-interface.h"
 #include "interrupt.h"
 #include <uspi.h>
+#include "sample.h"
+#else
+#include "circle-types.h"
+#endif
 #include "rpi-mailbox.h"
 }
 #include "InputMappings.h"
@@ -42,15 +57,19 @@ extern "C"
 #include "Pi1581.h"
 #include "FileBrowser.h"
 #include "ScreenLCD.h"
-#include "SpinLock.h"
+#include "ScreenHeadless.h"
 
 #include "logo.h"
-#include "sample.h"
 #include "ssd_logo.h"
+#include "version.h"
 
 unsigned versionMajor = 1;
 unsigned versionMinor = 24;
-
+#if defined (__CIRCLE__)
+#define CV "c"
+#else
+#define CV
+#endif
 // When the emulated CPU starts we execute the first million odd cycles in non-real-time (ie as fast as possible so the emulated 1541 becomes responsive to CBM-Browser asap)
 // During these cycles the CPU is executing the ROM self test routines (these do not need to be cycle accurate)
 // ***1581*** Skip to AFCA (how many cycles is this?)
@@ -105,8 +124,14 @@ Pi1541 pi1541;
 #if defined(PI1581SUPPORT)
 Pi1581 pi1581;
 #endif
+#if !defined(__CIRCLE__)
 CEMMCDevice	m_EMMC;
-Screen screen;
+#else
+bool usb_mass_update = false;
+#endif
+Screen *screen;
+Screen *screen_hdmi; 
+ScreenHeadLess *screen_headless;
 ScreenLCD* screenLCD = 0;
 Options options;
 const char* fileBrowserSelectedName;
@@ -136,6 +161,7 @@ const char* termainalTextNormal = "\E[0m";
 int headSoundFreq;
 int headSoundCounterDuration;
 
+#if !defined(__CIRCLE__)
 // Hooks required for USPi library
 extern "C"
 {
@@ -236,9 +262,12 @@ extern "C"
 		InterruptSystemConnectIRQ(nIRQ, pHandler, pParam);
 	}
 }
+#endif
 
 // Hooks for FatFs
+#if !defined (__CIRCLE__)
 DWORD get_fattime() { return 0; }	// If you have hardware RTC return a correct value here. THis can then be reflected in file modification times/dates.
+#endif
 
 extern u8 read6502(u16 address);
 extern u8 read6502ExtraRAM(u16 address);
@@ -249,14 +278,29 @@ extern void write6502_1581(u16 address, const u8 value);
 
 void InitialiseHardware()
 {
+#if !defined (__CIRCLE__)
 #if defined(RPI3)
 	RPI_GpioVirtInit();
 	RPI_TouchInit();
 #endif
-
-#if not defined(EXPERIMENTALZERO)
-	screen.Open(screenWidth, screenHeight, 16);
+#else
+	if (Kernel.screen_available())
+		options.SetHeadLess(1);
 #endif
+#if not defined(EXPERIMENTALZERO)
+	if (!options.GetHeadLess())
+	{
+		screen = new Screen();
+		DEBUG_LOG("opening screen\r\n");
+	}
+	else 
+#endif
+	{
+		screen = new ScreenHeadLess();
+		DEBUG_LOG("running headless\r\n");
+	}
+	screen->Open(screenWidth, screenHeight, 16);
+#if !defined (__CIRCLE__)
 	RPI_PropertyInit();
 	RPI_PropertyAddTag(TAG_GET_MAX_CLOCK_RATE, ARM_CLK_ID);
 	RPI_PropertyProcess();
@@ -278,6 +322,7 @@ void InitialiseHardware()
 
 	clockCycles1MHz = MaxClk / 1000000;
 #endif
+#endif		/* __CIRCLE__ */
 }
 
 void InitialiseLCD()
@@ -308,7 +353,7 @@ void InitialiseLCD()
 		if ( (height == 64) && (strcasecmp(options.GetLcdLogoName(), "1541ii") == 0) )
 		{
 			screenLCD->PlotRawImage(logo_ssd_1541ii, 0, 0, width, height);
-			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
+			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d" CV, versionMajor, versionMinor);
 			screenLCD->PrintText(false, 16, 0, tempBuffer, 0xffffffff);
 			logo_done = true;
 		}
@@ -335,7 +380,7 @@ void InitialiseLCD()
 
 		if (!logo_done)
 		{
-			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d", versionMajor, versionMinor);
+			snprintf(tempBuffer, tempBufferSize, "Pi1541 V%d.%02d" CV, versionMajor, versionMinor);
 			int x = (width - 8*strlen(tempBuffer) ) /2;
 			int y = (height-16)/2;
 			screenLCD->PrintText(false, x, y, tempBuffer, 0x0);
@@ -409,9 +454,9 @@ void UpdateScreen()
 	RGBA SRQColour = COLOUR_MAGENTA;
 	RGBA BkColour = FileBrowser::Colour(VIC2_COLOUR_INDEX_BLUE);
 
-	int height = screen.ScaleY(60);
-	int screenHeight = screen.Height();
-	int screenWidthM1 = screen.Width() - 1;
+	int height = screen->ScaleY(60);
+	int screenHeight = screen->Height();
+	int screenWidthM1 = screen->Width() - 1;
 	int top, top2, top3;
 	int bottom;
 	int graphX = 0;
@@ -430,7 +475,7 @@ void UpdateScreen()
 	while (1)
 	{
 		bool value;
-		u32 y = screen.ScaleY(STATUS_BAR_POSITION_Y);
+		u32 y = screen->ScaleY(STATUS_BAR_POSITION_Y);
 
 		//RPI_UpdateTouch();
 		//refreshUartStatusDisplay = false;
@@ -457,7 +502,7 @@ void UpdateScreen()
 //			SetACTLed(value);
 			oldLED = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
-			screen.PrintText(false, 4 * 8, y, tempBuffer, value ? COLOUR_RED : textColour, bgColour);
+			screen->PrintText(false, 4 * 8, y, tempBuffer, value ? COLOUR_RED : textColour, bgColour);
 			//refreshUartStatusDisplay = true;
 		}
 
@@ -466,12 +511,31 @@ void UpdateScreen()
 		{
 			oldMotor = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
-			screen.PrintText(false, 12 * 8, y, tempBuffer, textColour, bgColour);
+			screen->PrintText(false, 12 * 8, y, tempBuffer, textColour, bgColour);
 			//refreshUartStatusDisplay = true;
 		}
+#if defined (__CIRCLE__)
+		{
+			const char *p;
+			if (Kernel.get_ip(&p)) {
+				snprintf(tempBuffer, tempBufferSize, "IP address: %s", p);
+				screen->PrintText(false, 0, y + 20, tempBuffer, textColour, bgColour);
+			}
+			if (Kernel.usb_updatepnp())
+			{
+				if  (!USBKeyboardDetected && (USBKeyboardDetected = USPiKeyboardAvailable()))
+					keyboard->re_register();
+				numberOfUSBMassStorageDevices = USPiMassStorageDeviceAvailable();
+				usb_mass_update = true;
+			}
+			snprintf(tempBuffer, tempBufferSize, 
+					 "pottendo-Pi1541 (%s) Pi1541 V%d.%02d", PPI1541VERSION, versionMajor, versionMinor);
+			screen->PrintText(false, 0, y + 40, tempBuffer, textColour, bgColour);
 
+		}
+#endif
 		if (options.GraphIEC())
-			screen.DrawLineV(graphX, top3, bottom, BkColour);
+			screen->DrawLineV(graphX, top3, bottom, BkColour);
 
 		value = IEC_Bus::GetPI_Atn();
 		if (options.GraphIEC())
@@ -479,19 +543,19 @@ void UpdateScreen()
 			bottom = top2 - 2;
 			if (value ^ oldATN)
 			{
-				screen.DrawLineV(graphX, top3, bottom, atnColour);
+				screen->DrawLineV(graphX, top3, bottom, atnColour);
 			}
 			else
 			{
-				if (value) screen.PlotPixel(graphX, top3, atnColour);
-				else screen.PlotPixel(graphX, bottom, atnColour);
+				if (value) screen->PlotPixel(graphX, top3, atnColour);
+				else screen->PlotPixel(graphX, bottom, atnColour);
 			}
 		}
 		if (value != oldATN)
 		{
 			oldATN = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
-			screen.PrintText(false, 29 * 8, y, tempBuffer, textColour, bgColour);
+			screen->PrintText(false, 29 * 8, y, tempBuffer, textColour, bgColour);
 			//refreshUartStatusDisplay = true;
 		}
 
@@ -501,19 +565,19 @@ void UpdateScreen()
 			bottom = top - 2;
 			if (value ^ oldDATA)
 			{
-				screen.DrawLineV(graphX, top2, bottom, dataColour);
+				screen->DrawLineV(graphX, top2, bottom, dataColour);
 			}
 			else
 			{
-				if (value) screen.PlotPixel(graphX, top2, dataColour);
-				else screen.PlotPixel(graphX, bottom, dataColour);
+				if (value) screen->PlotPixel(graphX, top2, dataColour);
+				else screen->PlotPixel(graphX, bottom, dataColour);
 			}
 		}
 		if (value != oldDATA)
 		{
 			oldDATA = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
-			screen.PrintText(false, 35 * 8, y, tempBuffer, textColour, bgColour);
+			screen->PrintText(false, 35 * 8, y, tempBuffer, textColour, bgColour);
 			//refreshUartStatusDisplay = true;
 		}
 
@@ -523,19 +587,19 @@ void UpdateScreen()
 			bottom = screenHeight - 1;
 			if (value ^ oldCLOCK)
 			{
-				screen.DrawLineV(graphX, top, bottom, clockColour);
+				screen->DrawLineV(graphX, top, bottom, clockColour);
 			}
 			else
 			{
-				if (value) screen.PlotPixel(graphX, top, clockColour);
-				else screen.PlotPixel(graphX, bottom, clockColour);
+				if (value) screen->PlotPixel(graphX, top, clockColour);
+				else screen->PlotPixel(graphX, bottom, clockColour);
 			}
 		}
 		if (value != oldCLOCK)
 		{
 			oldCLOCK = value;
 			snprintf(tempBuffer, tempBufferSize, "%d", value);
-			screen.PrintText(false, 41 * 8, y, tempBuffer, textColour, bgColour);
+			screen->PrintText(false, 41 * 8, y, tempBuffer, textColour, bgColour);
 			//refreshUartStatusDisplay = true;
 		}
 
@@ -544,26 +608,26 @@ void UpdateScreen()
 		//{
 		//	if (value ^ oldSRQ)
 		//	{
-		//		screen.DrawLineV(graphX, 0, 100, SRQColour);
+		//		screen->DrawLineV(graphX, 0, 100, SRQColour);
 		//	}
 		//	else
 		//	{
-		//		if (value) screen.PlotPixel(graphX, 0, SRQColour);
-		//		else screen.PlotPixel(graphX, 100, SRQColour);
+		//		if (value) screen->PlotPixel(graphX, 0, SRQColour);
+		//		else screen->PlotPixel(graphX, 100, SRQColour);
 		//	}
 		//}
 		//if (value != oldSRQ)
 		//{
 		//	oldSRQ = value;
 		////	snprintf(tempBuffer, tempBufferSize, "%d", value);
-		////	screen.PrintText(false, 41 * 8, y, tempBuffer, textColour, bgColour);
+		////	screen->PrintText(false, 41 * 8, y, tempBuffer, textColour, bgColour);
 		////	//refreshUartStatusDisplay = true;
 		//}
 
 		if (graphX++ > screenWidthM1) graphX = 0;
 // black vertical line ahead of graph
 		if (options.GraphIEC())
-			screen.DrawLineV(graphX, top3, bottom, COLOUR_BLACK);
+			screen->DrawLineV(graphX, top3, bottom, COLOUR_BLACK);
 
 		u32 track;
 		if (emulating == EMULATING_1541)
@@ -573,7 +637,7 @@ void UpdateScreen()
 			{
 				oldTrack = track;
 				snprintf(tempBufferTrack, tempBufferTrackSize, "%02d.%d", (oldTrack >> 1) + 1, oldTrack & 1 ? 5 : 0);
-				screen.PrintText(false, 20 * 8, y, tempBufferTrack, textColour, bgColour);
+				screen->PrintText(false, 20 * 8, y, tempBufferTrack, textColour, bgColour);
 				//refreshUartStatusDisplay = true;
 				refreshLCDStatusDisplay = true;
 			}
@@ -585,13 +649,14 @@ void UpdateScreen()
 			{
 				oldTrack = track;
 				snprintf(tempBufferTrack, tempBufferTrackSize, "%02d  ", (oldTrack)+1);
-				screen.PrintText(false, 20 * 8, y, tempBufferTrack, textColour, bgColour);
+				screen->PrintText(false, 20 * 8, y, tempBufferTrack, textColour, bgColour);
 				//refreshUartStatusDisplay = true;
 				refreshLCDStatusDisplay = true;
 			}
 		}
 		if (emulating != IEC_COMMANDS)
 		{
+
 			// Putting the semaphore around diskCaddy.Update() keeps this core awake and this breaks emulation on option B hardware.
 			// Don't know why. Disabling for now.
 //#if not defined(EXPERIMENTALZERO)
@@ -614,7 +679,7 @@ void UpdateScreen()
 						oldTemperature = temperature;
 						//DEBUG_LOG("%0x %d %d\r\n", temp, temp, temp / 1000);
 						snprintf(tempBuffer, tempBufferSize, "%02d", temperature);
-						screen.PrintText(false, 43 * 8, y, tempBuffer, textColour, bgColour);
+						screen->PrintText(false, 43 * 8, y, tempBuffer, textColour, bgColour);
 						refreshLCDStatusDisplay = true;
 					}
 				}
@@ -638,7 +703,11 @@ void UpdateScreen()
 		//	UpdateUartControls(refreshUartStatusDisplay, oldLED, oldMotor, oldATN, oldDATA, oldCLOCK, oldTrack, romIndex);
 
 		// Go back to sleep. The USB irq will wake us up again.
+#if defined (__CIRCLE__)		
+		MsDelay(10);		/* less CPU demanding */
+#else		
 		__asm ("WFE");
+#endif
 	}
 #endif
 }
@@ -709,6 +778,7 @@ EmulatingMode BeginEmulating(FileBrowser* fileBrowser, const char* filenameForIc
 	inputMappings->WaitForClearButtons();
 	return IEC_COMMANDS;
 }
+#if !defined (__CIRCLE__)
 #if not defined(EXPERIMENTALZERO)
 static u32* dmaSound;
 
@@ -734,9 +804,7 @@ DMA_ControlBlock dmaSoundCB =
 	0,//&dmaSoundCB,
 	0, 0
 };
-#endif
 
-#if not defined(EXPERIMENTALZERO)
 static void PlaySoundDMA()
 {
 	write32(PWM_DMAC, PWM_ENAB + 0x0001);
@@ -744,7 +812,8 @@ static void PlaySoundDMA()
 	write32(DMA0_BASE + DMA_CONBLK_AD, (u32)&dmaSoundCB);
 	write32(DMA0_BASE + DMA_CS, DMA_ACTIVE);
 }
-#endif
+#endif	/* EXPERIMENTALZERO */
+#endif	/* __CIRCLE__ */
 
 void GlobalSetDeviceID(u8 id)
 {
@@ -1241,8 +1310,8 @@ void emulator()
 
 	roms.lastManualSelectedROMIndex = 0;
 
-	diskCaddy.SetScreen(&screen, screenLCD, &roms);
-	fileBrowser = new FileBrowser(inputMappings, &diskCaddy, &roms, &deviceID, options.DisplayPNGIcons(), &screen, screenLCD, options.ScrollHighlightRate());
+	diskCaddy.SetScreen(screen, screenLCD, &roms);
+	fileBrowser = new FileBrowser(inputMappings, &diskCaddy, &roms, &deviceID, options.DisplayPNGIcons(), screen, screenLCD, options.ScrollHighlightRate());
 	pi1541.Initialise();
 
 	m_IEC_Commands.SetAutoBootFB128(options.AutoBootFB128());
@@ -1284,7 +1353,13 @@ void emulator()
 			inputMappings->SetKeyboardBrowseLCDScreen(screenLCD && options.KeyboardBrowseLCDScreen());
 #endif
 			fileBrowser->ShowDeviceAndROM();
-
+#if defined (__CIRCLE__)
+			if (usb_mass_update)
+			{
+				fileBrowser->PopFolder();
+				usb_mass_update = false;
+			}
+#endif
 			if (!options.GetDisableSD2IECCommands())
 			{
 				m_IEC_Commands.SimulateIECBegin();
@@ -1403,7 +1478,6 @@ void emulator()
 #endif
 			if (diskCaddy.Empty())
 				IEC_Bus::WaitMicroSeconds(2 * 1000000);
-
 			IEC_Bus::WaitUntilReset();
 			emulating = IEC_COMMANDS;
 	
@@ -1427,7 +1501,7 @@ void emulator()
 //	DEBUG_LOG("Mouse: %x %d %d\r\n", nButtons, nDisplacementX, nDisplacementY);
 //}
 
-#ifdef HAS_MULTICORE
+#if defined(HAS_MULTICORE) && !defined(__CIRCLE__)
 extern "C" 
 {
 	void run_core() 
@@ -1487,10 +1561,10 @@ static void DisplayLogo()
 	int channels_in_file;
 	stbi_uc* image = stbi_load_from_memory((stbi_uc const*)I__logo_png, I__logo_png_size, &w, &h, &channels_in_file, 0);
 
-	screen.PlotImage((u32*)image, 0, 0, w, h);
+	screen->PlotImage((u32*)image, 0, 0, w, h);
 
-	snprintf(tempBuffer, tempBufferSize, "V%d.%02d", versionMajor, versionMinor);
-	screen.PrintText(false, 20, 180, tempBuffer, FileBrowser::Colour(VIC2_COLOUR_INDEX_BLUE));
+	snprintf(tempBuffer, tempBufferSize, "V%d.%02d pottendo-Pi1541 (%s)" , versionMajor, versionMinor, PPI1541VERSION);
+	screen->PrintText(false, 20, 180, tempBuffer, FileBrowser::Colour(VIC2_COLOUR_INDEX_BLUE));
 #endif
 }
 
@@ -1520,25 +1594,25 @@ void DisplayOptions(int y_pos)
 #if not defined(EXPERIMENTALZERO)
 	// print confirmation of parsed options
 	snprintf(tempBuffer, tempBufferSize, "ignoreReset = %d\r\n", options.IgnoreReset());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	screen->PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "RAMBOard = %d\r\n", options.GetRAMBOard());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	screen->PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "splitIECLines = %d\r\n", options.SplitIECLines());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	screen->PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "invertIECInputs = %d\r\n", options.InvertIECInputs());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	screen->PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "invertIECOutputs = %d\r\n", options.InvertIECOutputs());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	screen->PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "i2cLcdAddress = %d\r\n", options.I2CLcdAddress());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	screen->PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "i2cLcdFlip = %d\r\n", options.I2CLcdFlip());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	screen->PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "LCDName = %s\r\n", options.GetLCDName());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	screen->PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "LcdLogoName = %s\r\n", options.GetLcdLogoName());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	screen->PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 	snprintf(tempBuffer, tempBufferSize, "AutoBaseName = %s\r\n", options.GetAutoBaseName());
-	screen.PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	screen->PrintText(false, 0, y_pos += 16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 #endif
 }
 
@@ -1548,7 +1622,7 @@ void DisplayI2CScan(int y_pos)
 	int BSCMaster = options.I2CBusMaster();
 
 	snprintf(tempBuffer, tempBufferSize, "Scanning i2c bus %d ...\r\n", BSCMaster);
-	screen.PrintText(false, 0, y_pos , tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	screen->PrintText(false, 0, y_pos , tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 
 	RPI_I2CInit(BSCMaster, 1);
 
@@ -1566,7 +1640,7 @@ void DisplayI2CScan(int y_pos)
 	if (count == 0)
 		ptr += snprintf (tempBuffer+ptr, tempBufferSize-ptr, "Nothing");
 
-	screen.PrintText(false, 0, y_pos+16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+	screen->PrintText(false, 0, y_pos+16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 #endif
 }
 
@@ -1576,8 +1650,8 @@ static void CheckOptions()
 	FRESULT res;
 
 	u32 widthText, heightText;
-	u32 widthScreen = screen.Width();
-	u32 heightScreen = screen.Height();
+	u32 widthScreen = screen->Width();
+	u32 heightScreen = screen->Height();
 	u32 xpos, ypos;
 
 	deviceID = (u8)options.GetDeviceID();
@@ -1599,12 +1673,12 @@ static void CheckOptions()
 		{
 			u32 bytesRead;
 
-			screen.Clear(COLOUR_BLACK);
+			screen->Clear(COLOUR_BLACK);
 			snprintf(tempBuffer, tempBufferSize, "Loading Font ROM %s\r\n", FontROMName);
-			screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+			screen->MeasureText(false, tempBuffer, &widthText, &heightText);
 			xpos = (widthScreen - widthText) >> 1;
 			ypos = (heightScreen - heightText) >> 1;
-			screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+			screen->PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
 
 			SetACTLed(true);
 			res = f_read(&fp, CBMFontData, CBMFont_size, &bytesRead);
@@ -1626,12 +1700,12 @@ static void CheckOptions()
 		{
 			u32 bytesRead;
 
-			screen.Clear(COLOUR_BLACK);
+			screen->Clear(COLOUR_BLACK);
 			snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName1581);
-			screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+			screen->MeasureText(false, tempBuffer, &widthText, &heightText);
 			xpos = (widthScreen - widthText) >> 1;
 			ypos = (heightScreen - heightText) >> 1;
-			screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+			screen->PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
 
 			SetACTLed(true);
 			res = f_read(&fp, roms.ROMImage1581, ROMs::ROM1581_SIZE, &bytesRead);
@@ -1668,12 +1742,12 @@ static void CheckOptions()
 		{
 			u32 bytesRead;
 
-			screen.Clear(COLOUR_BLACK);
+			screen->Clear(COLOUR_BLACK);
 			snprintf(tempBuffer, tempBufferSize, "Loading ROM %s\r\n", ROMName);
-			screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+			screen->MeasureText(false, tempBuffer, &widthText, &heightText);
 			xpos = (widthScreen - widthText) >> 1;
 			ypos = (heightScreen - heightText) >> 1;
-			screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+			screen->PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
 
 			SetACTLed(true);
 			res = f_read(&fp, roms.ROMImages[ROMIndex], ROMs::ROM_SIZE, &bytesRead);
@@ -1685,7 +1759,7 @@ static void CheckOptions()
 				roms.UpdateLongestRomNameLen( strlen(roms.ROMNames[ROMIndex]) );
 			}
 			f_close(&fp);
-			//DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
+			DEBUG_LOG("Read ROM %s from options\r\n", ROMName);
 		}
 	}
 
@@ -1693,14 +1767,14 @@ static void CheckOptions()
 	if (roms.ROMValid[0] == false && !(AttemptToLoadROM("d1541.rom") || AttemptToLoadROM("dos1541") || AttemptToLoadROM("d1541II") || AttemptToLoadROM("Jiffy.bin")))
 	{
 		snprintf(tempBuffer, tempBufferSize, "No ROM file found!\r\nPlease copy a valid 1541 ROM file in the root folder of the SD card.\r\nThe file needs to be called 'dos1541'.");
-		screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+		screen->MeasureText(false, tempBuffer, &widthText, &heightText);
 		xpos = (widthScreen - widthText) >> 1;
 		ypos = (heightScreen - heightText) >> 1;
 		do
 		{
-			screen.Clear(COLOUR_RED);
+			screen->Clear(COLOUR_RED);
 			IEC_Bus::WaitMicroSeconds(20000);
-			screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+			screen->PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
 			IEC_Bus::WaitMicroSeconds(100000);
 		}
 		while (1);
@@ -1711,6 +1785,8 @@ static void CheckOptions()
 	inputMappings->INPUT_BUTTON_DOWN = options.GetButtonDown();
 	inputMappings->INPUT_BUTTON_BACK = options.GetButtonBack();
 	inputMappings->INPUT_BUTTON_INSERT = options.GetButtonInsert();
+
+	DEBUG_LOG("%s: done", __FUNCTION__);
 }
 
 void Reboot_Pi()
@@ -1737,8 +1813,8 @@ void UpdateFirmwareToSD()
 	FILINFO filInfo;
 	FRESULT res;
 	u32 widthText, heightText;
-	u32 widthScreen = screen.Width();
-	u32 heightScreen = screen.Height();
+	u32 widthScreen = screen->Width();
+	u32 heightScreen = screen->Height();
 	u32 xpos, ypos;
 
 	if (SwitchDrive("USB01:"))
@@ -1760,12 +1836,12 @@ void UpdateFirmwareToSD()
 					res = f_open(&fp, firmwareName, FA_READ);
 					if (res == FR_OK)
 					{
-						screen.Clear(COLOUR_BLACK);
+						screen->Clear(COLOUR_BLACK);
 						snprintf(tempBuffer, tempBufferSize, "Checking firmware on USB.\r\n");
-						screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+						screen->MeasureText(false, tempBuffer, &widthText, &heightText);
 						xpos = (widthScreen - widthText) >> 1;
 						ypos = (heightScreen - heightText) >> 1;
-						screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+						screen->PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
 
 						res = f_read(&fp, mem, (u32)filInfo.fsize, &bytes);
 						f_close(&fp);
@@ -1799,14 +1875,14 @@ void UpdateFirmwareToSD()
 										f_close(&fp);
 									}
 
-									screen.Clear(COLOUR_BLACK);
+									screen->Clear(COLOUR_BLACK);
 									if (!same && (FR_OK == f_open(&fp, firmwareName, FA_CREATE_ALWAYS | FA_WRITE)))
 									{
 										snprintf(tempBuffer, tempBufferSize, "Updating firmware.\r\n");
-										screen.MeasureText(false, tempBuffer, &widthText, &heightText);
+										screen->MeasureText(false, tempBuffer, &widthText, &heightText);
 										xpos = (widthScreen - widthText) >> 1;
 										ypos = (heightScreen - heightText) >> 1;
-										screen.PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
+										screen->PrintText(false, xpos, ypos, tempBuffer, COLOUR_WHITE, COLOUR_RED);
 
 										res = f_write(&fp, mem, (u32)filInfo.fsize, &bytes);
 										f_close(&fp);
@@ -1837,10 +1913,10 @@ void DisplayMessage(int x, int y, bool LCD, const char* message, u32 textColour,
 
 	if (!LCD)
 	{
-		x = screen.ScaleX(x);
-		y = screen.ScaleY(y);
+		x = screen->ScaleX(x);
+		y = screen->ScaleY(y);
 
-		screen.PrintText(false, x, y, (char*)message, textColour, backgroundColour);
+		screen->PrintText(false, x, y, (char*)message, textColour, backgroundColour);
 	}
 	else if (screenLCD)
 	{
@@ -1871,22 +1947,21 @@ extern "C"
 		FRESULT res;
 		FATFS fileSystemSD;
 		FATFS fileSystemUSB[16];
-
+#if !defined(__CIRCLE__)
 		m_EMMC.Initialize();
-
 #if not defined(EXPERIMENTALZERO)
 		RPI_AuxMiniUartInit(115200, 8);
 #endif
-
 		disk_setEMM(&m_EMMC);
 		f_mount(&fileSystemSD, "SD:", 1);
-
+#endif		
 		LoadOptions();
 
 		InitialiseHardware();
+#if !defined (__CIRCLE__)
 		enable_MMU_and_IDCaches();
 		_enable_unaligned_access();
-
+#endif
 		write32(ARM_GPIO_GPCLR0, 0xFFFFFFFF);
 
 		DisplayLogo();
@@ -1895,12 +1970,15 @@ extern "C"
 #if not defined(EXPERIMENTALZERO)
 		int y_pos = 184;
 		snprintf(tempBuffer, tempBufferSize, "Copyright(C) 2018 Stephen White");
-		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		screen->PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		snprintf(tempBuffer, tempBufferSize, "This program comes with ABSOLUTELY NO WARRANTY.");
-		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+		screen->PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
 		snprintf(tempBuffer, tempBufferSize, "This is free software, and you are welcome to redistribute it.");
-		screen.PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
-
+		screen->PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+#if defined (__CIRCLE__)
+		snprintf(tempBuffer, tempBufferSize, "Circle port done by pottendo, 2024");
+		screen->PrintText(false, 0, y_pos+=16, tempBuffer, COLOUR_WHITE, COLOUR_BLACK);
+#endif
 		if (options.I2CScan())
 			DisplayI2CScan(y_pos+=32);
 
@@ -1914,10 +1992,13 @@ extern "C"
 		//if (!options.QuickBoot())
 			//IEC_Bus::WaitMicroSeconds(3 * 1000000);
 
+#if !defined (__CIRCLE__)		
 		InterruptSystemInitialize();
+#endif
 #if not defined(EXPERIMENTALZERO)
+#if !defined (__CIRCLE__)		
 		TimerSystemInitialize();
-
+#endif
 		USPiInitialize();
 
 		DEBUG_LOG("\r\n");
@@ -1955,6 +2036,7 @@ extern "C"
 #if not defined(EXPERIMENTALZERO)
 		if (!options.SoundOnGPIO())
 		{
+#if !defined (__CIRCLE__)			
 			dmaSound = (u32*)malloc(Sample_bin_size * 4);
 			for (int i = 0; i < Sample_bin_size; ++i)
 			{
@@ -1962,12 +2044,13 @@ extern "C"
 			}
 			dmaSoundCB.sourceAddress = dmaSound;
 			//PlaySoundDMA();
+#endif			
 		}
 
 		for (int USBDriveIndex = 0; USBDriveIndex < numberOfUSBMassStorageDevices; ++USBDriveIndex)
 		{
 			char USBDriveId[16];
-			disk_setUSB(USBDriveIndex);
+			//disk_setUSB(USBDriveIndex);
 			sprintf(USBDriveId, "USB%02d:", USBDriveIndex + 1);
 			res = f_mount(&fileSystemUSB[USBDriveIndex], USBDriveId, 1);
 		}
@@ -1986,15 +2069,22 @@ extern "C"
 		pi1541.drive.SetVIA(&pi1541.VIA[1]);
 		pi1541.VIA[0].GetPortB()->SetPortOut(0, IEC_Bus::PortB_OnPortOut);
 		IEC_Bus::Initialise();
+#if !defined(__CIRCLE__) 
 		if (screenLCD)
 			screenLCD->ClearInit(0);
-
 #ifdef HAS_MULTICORE
 		start_core(3, _spin_core);
 		start_core(2, _spin_core);
 #ifdef USE_MULTICORE
 		start_core(1, _init_core);
-		UpdateScreen();		// core0 now loops here where it will handle interrupts and passively update the screen.
+		if (options.GetHeadLess())
+		{
+			while (1) 
+				MsDelay(1000*3600);
+		} else 
+		{
+			UpdateScreen();		// core0 now loops here where it will handle interrupts and passively update the screen->
+		}
 		while (1);
 #else
 		start_core(1, _spin_core);
@@ -2003,6 +2093,7 @@ extern "C"
 #ifndef USE_MULTICORE
 		emulator();	// If only one core the emulator runs on it now.
 #endif
+#endif		
 	}
 }
 

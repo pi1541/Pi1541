@@ -1,6 +1,7 @@
 #ifndef types_h
 #define types_h
 
+#if !defined (__CIRCLE__)
 #include <stddef.h>
 #include <uspi/types.h>
 #include "integer.h"
@@ -8,6 +9,12 @@
 typedef unsigned long long	u64;
 
 typedef signed long long	s64;
+
+#else
+
+#include "circle-types.h"
+
+#endif
 
 typedef enum {
 	LCD_UNKNOWN,

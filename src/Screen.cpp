@@ -26,7 +26,9 @@
 
 extern "C"
 {
+#if !defined (__CIRCLE__)	
 	#include "rpi-mailbox-interface.h"
+#endif	
 	#include "xga_font_data.h"
 }
 
@@ -48,13 +50,14 @@ void Screen::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth)
 	if (heightDesired > 720)
 		heightDesired = 720;
 
+	scaleX = (float)widthDesired / 1024.0f;
+	scaleY = (float)heightDesired / 768.0f;
+
+#if !defined (__CIRCLE__)
 	rpi_mailbox_property_t* mp;
 	//int width = 0;
 	//int height = 0;
 	//int depth = 0;
-
-	scaleX = (float)widthDesired / 1024.0f;
-	scaleY = (float)heightDesired / 768.0f;
 
 	RPI_PropertyInit();
 	RPI_PropertyAddTag(TAG_GET_PHYSICAL_SIZE);
@@ -101,12 +104,19 @@ void Screen::Open(u32 widthDesired, u32 heightDesired, u32 colourDepth)
 			framebuffer = (unsigned char*)(mp->data.buffer_32[0] & 0x3FFFFFFF);
 	}
 	while (framebuffer == 0);
-
+#else
+	/* use Circle screen / framebuffer drivers*/
+	if (Kernel.init_screen(widthDesired, heightDesired, colourDepth, 
+							width, height, bpp, pitch, &framebuffer) == false)
+	{
+		Kernel.log("%s: failed to initialize screen", __FUNCTION__);
+		opened = false;
+	}
+#endif
 
 	//RPI_PropertyInit();
 	//RPI_PropertyAddTag(TAG_SET_PALETTE, palette);
 	//RPI_PropertyProcess();
-
 	switch (bpp)
 	{
 		case 32:
@@ -143,10 +153,15 @@ void Screen::PlotPixel24(u32 pixel_offset, RGBA Colour)
 }
 void Screen::PlotPixel16(u32 pixel_offset, RGBA Colour)
 {
+#if !defined (__CIRCLE__)
 #if not defined(EXPERIMENTALZERO)
 	*(unsigned short*)&framebuffer[pixel_offset] = ((RED(Colour) >> 3) << 11) | ((GREEN(Colour) >> 2) << 5) | (BLUE(Colour) >> 3);
 #endif
+#else
+	Kernel.set_pixel((pixel_offset % pitch) / 2, pixel_offset / pitch, Colour);
+#endif
 }
+
 void Screen::PlotPixel8(u32 pixel_offset, RGBA Colour)
 {
 #if not defined(EXPERIMENTALZERO)

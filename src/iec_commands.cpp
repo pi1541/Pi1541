@@ -25,7 +25,9 @@
 
 #include "iec_commands.h"
 #include "iec_bus.h"
+#if !defined (__CIRCLE__)
 #include "ff.h"
+#endif
 #include "DiskImage.h"
 #include "Petscii.h"
 #include "FileBrowser.h"
@@ -224,6 +226,7 @@ IEC_Commands::IEC_Commands()
 	displayingDevices = false;
 	lowercaseBrowseModeFilenames = false;
 	newDiskType = DiskImage::D64;
+	selectedImageName[0] = '\0';
 }
 
 void IEC_Commands::Reset(void)

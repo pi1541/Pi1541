@@ -1,0 +1,55 @@
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+CIRCLEBASE ?= ../../circle-stdlib
+include $(CIRCLEBASE)/Config.mk
+
+CIRCLEHOME = $(CIRCLEBASE)/libs/circle
+NEWLIBDIR = $(CIRCLEBASE)/install/$(NEWLIB_ARCH)
+
+#CIRCLEOBJS = circle-main.o circle-kernel.o webserver.o
+PI1541OBS = $(COMMON_OBJS)
+
+OBJS = $(CIRCLE_OBJS) $(PI1541OBS)
+
+include $(CIRCLEHOME)/Rules.mk
+
+ADDONINC = -I$(CIRCLEHOME)/addon/linux
+
+CFLAGS += -D__CIRCLE__ -I. -I./Circle -I "$(NEWLIBDIR)/include" \
+       	  -I $(STDDEF_INCPATH) -I $(CIRCLEBASE)/include $(ADDONINC) \
+	  -Wno-psabi -Wno-write-strings -Wno-unused-variable -Wno-unused-but-set-variable -Wno-address \
+	  -DRPI3=1 $(XFLAGS)
+AFLAGS = -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8 -mfloat-abi=hard -marm -DRPI3=1 -DDEBUG=1
+
+# -mno-unaligned-access \
+
+LIBS := \
+	$(NEWLIBDIR)/lib/libm.a $(NEWLIBDIR)/lib/libc.a $(NEWLIBDIR)/lib/libcirclenewlib.a \
+	$(CIRCLEHOME)/addon/wlan/hostap/wpa_supplicant/libwpa_supplicant.a \
+	$(CIRCLEHOME)/addon/wlan/libwlan.a \
+	$(CIRCLEHOME)/addon/SDCard/libsdcard.a \
+	$(CIRCLEHOME)/addon/fatfs/libfatfs.a \
+	$(CIRCLEHOME)/lib/usb/libusb.a \
+	$(CIRCLEHOME)/lib/input/libinput.a \
+	$(CIRCLEHOME)/lib/sound/libsound.a \
+	$(CIRCLEHOME)/lib/fs/libfs.a \
+	$(CIRCLEHOME)/lib/net/libnet.a \
+	$(CIRCLEHOME)/lib/sched/libsched.a \
+	$(CIRCLEHOME)/lib/libcircle.a
+
+EXTRACLEAN = ${OBJS:.o=.d} ${SKVIC20OBJS:.o=.d} $(SKVIC20OBJS) $(RADOBJS) $(OLED) *.img *.lst *.map *.elf version.h
+
+-include $(DEPS)

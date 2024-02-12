@@ -108,6 +108,11 @@ public:
 	//ROTARY: Added for rotary encoder inversion (Issue#185) - 08/13/2020 by Geo...
 	inline unsigned int RotaryEncoderInvert() const { return rotaryEncoderInvert; }
 
+	inline unsigned int GetNetWifi() const { return netWifi; }
+	inline unsigned int GetNetEthernet() const { return netEthernet; }
+	inline unsigned int GetHeadLess() const { return headLess; }
+	inline void SetHeadLess(unsigned int h) { headLess = h; }
+
 	// Page up and down will jump a different amount based on the maximum number rows displayed.
 	// Perhaps we should use some keyboard modifier to the the other screen?
 	inline unsigned int KeyboardBrowseLCDScreen() const { return keyboardBrowseLCDScreen; }
@@ -192,5 +197,11 @@ private:
 	//ROTARY: Added for rotary encoder inversion (Issue#185) - 08/13/2020 by Geo...
 	unsigned int rotaryEncoderInvert;
 
+	// WiFi
+	unsigned int netWifi;
+	unsigned int netEthernet;
+
+	// headless
+	unsigned int headLess;
 };
 #endif

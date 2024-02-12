@@ -27,10 +27,12 @@
 #include "lz.h"
 #include "Petscii.h"
 #include <malloc.h>
+#if !defined (__CIRCLE__)
 extern "C"
 {
 #include "rpi-gpio.h"
 }
+#endif
 
 extern u32 HashBuffer(const void* pBuffer, u32 length);
 
@@ -1391,6 +1393,7 @@ bool DiskImage::GetDecodedSector(u32 track, u32 sector, u8* buffer)
 
 DiskImage::DiskType DiskImage::GetDiskImageTypeViaExtention(const char* diskImageName)
 {
+	if (!diskImageName) return NONE;
 	char* ext = strrchr((char*)diskImageName, '.');
 
 	if (ext)

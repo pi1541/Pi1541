@@ -18,20 +18,28 @@
 #if not defined(EXPERIMENTALZERO)
 #include "Keyboard.h"
 #include <string.h>
-#include <uspi.h>
-#include "Timer.h"
 #include "debug.h"
+#if !defined (__CIRCLE__)
+#include "Timer.h"
+#include <uspi.h>
 extern "C"
 {
 #include "uspi/devicenameservice.h"
 }
+#else
+#include "circle-kernel.h"
+#endif
 
 #define REPEAT_RATE		8
 #define REPEAT_DELAY	3
 
 Keyboard* Keyboard::instance;
 
+#if !defined (__CIRCLE__)
 void Keyboard::KeyPressedHandlerRaw(TUSBKeyboardDevice* device, unsigned char modifiers, const unsigned char RawKeys[6])
+#else
+void Keyboard::KeyPressedHandlerRaw(unsigned char modifiers, const unsigned char RawKeys[6])
+#endif
 {
 	// byte 0 - modifires
 	//  bit 0: left control
@@ -87,6 +95,9 @@ void Keyboard::KeyPressedHandlerRaw(TUSBKeyboardDevice* device, unsigned char mo
 		// Only need the timer if a key was held down
 		if (keyboard->timer == 0)
 		{
+#if defined (__CIRCLE__)			
+			void *device = nullptr;
+#endif			
 			keyboard->timer = TimerStartKernelTimer(REPEAT_RATE, USBKeyboardDeviceTimerHandler, 0, device);
 			//DEBUG_LOG("Timer started\r\n");
 		}
@@ -102,7 +113,7 @@ void Keyboard::KeyPressedHandlerRaw(TUSBKeyboardDevice* device, unsigned char mo
 	keyboard->updateCount++;
 }
 
-void Keyboard::USBKeyboardDeviceTimerHandler(unsigned hTimer, void *pParam, void *pContext)
+void Keyboard::USBKeyboardDeviceTimerHandler(KTHType hTimer, void *pParam, void *pContext)
 {
 	Keyboard* keyboard = Keyboard::Instance();
 	bool anyDown = false;
@@ -138,9 +149,13 @@ void Keyboard::USBKeyboardDeviceTimerHandler(unsigned hTimer, void *pParam, void
 		TimerCancelKernelTimer(keyboard->timer);
 		keyboard->timer = 0;
 	}
-
 	if (anyDown)	// Only need the timer if a key was held down
 		keyboard->timer = TimerStartKernelTimer(REPEAT_RATE, USBKeyboardDeviceTimerHandler, 0, pContext);
+}
+
+void Keyboard::re_register(void) 
+{
+	 USPiKeyboardRegisterKeyStatusHandlerRaw(KeyPressedHandlerRaw);
 }
 
 Keyboard::Keyboard()

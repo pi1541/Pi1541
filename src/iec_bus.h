@@ -25,7 +25,9 @@
 #include "m8520.h"
 
 #include "rpi-gpio.h"
+#if !defined (__CIRCLE__)
 #include "rpiHardware.h"
+#endif
 
 //ROTARY: Added for rotary encoder support - 09/05/2019 by Geo...
 #include "dmRotary.h"
@@ -199,6 +201,7 @@ enum PIGPIOMasks
 };
 
 static const unsigned ButtonPinFlags[5] = { PIGPIO_MASK_IN_BUTTON1, PIGPIO_MASK_IN_BUTTON2, PIGPIO_MASK_IN_BUTTON3, PIGPIO_MASK_IN_BUTTON4, PIGPIO_MASK_IN_BUTTON5 };
+static const unsigned ButtonPins[5] = { PIGPIO_IN_BUTTON1, PIGPIO_IN_BUTTON2, PIGPIO_IN_BUTTON3, PIGPIO_IN_BUTTON4, PIGPIO_IN_BUTTON5 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Original Non-split lines
@@ -293,29 +296,75 @@ typedef bool(*CheckStatus)();
 
 class IEC_Bus
 {
+#if defined (__CIRCLE__)
+	static CGPIOPin IO_led;
+	static CGPIOPin IO_sound;
+	static CGPIOPin IO_ATN;
+	static CGPIOPin IO_CLK;
+	static CGPIOPin IO_DAT;
+	static CGPIOPin IO_SRQ;
+	static CGPIOPin IO_RST;
+	static CGPIOPin IO_buttons[5];
+
+	static CGPIOPin IO_IN_BUTTON4;
+	static CGPIOPin IO_IN_BUTTON5;
+	static CGPIOPin IO_IN_RESET;
+	static CGPIOPin IO_IN_SRQ;
+	static CGPIOPin IO_IN_BUTTON2;
+	static CGPIOPin IO_IN_BUTTON3;
+	static CGPIOPin IO_IN_ATN;
+	static CGPIOPin IO_IN_DATA;
+	static CGPIOPin IO_IN_CLOCK;
+	static CGPIOPin IO_IN_BUTTON1;
+
+	//static CGPIOPin IO_OUT_RESET;
+	static CGPIOPin IO_OUT_SPI0_RS;
+
+	static CGPIOPin IO_OUT_ATN;
+	static CGPIOPin IO_OUT_SOUND;
+	static CGPIOPin IO_OUT_LED;
+	static CGPIOPin IO_OUT_CLOCK;
+	static CGPIOPin IO_OUT_DATA;
+	static CGPIOPin IO_OUT_SRQ;
+#endif	
 public:
 	static inline void Initialise(void)
 	{
 		volatile int index; // Force a real delay in the loop below.
-
 		// Clear all outputs to 0
 		write32(ARM_GPIO_GPCLR0, 0xFFFFFFFF);
-
+		//CGPIOPin::WriteAll(0xffffffff, 0xffffffff);
 		if (!splitIECLines)
 		{
 			// This means that when any pin is turn to output it will output a 0 and pull lines low (ie an activation state on the IEC bus)
 			// Note: on the IEC bus you never output a 1 you simply tri state and it will be pulled up to a 1 (ie inactive state on the IEC bus) if no one else is pulling it low.
 
-			//myOutsGPFSEL0 = read32(ARM_GPIO_GPFSEL0);
-			//myOutsGPFSEL1 = read32(ARM_GPIO_GPFSEL1);
-
-			//myOutsGPFSEL1 |= (1 << ((PIGPIO_OUT_LED - 10) * 3));
-			//myOutsGPFSEL1 |= (1 << ((PIGPIO_OUT_SOUND - 10) * 3));
-			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_SOUND, FS_OUTPUT);
-			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_LED, FS_OUTPUT);
+			myOutsGPFSEL0 = read32(ARM_GPIO_GPFSEL0);
+			myOutsGPFSEL1 = read32(ARM_GPIO_GPFSEL1);
+#if defined (__CIRCLE__)			
+#if 0
+			IEC_Bus::IO_led.AssignPin(PIGPIO_OUT_LED); IEC_Bus::IO_led.SetMode(GPIOModeOutput, true);
+			IEC_Bus::IO_sound.AssignPin(PIGPIO_OUT_SOUND); IEC_Bus::IO_sound.SetMode(GPIOModeOutput, true);
+			IEC_Bus::IO_CLK.AssignPin(PIGPIO_CLOCK); IEC_Bus::IO_CLK.SetMode(GPIOModeInput, true);
+			IEC_Bus::IO_ATN.AssignPin(PIGPIO_ATN); IEC_Bus::IO_ATN.SetMode(GPIOModeInput, true);
+			IEC_Bus::IO_DAT.AssignPin(PIGPIO_DATA); IEC_Bus::IO_DAT.SetMode(GPIOModeInput, true);
+			IEC_Bus::IO_SRQ.AssignPin(PIGPIO_SRQ); IEC_Bus::IO_SRQ.SetMode(GPIOModeInput, true);
+#endif			
+			IEC_Bus::IO_RST.AssignPin(PIGPIO_RESET); IEC_Bus::IO_RST.SetMode(GPIOModeInput, true);
+			for (int i = 0; i < 5; i++) {
+				IO_buttons[i].AssignPin(ButtonPins[i]);
+				IO_buttons[i].SetMode(GPIOModeInputPullUp, true);
+				Kernel.log("%s: assigning button %d to pin %d", __FUNCTION__, i, ButtonPins[i]);
+			}
+#endif			
+			myOutsGPFSEL1 |= (1 << ((PIGPIO_OUT_LED - 10) * 3));
+			myOutsGPFSEL1 |= (1 << ((PIGPIO_OUT_SOUND - 10) * 3));
+			//RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_SOUND, FS_OUTPUT);
+			//RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_LED, FS_OUTPUT);
 		}
 		else
 		{
+#if !defined (__CIRCLE__)			
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_IN_BUTTON4, FS_INPUT);
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_IN_BUTTON5, FS_INPUT);
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_IN_RESET, FS_INPUT);
@@ -337,9 +386,32 @@ public:
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_CLOCK, FS_OUTPUT);
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_DATA, FS_OUTPUT);
 			RPI_SetGpioPinFunction((rpi_gpio_pin_t)PIGPIO_OUT_SRQ, FS_OUTPUT);
+#else
+			IEC_Bus::IO_IN_BUTTON4.AssignPin(PIGPIO_IN_BUTTON4); IEC_Bus::IO_IN_BUTTON4.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_BUTTON5.AssignPin(PIGPIO_IN_BUTTON5); IEC_Bus::IO_IN_BUTTON5.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_RESET.AssignPin(PIGPIO_IN_RESET); IEC_Bus::IO_IN_RESET.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_SRQ.AssignPin(PIGPIO_IN_SRQ); IEC_Bus::IO_IN_SRQ.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_BUTTON2.AssignPin(PIGPIO_IN_BUTTON2); IEC_Bus::IO_IN_BUTTON2.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_BUTTON3.AssignPin(PIGPIO_IN_BUTTON3); IEC_Bus::IO_IN_BUTTON3.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_ATN.AssignPin(PIGPIO_IN_ATN); IEC_Bus::IO_IN_ATN.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_DATA.AssignPin(PIGPIO_IN_DATA); IEC_Bus::IO_IN_DATA.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_CLOCK.AssignPin(PIGPIO_IN_CLOCK); IEC_Bus::IO_IN_CLOCK.SetMode(GPIOModeInput);
+			IEC_Bus::IO_IN_BUTTON1.AssignPin(PIGPIO_IN_BUTTON1); IEC_Bus::IO_IN_BUTTON1.SetMode(GPIOModeInput);
+
+			//IO_OUT_RESET.AssignPin(PIGPIO_OUT_RESET); IEC_Bus::IO_OUT_RESET.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_OUT_SPI0_RS.AssignPin(PIGPIO_OUT_SPI0_RS); IEC_Bus::IO_OUT_SPI0_RS.SetMode(GPIOModeOutput);
+
+			IEC_Bus::IO_OUT_ATN.AssignPin(PIGPIO_OUT_ATN); IEC_Bus::IO_OUT_ATN.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_OUT_SOUND.AssignPin(PIGPIO_OUT_SOUND); IEC_Bus::IO_OUT_SOUND.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_OUT_LED.AssignPin(PIGPIO_OUT_LED); IEC_Bus::IO_OUT_LED.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_OUT_CLOCK.AssignPin(PIGPIO_OUT_CLOCK); IEC_Bus::IO_OUT_CLOCK.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_OUT_DATA.AssignPin(PIGPIO_OUT_DATA); IEC_Bus::IO_OUT_DATA.SetMode(GPIOModeOutput);
+			IEC_Bus::IO_OUT_SRQ.AssignPin(PIGPIO_OUT_SRQ); IEC_Bus::IO_OUT_SRQ.SetMode(GPIOModeOutput);						
+#endif			
 		}
 	
 #if not defined(EXPERIMENTALZERO)
+#if !defined (__CIRCLE__)
 		// Set up audio.
 		write32(CM_PWMDIV, CM_PASSWORD + 0x2000);
 		write32(CM_PWMCTL, CM_PASSWORD + CM_ENAB + CM_SRC_OSCILLATOR);	// Use Default 100MHz Clock
@@ -347,6 +419,7 @@ public:
 		write32(PWM_RNG1, 0x1B4);	// 8bit 44100Hz Mono
 		write32(PWM_RNG2, 0x1B4);
 		write32(PWM_CTL, PWM_USEF2 + PWM_PWEN2 + PWM_USEF1 + PWM_PWEN1 + PWM_CLRF1);
+#endif		
 #endif
 
 		for (index = 0; index < buttonCount; ++index)
@@ -384,7 +457,6 @@ public:
 				IEC_Bus::rotaryEncoder.Initialize(RPI_GPIO22, RPI_GPIO23, RPI_GPIO27);
 			}
 		}
-
 	}
 
 	static inline void LetSRQBePulledHigh()
@@ -403,12 +475,14 @@ public:
 	static void UpdateButton(int index, unsigned gplev0)
 	{
 		bool inputcurrent = (gplev0 & ButtonPinFlags[index]) == 0;
+		//XXXbool inputcurrent = IO_buttons[index].Read() == 0;
 
 		InputButtonPrev[index] = InputButton[index];
 		inputRepeatPrev[index] = inputRepeat[index];
 
 		if (inputcurrent)
 		{
+			//Kernel.log("%s: button %d fired", __FUNCTION__, index);
 			validInputCount[index]++;
 			if (validInputCount[index] == INPUT_BUTTON_DEBOUNCE_THRESHOLD)
 			{
@@ -485,8 +559,14 @@ public:
 		do
 		{
 			gplev0 = read32(ARM_GPIO_GPLEV0);
-			Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == \
+			//XXXgplev0 = CGPIOPin::ReadAll();
+
+#if !defined (__CIRCLE__)
+			Resetting = !ignoreReset && ((gplev0 & PIGPIO_MASK_IN_RESET) == 
 				 (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+#else			
+			Resetting = !ignoreReset && (IO_RST.Read() == (invertIECInputs ? PIGPIO_MASK_IN_RESET : 0));
+#endif			
 
 			if (Resetting)
 				IEC_Bus::WaitMicroSeconds(100);
@@ -508,13 +588,25 @@ public:
 		if (!splitIECLines)
 		{
 			unsigned outputs = 0;
-
+#if 1
 			if (AtnaDataSetToOut || DataSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_DATA - 10) * 3));
 			if (ClockSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_CLOCK - 10) * 3));
 			//if (SRQSetToOut) outputs |= (FS_OUTPUT << ((PIGPIO_SRQ - 10) * 3));			// For Option A hardware we should not support pulling more than 2 lines low at any one time!
 
 			unsigned nValue = (myOutsGPFSEL1 & PI_OUTPUT_MASK_GPFSEL1) | outputs;
 			write32(ARM_GPIO_GPFSEL1, nValue);
+#else
+			if (AtnaDataSetToOut || DataSetToOut)
+			{
+				IEC_Bus::IO_DAT.SetMode(GPIOModeOutput, true);
+				//Kernel.log("%s: DATA fired", __FUNCTION__);
+			}
+			else IEC_Bus::IO_DAT.SetMode(GPIOModeInput, true);
+			if (ClockSetToOut) {
+				IEC_Bus::IO_CLK.SetMode(GPIOModeOutput, true);
+				//Kernel.log("%s: CLOCK fired", __FUNCTION__);
+			} else IEC_Bus::IO_CLK.SetMode(GPIOModeInput, true);
+#endif
 		}
 		else
 		{
@@ -533,7 +625,7 @@ public:
 				clear = tmp;
 			}
 		}
-
+#if 1
 		if (OutputLED) set |= 1 << PIGPIO_OUT_LED;
 		else clear |= 1 << PIGPIO_OUT_LED;
 
@@ -542,12 +634,18 @@ public:
 
 		write32(ARM_GPIO_GPSET0, set);
 		write32(ARM_GPIO_GPCLR0, clear);
-	}
-
+#else
+		if (OutputLED) IEC_Bus::IO_led.Write(HIGH);
+		else IEC_Bus::IO_led.Write(LOW);
+		if (OutputSound) IEC_Bus::IO_sound.Write(HIGH);
+		else IEC_Bus::IO_sound.Write(LOW);
+#endif
+	}			
+	
 	static void WaitMicroSeconds(u32 amount)
 	{
 		u32 count;
-
+		//usDelay(amount); return;
 		for (count = 0; count < amount; ++count)
 		{
 			unsigned before;

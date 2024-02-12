@@ -19,7 +19,9 @@
 #ifndef FileBrowser_H
 #define FileBrowser_H
 #include <assert.h>
+#if !defined (__CIRCLE__)
 #include "ff.h"
+#endif
 #include <vector>
 #include "types.h"
 #include "DiskImage.h"

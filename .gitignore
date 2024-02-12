@@ -5,4 +5,7 @@
 *.lst
 *.map
 *.swp
+*.d
+*~
 
+src/version.h

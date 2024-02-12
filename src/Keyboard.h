@@ -20,10 +20,15 @@
 #define Keyboard_H
 #include <stdio.h>
 
+#if !defined (__CIRCLE__)	
 extern "C"
 {
 #include <uspi/usbkeyboard.h>
 }
+#include "rpi-base.h"
+#else
+#include "circle-types.h"
+#endif
 #if not defined(EXPERIMENTALZERO)
 
 #define MAX_KEYS 0x7f
@@ -293,13 +298,18 @@ protected:
 	/*volatile*/ u64 keyStatus[2];
 	/*volatile*/ u64 keyStatusPrev[2];
 	u32 keyRepeatCount[MAX_KEYS];
-	u32 timer;
 	//volatile bool dirty;
+
+#if !defined (__CIRCLE__)
+	u32 timer;
+	static void KeyPressedHandlerRaw(TUSBKeyboardDevice* device, unsigned char modifiers, const unsigned char RawKeys[6]);
+#else	
+	TKernelTimerHandle timer;
+	static void KeyPressedHandlerRaw(unsigned char modifiers, const unsigned char RawKeys[6]);
+#endif	
+	static void USBKeyboardDeviceTimerHandler(KTHType hTimer, void *pParam, void *pContext);
 	/*volatile*/ u32 updateCount;
 	u32 updateCountLastRead;
-
-	static void KeyPressedHandlerRaw(TUSBKeyboardDevice* device, unsigned char modifiers, const unsigned char RawKeys[6]);
-	static void USBKeyboardDeviceTimerHandler(unsigned hTimer, void *pParam, void *pContext);
 
 public:
 	Keyboard();
@@ -354,6 +364,7 @@ public:
 
 	inline bool KeyLCtrlAlt() { return (modifier == (KEY_MOD_LALT | KEY_MOD_LCTRL) ); }
 
+	void re_register(void);
 	static Keyboard* instance;
 };
 #endif

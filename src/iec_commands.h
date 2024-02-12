@@ -20,7 +20,9 @@
 #define IEC_COMMANDS_H
 
 #include "iec_bus.h"
+#if !defined (__CIRCLE__)
 #include "ff.h"
+#endif
 #include "debug.h"
 #include "DiskImage.h"
 

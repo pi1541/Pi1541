@@ -52,7 +52,7 @@ extern "C"
 // Hall effect sensors can detect flux density of a magnetic field (even a constant one) but generally require stronger flux densities than found on the coating of floppy media can provide, so are not used to read data.
 // And unfortunately, hall effect sensors have no way of writing data only reading it.
 //
-// Maxwell–Faraday law/equation states that a time varying magnetic field will induce a time varing electric field and visa versa.
+// Maxwellï¿½Faraday law/equation states that a time varying magnetic field will induce a time varing electric field and visa versa.
 // Disks drive heads use this principal, and can therefore, read and write data.
 // Yet they can only detect/read and create/write changes in the disk's analogue magnetic field over time.
 // The larger and quicker the change the easier it is to detect and read.
@@ -71,7 +71,7 @@ extern "C"
 // These data encoding schemes sacrifice disk density for maintaining a rapidly changing, easy to read magnetic field.
 // Originally, up to 50% of a disk's density was sacrificed for software encoding schemes. Interleaving clock bits with data bits.
 // Then some bright sparks invented other more efficient schemes, almost doubling the density of the of the disk (as space for the clock bits could now be used for data).
-// Some marketing genius picked up on the words “double density” and the name stuck, even though the disk was always capable of storing the exact same number of bits!
+// Some marketing genius picked up on the words ï¿½double densityï¿½ and the name stuck, even though the disk was always capable of storing the exact same number of bits!
 // A encoding scheme commonly used at the time of the 1541 is called GCR.
 // GCR encodes 4 bits into 5 where any combination cannot produce no more than two 0s in a row. This sacrifices only 20% of the disk's density.
 // There is no drive hardware that dictates that any specific encoding scheme nees to be used.
@@ -378,10 +378,13 @@ void Drive::Reset()
 	ResetEncoderDecoder(18.0f, 22.0f);
 #endif
 	newDiskImageQueuedCylesRemaining = DISK_SWAP_CYCLES_DISK_EJECTING + DISK_SWAP_CYCLES_NO_DISK + DISK_SWAP_CYCLES_DISK_INSERTING;
-	m_pVIA->InputCA1(true);	// Reset in read mode
-	m_pVIA->InputCB1(true);
-	m_pVIA->InputCA2(true);
-	m_pVIA->InputCB2(true);
+	if (m_pVIA) 
+	{
+		m_pVIA->InputCA1(true);	// Reset in read mode
+		m_pVIA->InputCB1(true);
+		m_pVIA->InputCA2(true);
+		m_pVIA->InputCB2(true);
+	}
 }
 
 void Drive::Insert(DiskImage* diskImage)

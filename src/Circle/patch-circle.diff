@@ -1,0 +1,78 @@
+diff --git a/addon/fatfs/ffconf.h b/addon/fatfs/ffconf.h
+index 4bf3998..13e7a46 100644
+--- a/addon/fatfs/ffconf.h
++++ b/addon/fatfs/ffconf.h
+@@ -47,7 +47,7 @@
+ /  (0:Disable or 1:Enable) Also FF_FS_READONLY needs to be 0 to enable this option. */
+ 
+ 
+-#define FF_USE_LABEL	0
++#define FF_USE_LABEL	1
+ /* This option switches volume label functions, f_getlabel() and f_setlabel().
+ /  (0:Disable or 1:Enable) */
+ 
+@@ -171,7 +171,8 @@
+ 
+ 
+ #define FF_STR_VOLUME_ID	1
+-#define FF_VOLUME_STRS		"SD","USB","USB2","USB3"
++/* #define FF_VOLUME_STRS		"SD","USB","USB2","USB3" */
++
+ /* FF_STR_VOLUME_ID switches support for volume ID in arbitrary strings.
+ /  When FF_STR_VOLUME_ID is set to 1 or 2, arbitrary strings can be used as drive
+ /  number in the path name. FF_VOLUME_STRS defines the volume ID strings for each
+diff --git a/include/circle/sysconfig.h b/include/circle/sysconfig.h
+index 8b51df3..4101c87 100644
+--- a/include/circle/sysconfig.h
++++ b/include/circle/sysconfig.h
+@@ -35,14 +35,14 @@
+ // increase this value. The value must be a multiple of 16 KByte.
+ 
+ #ifndef KERNEL_MAX_SIZE
+-#define KERNEL_MAX_SIZE		(2 * MEGABYTE)
++#define KERNEL_MAX_SIZE		(8 * MEGABYTE)
+ #endif
+ 
+ // KERNEL_STACK_SIZE is the size of the stack set on startup for the
+ // main thread.  This must be a multiple of 16 KByte.
+ 
+ #ifndef KERNEL_STACK_SIZE
+-#define KERNEL_STACK_SIZE	0x20000
++#define KERNEL_STACK_SIZE	(8 * 0x20000)
+ #endif
+ 
+ // HEAP_DEFAULT_NEW defines the default heap to be used for the "new"
+@@ -155,7 +155,7 @@
+ // single core applications, because this may slow down the system
+ // because multiple cores may compete for bus time without use.
+ 
+-//#define ARM_ALLOW_MULTI_CORE
++#define ARM_ALLOW_MULTI_CORE
+ 
+ #endif
+ 
+@@ -259,13 +259,13 @@
+ // MAX_TASKS is the maximum number of tasks in the system.
+ 
+ #ifndef MAX_TASKS
+-#define MAX_TASKS		20
++#define MAX_TASKS		(4*20)
+ #endif
+ 
+ // TASK_STACK_SIZE is the stack size for each task.
+ 
+ #ifndef TASK_STACK_SIZE
+-#define TASK_STACK_SIZE		0x8000
++#define TASK_STACK_SIZE		(4*0x8000)
+ #endif
+ 
+ // NO_BUSY_WAIT deactivates busy waiting in the EMMC, SDHOST and USB
+@@ -287,7 +287,7 @@
+ 
+ #ifndef DEFAULT_KEYMAP
+ 
+-#define DEFAULT_KEYMAP		"DE"
++#define DEFAULT_KEYMAP		"US"
+ //#define DEFAULT_KEYMAP		"ES"
+ //#define DEFAULT_KEYMAP		"FR"
+ //#define DEFAULT_KEYMAP		"IT"

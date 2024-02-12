@@ -20,10 +20,10 @@ ifeq ($(strip $(RASPPI)),0)
 	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -mno-unaligned-access -DRPIZERO=1 -DEXPERIMENTALZERO=1
 	CFLAGS	+= -DRPIZERO=1 -DRASPPI=1
 else ifeq ($(strip $(RASPPI)),1BRev1)
-	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -mno-unaligned-access-DRPI1BREV1=1 -DEXPERIMENTALZERO=1
+	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -mno-unaligned-access -DRPI1BREV1=1 -DEXPERIMENTALZERO=1
 	CFLAGS	+= -DRPI1BREV1=1 -DRASPPI=1
 else ifeq ($(strip $(RASPPI)),1BRev2)
-	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -mno-unaligned-access-DRPI1BREV2=1 -DEXPERIMENTALZERO=1
+	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -mno-unaligned-access -DRPI1BREV2=1 -DEXPERIMENTALZERO=1
 	CFLAGS	+= -DRPI1BREV2=1 -DRASPPI=1
 else ifeq ($(strip $(RASPPI)),1BPlus)
 	ARCH	?= -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -mno-unaligned-access -DRPI1BPLUS=1 -DEXPERIMENTALZERO=1
@@ -39,7 +39,7 @@ else
 endif
 
 AFLAGS	 += $(ARCH)
-CFLAGS	 += $(ARCH) -Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-psabi -fsigned-char -fno-builtin -Ofast -DNDEBUG
+CFLAGS	 += $(ARCH) -Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-psabi -fsigned-char -fno-builtin -Ofast -DNDEBUG -DDEBUG=1
 CPPFLAGS := $(CFLAGS) $(CPPFLAGS) -fno-exceptions -fno-rtti -std=c++0x -Wno-write-strings
 CFLAGS	 += -fno-delete-null-pointer-checks -fdata-sections -ffunction-sections -u _printf_float -std=gnu99
 

@@ -27,7 +27,6 @@
 
 #include "dmRotary.h"
 
-
 //------------------------------------------------------------------------------
 // Initialize
 //
@@ -52,6 +51,12 @@ void RotaryEncoder::Initialize(rpi_gpio_pin_t clockGpioPin, rpi_gpio_pin_t dataG
 	_dataPin.SetGpioPin(dataGpioPin);
 	_switchPin.SetGpioPin(switchGpioPin);
 
+#if defined (__CIRCLE__)
+	Kernel.log("%s: Initializing rotary GPIOs", __FUNCTION__);
+	ROT_CLK.AssignPin(clockGpioPin); ROT_CLK.SetMode(GPIOModeInputPullUp, true);
+	ROT_DAT.AssignPin(dataGpioPin); ROT_DAT.SetMode(GPIOModeInputPullUp, true);
+	ROT_SW.AssignPin(switchGpioPin); ROT_SW.SetMode(GPIOModeInputPullUp, true);
+#else
 	//Set pins for input
 	RPI_SetGpioInput(clockGpioPin);
 	RPI_SetGpioInput(dataGpioPin);
@@ -61,6 +66,7 @@ void RotaryEncoder::Initialize(rpi_gpio_pin_t clockGpioPin, rpi_gpio_pin_t dataG
 	unsigned controlSignal = 2;
 	unsigned gpioPinMask = _clockPin.GetGpioPinMask() | _dataPin.GetGpioPinMask() | _switchPin.GetGpioPinMask();
 	SetGpioPullUpDown(controlSignal, gpioPinMask);
+#endif	
 
 }
 
@@ -230,7 +236,7 @@ rotary_result_t RotaryEncoder::Poll(unsigned gplev0)
 
 }
 
-
+#if !defined (__CIRCLE__)
 //------------------------------------------------------------------------------
 // SetGpioPullUpDown
 //
@@ -267,7 +273,7 @@ void RotaryEncoder::SetGpioPullUpDown(unsigned controlSignal, unsigned gpioPinMa
 	write32(ARM_GPIO_GPPUDCLK0, 0);
 
 }
-
+#endif/* __CIRCLE__ */
 
 #ifdef DM_ROTARY_DEBUG
 

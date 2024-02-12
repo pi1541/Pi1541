@@ -31,9 +31,17 @@
 extern "C"
 {
     #include "rpi-aux.h"
+#if !defined (__CIRCLE__)    
     #include "rpiHardware.h"
+#endif    
 }
 
+#if defined (__CIRCLE__)
+#include <circle/gpiopin.h>
+#include <circle/memio.h>
+#include "rpi-gpio.h"
+#include "circle-kernel.h"
+#endif
 //Enable debugging messages on the mini uart
 //#define DM_ROTARY_DEBUG
 
@@ -213,7 +221,11 @@ public:
 class RotaryEncoder {
 
 private:
-
+#if defined (__CIRCLE__)
+    CGPIOPin ROT_CLK;     /* menu Up */
+    CGPIOPin ROT_DAT;     /* menu Down */
+    CGPIOPin ROT_SW;     /* menu Button */
+#endif    
     // Switch data
 
     RotaryPin _switchPin;
@@ -229,9 +241,9 @@ private:
     int _currentRotarySequence = 0;
 
     // Private methods
-
+#if !defined (__CIRCLE__)
     void SetGpioPullUpDown(unsigned controlSignal, unsigned gpioPinMask);
-
+#endif
     #ifdef DM_ROTARY_DEBUG    
         void WriteToMiniUart(char* pMessage);
     #endif

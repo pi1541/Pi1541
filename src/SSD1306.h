@@ -21,10 +21,12 @@
 
 #include <stdlib.h>
 #include "types.h"
+#if !defined (__CIRCLE__)
 extern "C"
 {
 #include "rpi-i2c.h"
 }
+#endif
 
 // 8 pages * (128 columns * 8 bits)
 //0                      127 0                         127

@@ -16,7 +16,7 @@ extern "C" {
 
 #define MSEC2HZ(msec)	((msec) * HZ / 1000)
 
-	typedef void TKernelTimerHandler(unsigned hTimer, void* pParam, void* pContext);
+	typedef void TKernelTimerHandler(KTHType hTimer, void* pParam, void* pContext);
 
 	typedef struct TKernelTimer
 	{

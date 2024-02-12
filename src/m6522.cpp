@@ -429,7 +429,7 @@ unsigned char m6522::Read(unsigned int address)
 			value = portA.GetDirection();
 		break;
 		case T1CL:
-			// A read T1CL transters the counter’s contents to the data bus and if a T1 interrupt has occurred the read	operation will clear the IFR flag and reset !IRQ
+			// A read T1CL transters the counterï¿½s contents to the data bus and if a T1 interrupt has occurred the read	operation will clear the IFR flag and reset !IRQ
 			ClearInterrupt(IR_T1);
 			value = t1c.bytes.l;
 		break;
@@ -438,7 +438,7 @@ unsigned char m6522::Read(unsigned int address)
 			value = t1c.bytes.h;
 		break;
 		case T1LL:
-			// A read of T1LL transfers the latch’s contents to the data bus; it has no	effect on the T1 interrupt flag.
+			// A read of T1LL transfers the latchï¿½s contents to the data bus; it has no	effect on the T1 interrupt flag.
 			value = t1l.bytes.l;
 		break;
 		case T1LH:
