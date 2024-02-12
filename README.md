@@ -44,7 +44,6 @@ The floppy emulation is entirely untouched, so it's as good as it was/is in V1.2
 
 TODOs
 -----
-- Testing of Option B, split IEC lines
 - Make the webserver useful
 - Allow static IP Adresses for faster startup, to be configured in `options.txt`
 - Make execution more efficient wrt. CPU usage to keep temperature lower, use throtteling to protect the Pi.
