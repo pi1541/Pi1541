@@ -86,7 +86,7 @@ public:
 	bool run_wifi(void);
 	bool run_ethernet(void);
 	void run_webserver(void);
-	void i2c_init(int BSCMaster, int fast) {};	/* already done in Kernel's Initialization */
+	void i2c_init(int BSCMaster, int fast);
 	void i2c_setclock(int BSCMaster, int clock_freq);
 	int i2c_read(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count);
 	int i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count);
@@ -119,7 +119,7 @@ private:
 	CUSBKeyboardDevice * volatile m_pKeyboard;
 	CDevice 			*pUMSD1;
 	CEMMCDevice			m_EMMC;
-	CI2CMaster			m_I2c;
+	CI2CMaster			*m_I2c;
 #if RASPPI <= 4	
 	CPWMSoundDevice		*m_PWMSoundDevice;
 #endif	

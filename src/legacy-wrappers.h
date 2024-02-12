@@ -38,9 +38,6 @@ int GetTemperature(unsigned &value);
 void SetACTLed(int v);
 void _enable_unaligned_access(void);
 void enable_MMU_and_IDCaches(void);
-void InitialiseLCD();
-void UpdateLCD(const char* track, unsigned temperature);
-void DisplayI2CScan(int y_pos);
 void emulator(void);
 void PlaySoundDMA(void);
 

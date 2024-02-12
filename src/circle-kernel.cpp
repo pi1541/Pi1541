@@ -55,7 +55,7 @@ CKernel::CKernel(void) :
 	m_USBHCI (&mInterrupt, &mTimer, true),
 	m_pKeyboard (0),
 	m_EMMC (&mInterrupt, &mTimer, &m_ActLED),
-	m_I2c (0, true),
+	m_I2c (nullptr),
 #if RASPPI <= 4
 	m_PWMSoundDevice (nullptr),
 #endif	
@@ -104,8 +104,6 @@ boolean CKernel::Initialize (void)
 			mLogger.Write ("pottendo-kern", LogNotice, "mounted drive: " _DRIVE);
 		}
 	}
-	if (bOK) bOK = m_I2c.Initialize();
-	mLogger.Write ("pottendo-kern", LogNotice, "I2C %s", bOK ? "ok" : "failed");
 	return bOK;
 }
 
@@ -264,26 +262,40 @@ void CKernel::run_webserver(void)
 	}
 }
 
+void CKernel::i2c_init(int BSCMaster, int fast)
+{
+	if (m_I2c)
+		delete m_I2c;
+
+	m_I2c = new CI2CMaster(BSCMaster, fast);
+	if (!m_I2c->Initialize())
+	{
+		log("%s: failed", __FUNCTION__);
+		return;
+	}
+	log("%s: Master %d successfully initialized", __FUNCTION__, BSCMaster);
+}
+
 void CKernel::i2c_setclock(int BSCMaster, int clock_freq)
 {
-	m_I2c.SetClock(clock_freq);
+	m_I2c->SetClock(clock_freq);
 }
 
 int CKernel::i2c_read(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count)
 {
-	return m_I2c.Read(slaveAddress, buffer, count);
+	return m_I2c->Read(slaveAddress, buffer, count);
 }
 
 int CKernel::i2c_write(int BSCMaster, unsigned char slaveAddress, void* buffer, unsigned count)
 {
-	return m_I2c.Write(slaveAddress, buffer, count);
+	return m_I2c->Write(slaveAddress, buffer, count);
 }
 
 int CKernel::i2c_scan(int BSCMaster, unsigned char slaveAddress)
 {
 	int found = 0;
 	u8 t[1];
-	if (m_I2c.Read(slaveAddress, t, 1) >= 0) 
+	if (m_I2c->Read(slaveAddress, t, 1) >= 0) 
 	{
 		log("identified I2C slave on address 0x%02x", slaveAddress);
 		found++;
